@@ -280,7 +280,8 @@
       document.getElementById("notes").value = "";
 
       loadCompany();
-    renderJobs();
+      updateDashboard();
+      renderJobs();
       alert("Projekti u ruajt.");
     }
 
@@ -326,6 +327,7 @@
     };
 
     async function renderJobs(){
+      updateDashboard();
       const allJobs = getJobs();
       const searchEl = document.getElementById("projectSearch");
       const filterEl = document.getElementById("projectFilter");

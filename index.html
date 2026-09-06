@@ -1,778 +1,194 @@
-<!DOCTYPE html>
-<html lang="sq">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="Iliri Måleri" />
-  <title>Iliri Måleri</title>
-  <style>
-    :root{
-      --bg:#f4f4f4;
-      --card:#ffffff;
-      --text:#111111;
-      --muted:#666666;
-      --accent:#111111;
-      --line:#dddddd;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-      background:var(--bg);
-      color:var(--text);
-    }
-    .wrap{
-      max-width:680px;
-      margin:0 auto;
-      padding:20px 16px 40px;
-    }
-    h1{
-      font-size:30px;
-      margin:8px 0 4px;
-      text-align:center;
-    }
-    .subtitle{
-      text-align:center;
-      color:var(--muted);
-      margin-bottom:20px;
-    }
-    .card{
-      background:var(--card);
-      border-radius:16px;
-      padding:16px;
-      margin-bottom:16px;
-      box-shadow:0 2px 10px rgba(0,0,0,.06);
-    }
-    label{
-      display:block;
-      font-weight:600;
-      margin:12px 0 6px;
-    }
-    input, textarea, select{
-      width:100%;
-      padding:13px 12px;
-      border:1px solid var(--line);
-      border-radius:12px;
-      font-size:17px;
-      background:#fff;
-    }
-    textarea{min-height:90px;resize:vertical}
-    button{
-      width:100%;
-      padding:14px;
-      border:0;
-      border-radius:12px;
-      font-size:17px;
-      font-weight:700;
-      margin-top:14px;
-      background:var(--accent);
-      color:white;
-    }
-    .secondary{
-      background:#e9e9e9;
-      color:#111;
-    }
-    .job{
-      padding:12px 0;
-      border-bottom:1px solid var(--line);
-    }
-    .job:last-child{border-bottom:0}
-    .job strong{display:block;font-size:17px}
-    .small{color:var(--muted);font-size:14px;margin-top:3px}
-    .empty{color:var(--muted)}
-    .photos{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
-    .photos img{width:100%;height:140px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
-    .photo-label{font-size:14px;font-weight:700;margin-top:10px}
-    .offer-box{background:#f7f7f7;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
-    .offer-row{display:flex;justify-content:space-between;gap:12px;margin:6px 0}
-    .offer-total{font-size:18px;font-weight:800;border-top:1px solid var(--line);padding-top:8px;margin-top:8px}
-    .invoice-box{background:#f7f7f7;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
-    .dashboard{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:16px 0 24px}
-    .dash-btn{background:#fff;color:#111;border:1px solid var(--line);min-height:82px;font-size:16px;font-weight:750;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
-    .dash-btn span{font-size:26px}
-    .section-target{scroll-margin-top:12px}
-    .toolbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 16px}
-    .danger{background:#fff;color:#111;border:1px solid #bbb}
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <h1>ILIRI MÅLERI</h1>
-    <div class="dashboard">
-      <button class="dash-btn" onclick="goToSection('projectsSection')"><span>📁</span>Projektet</button>
-      <button class="dash-btn" onclick="goToSection('clientsSection')"><span>👤</span>Klientët</button>
-      <button class="dash-btn" onclick="goToSection('hoursSection')"><span>⏱️</span>Orët</button>
-      <button class="dash-btn" onclick="goToSection('materialsSection')"><span>🎨</span>Materialet</button>
-      <button class="dash-btn" onclick="goToSection('offersSection')"><span>📝</span>Ofertat</button>
-      <button class="dash-btn" onclick="goToSection('invoicesSection')"><span>🧾</span>Faturat</button>
-    </div>
-
-    <div id="clientsSection" class="card section-target">
-      <h2>Klientët</h2>
-      <div id="clientsSummary" class="small">Klientët e regjistruar do të shfaqen këtu.</div>
-    </div>
-
-    <div id="hoursSection" class="card section-target">
-      <h2>Orët</h2>
-      <div id="hoursSummary" class="small">0 orë gjithsej</div>
-    </div>
-
-    <div id="materialsSection" class="card section-target">
-      <h2>Materialet</h2>
-      <div id="materialsSummary" class="small">0.00 kr gjithsej</div>
-    </div>
-
-    <div id="offersSection" class="card section-target">
-      <h2>Ofertat</h2>
-      <div id="offersSummary" class="small">0 oferta të ruajtura</div>
-    </div>
-
-    <div id="invoicesSection" class="card section-target">
-      <h2>Faturat</h2>
-      <div id="invoicesSummary" class="small">0 fatura të ruajtura</div>
-    </div>
-
-    <div class="subtitle">Aplikacioni im i punës · Versioni 13</div>
-
-    <div class="card">
-      <h2>Punë e re</h2>
-
-      <label for="client">Emri i klientit</label>
-      <input id="client" placeholder="p.sh. Anders Karlsson">
-
-      <label for="phone">Telefoni</label>
-      <input id="phone" type="tel" placeholder="07...">
-
-      <label for="address">Adresa e punës</label>
-      <input id="address" placeholder="Rruga dhe numri">
-
-      <label for="type">Lloji i punës</label>
-      <select id="type">
-        <option value="">Zgjidh</option>
-        <option>Lyerje e brendshme</option>
-        <option>Lyerje e jashtme</option>
-        <option>Spatulim / bredspackling</option>
-        <option>Tapet</option>
-        <option>Sprucim</option>
-        <option>Tjetër</option>
-      </select>
-
-      <label for="status">Gjendja e projektit</label>
-      <select id="status">
-        <option value="Filloi">Filloi</option>
-        <option value="Në proces">Në proces</option>
-        <option value="Mbaroi">Mbaroi</option>
-      </select>
-
-      <label for="notes">Shënime</label>
-      <textarea id="notes" placeholder="Çfarë duhet bërë..."></textarea>
-
-      <button onclick="saveJob()">Ruaj projektin</button>
-    </div>
-
-    <div class="card">
-      <h2>Projektet e mia</h2>
-      <div id="jobs"></div>
-      <button class="secondary" onclick="clearAll()">Fshi të gjitha</button>
-    </div>
-  </div>
-
-  <script>
-    function goToSection(id){
-      const el = document.getElementById(id);
-      if(el) el.scrollIntoView({behavior:"smooth", block:"start"});
-    }
-
-    function updateDashboard(){
-      const jobs = getJobs();
-      const clients = [...new Set(jobs.map(j => (j.client || "").trim()).filter(Boolean))];
-      const totalHours = jobs.reduce((sum,j) =>
-        sum + (j.hours || []).reduce((s,h) => s + Number(h.hours || 0), 0), 0);
-      const totalMaterials = jobs.reduce((sum,j) =>
-        sum + (j.materials || []).reduce((s,m) => s + Number(m.cost || 0), 0), 0);
-      const offers = jobs.filter(j => j.offer && Number(j.offer.labourPrice || 0) >= 0).length;
-      const invoices = jobs.filter(j => j.invoice && (j.invoice.number || j.invoice.date || j.invoice.dueDate)).length;
-
-      const c = document.getElementById("clientsSummary");
-      const h = document.getElementById("hoursSummary");
-      const m = document.getElementById("materialsSummary");
-      const o = document.getElementById("offersSummary");
-      const i = document.getElementById("invoicesSummary");
-
-      if(c) c.innerHTML = clients.length
-        ? `<b>${clients.length}</b> klientë: ${clients.map(escapeHtml).join(", ")}`
-        : "Nuk ka klientë ende.";
-      if(h) h.innerHTML = `<b>${totalHours}</b> orë gjithsej`;
-      if(m) m.innerHTML = `<b>${totalMaterials.toFixed(2)} kr</b> materiale gjithsej`;
-      if(o) o.innerHTML = `<b>${offers}</b> oferta të ruajtura`;
-      if(i) i.innerHTML = `<b>${invoices}</b> fatura të ruajtura`;
-    }
-
-    function getCompany(){
-      return JSON.parse(localStorage.getItem("iliriMaleriCompany") || "{}");
-    }
-
-    function saveCompany(){
-      const company = {
-        name: document.getElementById("companyName").value.trim(),
-        org: document.getElementById("companyOrg").value.trim(),
-        address: document.getElementById("companyAddress").value.trim(),
-        phone: document.getElementById("companyPhone").value.trim(),
-        email: document.getElementById("companyEmail").value.trim(),
-        payment: document.getElementById("companyPayment").value.trim()
-      };
-      localStorage.setItem("iliriMaleriCompany", JSON.stringify(company));
-      alert("Të dhënat e firmës u ruajtën.");
-    }
-
-    function loadCompany(){
-      const c = getCompany();
-      document.getElementById("companyName").value = c.name || "";
-      document.getElementById("companyOrg").value = c.org || "";
-      document.getElementById("companyAddress").value = c.address || "";
-      document.getElementById("companyPhone").value = c.phone || "";
-      document.getElementById("companyEmail").value = c.email || "";
-      document.getElementById("companyPayment").value = c.payment || "";
-    }
-
-    function getJobs(){
-      return JSON.parse(localStorage.getItem("iliriMaleriJobs") || "[]");
-    }
-
-    function saveJobs(jobs){
-      localStorage.setItem("iliriMaleriJobs", JSON.stringify(jobs));
-    }
-
-    function saveJob(){
-      const client = document.getElementById("client").value.trim();
-      const phone = document.getElementById("phone").value.trim();
-      const address = document.getElementById("address").value.trim();
-      const type = document.getElementById("type").value;
-      const status = document.getElementById("status").value;
-      const notes = document.getElementById("notes").value.trim();
-
-      if(!client){
-        alert("Shkruaj emrin e klientit.");
-        return;
-      }
-
-      const jobs = getJobs();
-      jobs.unshift({
-        id: Date.now(),
-        client,
-        phone,
-        address,
-        type,
-        status,
-        notes,
-        createdAt: new Date().toLocaleString("sq-AL")
-      });
-
-      saveJobs(jobs);
-
-      document.getElementById("client").value = "";
-      document.getElementById("phone").value = "";
-      document.getElementById("address").value = "";
-      document.getElementById("type").value = "";
-      document.getElementById("status").value = "Filloi";
-      document.getElementById("notes").value = "";
-
-      loadCompany();
-      updateDashboard();
-      renderJobs();
-      alert("Projekti u ruajt.");
-    }
-
-    const photoDB = {
-      db: null,
-      async open(){
-        if(this.db) return this.db;
-        this.db = await new Promise((resolve, reject) => {
-          const req = indexedDB.open("IliriMaleriPhotos", 1);
-          req.onupgradeneeded = () => {
-            const db = req.result;
-            if(!db.objectStoreNames.contains("photos")){
-              const store = db.createObjectStore("photos", {keyPath:"id", autoIncrement:true});
-              store.createIndex("jobId", "jobId", {unique:false});
-            }
-          };
-          req.onsuccess = () => resolve(req.result);
-          req.onerror = () => reject(req.error);
-        });
-        return this.db;
-      },
-      async add(jobId, category, file){
-        const db = await this.open();
-        return new Promise((resolve, reject) => {
-          const tx = db.transaction("photos", "readwrite");
-          tx.objectStore("photos").add({
-            jobId, category, blob:file, name:file.name, createdAt:Date.now()
-          });
-          tx.oncomplete = () => resolve();
-          tx.onerror = () => reject(tx.error);
-        });
-      },
-      async getByJob(jobId){
-        const db = await this.open();
-        return new Promise((resolve, reject) => {
-          const tx = db.transaction("photos", "readonly");
-          const idx = tx.objectStore("photos").index("jobId");
-          const req = idx.getAll(jobId);
-          req.onsuccess = () => resolve(req.result || []);
-          req.onerror = () => reject(req.error);
-        });
-      }
-    };
-
-    async function renderJobs(){
-      updateDashboard();
-      const allJobs = getJobs();
-      const searchEl = document.getElementById("projectSearch");
-      const filterEl = document.getElementById("projectFilter");
-      const q = (searchEl?.value || "").trim().toLowerCase();
-      const statusFilter = filterEl?.value || "";
-      const jobs = allJobs.filter(job => {
-        const text = `${job.client || ""} ${job.address || ""} ${job.phone || ""} ${job.type || ""}`.toLowerCase();
-        return (!q || text.includes(q)) && (!statusFilter || job.status === statusFilter);
-      });
-      const box = document.getElementById("jobs");
-
-      if(!jobs.length){
-        box.innerHTML = '<div class="empty">Nuk ke regjistruar ende asnjë projekt.</div>';
-        updateDashboard();
-        return;
-      }
-
-      const rendered = [];
-      for (const job of jobs){
-        const totalHours = (job.hours || []).reduce((sum, h) => sum + Number(h.hours || 0), 0);
-        const totalMaterials = (job.materials || []).reduce((sum, m) => sum + Number(m.cost || 0), 0);
-        const labourPrice = Number(job.offer?.labourPrice || 0);
-        const vatRate = Number(job.offer?.vatRate || 0);
-        const subtotal = labourPrice + totalMaterials;
-        const vatAmount = subtotal * vatRate / 100;
-        const grandTotal = subtotal + vatAmount;
-
-        const photos = await photoDB.getByJob(job.id);
-        const before = photos.filter(p => p.category === "para");
-        const after = photos.filter(p => p.category === "pas");
-
-        const beforeHtml = before.map(p => {
-          const url = URL.createObjectURL(p.blob);
-          return `<img src="${url}" alt="Foto para">`;
-        }).join("");
-
-        const afterHtml = after.map(p => {
-          const url = URL.createObjectURL(p.blob);
-          return `<img src="${url}" alt="Foto pas">`;
-        }).join("");
-
-        rendered.push(`
-        <div class="job">
-          <strong>${escapeHtml(job.client)}</strong>
-          <div class="small">${escapeHtml(job.type || "Pa lloj pune")}</div>
-          <div class="small">${escapeHtml(job.address || "")}</div>
-          <div class="small">${escapeHtml(job.phone || "")}</div>
-
-          <label style="margin-top:10px">Gjendja e projektit</label>
-          <select onchange="updateStatus(${job.id}, this.value)">
-            <option ${job.status === "Filloi" ? "selected" : ""}>Filloi</option>
-            <option ${job.status === "Në proces" ? "selected" : ""}>Në proces</option>
-            <option ${job.status === "Mbaroi" ? "selected" : ""}>Mbaroi</option>
-          </select>
-
-          <h3 style="margin-bottom:4px">Orët e punës</h3>
-          <div class="small"><b>Orë gjithsej:</b> ${totalHours}</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-            <input id="date-${job.id}" type="date">
-            <input id="hours-${job.id}" type="number" min="0" step="0.5" placeholder="Orë">
-          </div>
-          <button class="secondary" onclick="addHours(${job.id})">Shto orët</button>
-          <div style="margin-top:8px">
-            ${(job.hours || []).map(h => `<div class="small">${escapeHtml(h.date)} — ${escapeHtml(h.hours)} orë</div>`).join("")}
-          </div>
-
-          <h3 style="margin-bottom:4px;margin-top:18px">Materialet & shpenzimet</h3>
-          <div class="small"><b>Totali i materialeve:</b> ${totalMaterials.toFixed(2)} kr</div>
-          <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:8px;margin-top:8px">
-            <input id="material-${job.id}" placeholder="p.sh. Bojë muri">
-            <input id="cost-${job.id}" type="number" min="0" step="0.01" placeholder="Kr">
-          </div>
-          <button class="secondary" onclick="addMaterial(${job.id})">Shto materialin</button>
-          <div style="margin-top:8px">
-            ${(job.materials || []).map(m => `<div class="small">${escapeHtml(m.name)} — ${Number(m.cost).toFixed(2)} kr</div>`).join("")}
-          </div>
-
-          <h3 style="margin-bottom:4px;margin-top:18px">Oferta</h3>
-          <label>Çmimi i punës</label>
-          <input id="labour-${job.id}" type="number" min="0" step="0.01" value="${labourPrice || ""}" placeholder="Kr">
-
-          <label>TVSH</label>
-          <select id="vat-${job.id}">
-            <option value="0" ${vatRate === 0 ? "selected" : ""}>0%</option>
-            <option value="25" ${vatRate === 25 ? "selected" : ""}>25%</option>
-          </select>
-
-          <button class="secondary" onclick="saveOffer(${job.id})">Ruaj ofertën</button>
-          <button onclick="viewOffer(${job.id})">Shiko ofertën</button>
-
-          <div class="offer-box">
-            <div class="offer-row"><span>Puna</span><b>${labourPrice.toFixed(2)} kr</b></div>
-            <div class="offer-row"><span>Materialet</span><b>${totalMaterials.toFixed(2)} kr</b></div>
-            <div class="offer-row"><span>Nëntotali</span><b>${subtotal.toFixed(2)} kr</b></div>
-            <div class="offer-row"><span>TVSH ${vatRate}%</span><b>${vatAmount.toFixed(2)} kr</b></div>
-            <div class="offer-row offer-total"><span>Totali</span><span>${grandTotal.toFixed(2)} kr</span></div>
-          </div>
-
-          <h3 style="margin-bottom:4px;margin-top:18px">Fatura</h3>
-          <label>Numri i faturës</label>
-          <input id="invoice-number-${job.id}" value="${escapeHtml(job.invoice?.number || "")}" placeholder="p.sh. 2026-001">
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div>
-              <label>Data e faturës</label>
-              <input id="invoice-date-${job.id}" type="date" value="${escapeHtml(job.invoice?.date || "")}">
-            </div>
-            <div>
-              <label>Afati i pagesës</label>
-              <input id="invoice-due-${job.id}" type="date" value="${escapeHtml(job.invoice?.dueDate || "")}">
-            </div>
-          </div>
-
-          <button class="secondary" onclick="saveInvoice(${job.id})">Ruaj faturën</button>
-          <button onclick="viewInvoice(${job.id})">Shiko faturën</button>
-
-          <div class="invoice-box">
-            <div class="offer-row"><span>Numri</span><b>${escapeHtml(job.invoice?.number || "—")}</b></div>
-            <div class="offer-row"><span>Data</span><b>${escapeHtml(job.invoice?.date || "—")}</b></div>
-            <div class="offer-row"><span>Afati</span><b>${escapeHtml(job.invoice?.dueDate || "—")}</b></div>
-            <div class="offer-row offer-total"><span>Totali</span><span>${grandTotal.toFixed(2)} kr</span></div>
-          </div>
-
-          <h3 style="margin-bottom:4px;margin-top:18px">Fotot e projektit</h3>
-
-          <div class="photo-label">Foto PARA</div>
-          <input id="before-${job.id}" type="file" accept="image/*" capture="environment" multiple>
-          <button class="secondary" onclick="savePhotos(${job.id}, 'para')">Ruaj foto para</button>
-          <div class="photos">${beforeHtml || '<div class="small">Nuk ka foto para.</div>'}</div>
-
-          <div class="photo-label">Foto PAS</div>
-          <input id="after-${job.id}" type="file" accept="image/*" capture="environment" multiple>
-          <button class="secondary" onclick="savePhotos(${job.id}, 'pas')">Ruaj foto pas</button>
-          <div class="photos">${afterHtml || '<div class="small">Nuk ka foto pas.</div>'}</div>
-
-          <button class="danger" onclick="deleteJob(${job.id})">Fshi këtë projekt</button>
-          <div class="small" style="margin-top:12px">${escapeHtml(job.createdAt)}</div>
-          ${job.notes ? `<div class="small">${escapeHtml(job.notes)}</div>` : ""}
-        </div>
-      `);
-      }
-
-      box.innerHTML = rendered.join("");
-      updateDashboard();
-    }
-
-    function updateStatus(id, newStatus){
-      const jobs = getJobs();
-      const job = jobs.find(j => j.id === id);
-      if(!job) return;
-      job.status = newStatus;
-      saveJobs(jobs);
-      renderJobs();
-    }
-
-    function addHours(id){
-      const dateEl = document.getElementById(`date-${id}`);
-      const hoursEl = document.getElementById(`hours-${id}`);
-      const date = dateEl.value;
-      const hours = Number(hoursEl.value);
-
-      if(!date || !hours || hours <= 0){
-        alert("Zgjidh datën dhe shkruaj sa orë ke punuar.");
-        return;
-      }
-
-      const jobs = getJobs();
-      const job = jobs.find(j => j.id === id);
-      if(!job) return;
-
-      job.hours = job.hours || [];
-      job.hours.unshift({date, hours});
-      saveJobs(jobs);
-      renderJobs();
-    }
-
-    function addMaterial(id){
-      const materialEl = document.getElementById(`material-${id}`);
-      const costEl = document.getElementById(`cost-${id}`);
-      const name = materialEl.value.trim();
-      const cost = Number(costEl.value);
-
-      if(!name || isNaN(cost) || cost < 0){
-        alert("Shkruaj materialin dhe çmimin.");
-        return;
-      }
-
-      const jobs = getJobs();
-      const job = jobs.find(j => j.id === id);
-      if(!job) return;
-
-      job.materials = job.materials || [];
-      job.materials.unshift({name, cost});
-      saveJobs(jobs);
-      renderJobs();
-    }
-
-    function viewOffer(id){
-      const jobs = getJobs();
-      const job = jobs.find(j => j.id === id);
-      if(!job) return;
-
-      const totalMaterials = (job.materials || []).reduce((sum, m) => sum + Number(m.cost || 0), 0);
-      const labourPrice = Number(job.offer?.labourPrice || 0);
-      const vatRate = Number(job.offer?.vatRate || 0);
-      const subtotal = labourPrice + totalMaterials;
-      const vatAmount = subtotal * vatRate / 100;
-      const grandTotal = subtotal + vatAmount;
-
-      const company = getCompany();
-
-      const materialRows = (job.materials || []).length
-        ? (job.materials || []).map(m => `
-            <tr>
-              <td>${escapeHtml(m.name)}</td>
-              <td style="text-align:right">${Number(m.cost || 0).toFixed(2)} kr</td>
-            </tr>`).join("")
-        : `<tr><td>Materiale</td><td style="text-align:right">0.00 kr</td></tr>`;
-
-      const html = `
 <!doctype html>
 <html lang="sq">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ofertë - ${escapeHtml(job.client)}</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>ILIRI Måleri</title>
 <style>
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;background:#f4f4f4;color:#111}
-.sheet{max-width:720px;margin:20px auto;background:white;padding:28px;border-radius:14px}
-h1{margin:0 0 4px;font-size:28px}
-.brand{font-weight:800;font-size:18px;margin-bottom:28px}
-.meta{line-height:1.7;margin-bottom:22px}
-table{width:100%;border-collapse:collapse;margin-top:16px}
-td{padding:10px 0;border-bottom:1px solid #ddd}
-.total{font-size:20px;font-weight:800}
-.actions{display:flex;gap:10px;margin-top:24px}
-button{padding:12px 16px;border:0;border-radius:10px;background:#111;color:white;font-size:16px}
-@media print{body{background:white}.sheet{margin:0;max-width:none;border-radius:0}.actions{display:none}}
+  :root { --bg:#f4f5f7; --card:#fff; --text:#111; --muted:#6b7280; --line:#d1d5db; --accent:#111827; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+  header{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  h1{font-size:20px;margin:0}
+  .wrap{max-width:900px;margin:0 auto;padding:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:640px){.grid{grid-template-columns:1fr}}
+  label{font-size:13px;color:var(--muted);display:block;margin:8px 0 5px}
+  input,select,textarea,button{font:inherit}
+  input,select,textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;background:#fff}
+  textarea{min-height:90px;resize:vertical}
+  button{border:0;border-radius:10px;padding:11px 14px;background:var(--accent);color:#fff;font-weight:600}
+  button.secondary{background:#e5e7eb;color:#111}
+  button.danger{background:#b91c1c}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .row button{flex:1}
+  .project{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px;background:#fff}
+  .project h3{margin:0 0 6px;font-size:17px}
+  .meta{font-size:13px;color:var(--muted);line-height:1.5}
+  .empty{color:var(--muted);text-align:center;padding:18px}
+  .top-actions{display:flex;gap:8px}
+  .top-actions button{padding:8px 10px}
+  .badge{display:inline-block;padding:3px 8px;border-radius:999px;background:#eef2ff;font-size:12px;margin-top:6px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
+  .stat b{display:block;font-size:20px}
+  .hidden{display:none}
 </style>
 </head>
 <body>
-<div class="sheet">
-  <div class="brand">${escapeHtml(company.name || "ILIRI MÅLERI")}</div>
-  <div class="meta">
-    ${company.org ? `<b>Org.nr:</b> ${escapeHtml(company.org)}<br>` : ""}
-    ${company.address ? `${escapeHtml(company.address)}<br>` : ""}
-    ${company.phone ? `${escapeHtml(company.phone)}<br>` : ""}
-    ${company.email ? `${escapeHtml(company.email)}<br>` : ""}
+<header>
+  <h1 id="appTitle">ILIRI Måleri</h1>
+  <div class="top-actions">
+    <button class="secondary" id="langBtn" type="button">SV</button>
+    <button class="secondary" id="exportBtn" type="button">Backup</button>
   </div>
-  <h1>OFERTË</h1>
-  <div class="meta">
-    <b>Klienti:</b> ${escapeHtml(job.client)}<br>
-    ${job.phone ? `<b>Telefoni:</b> ${escapeHtml(job.phone)}<br>` : ""}
-    ${job.address ? `<b>Adresa:</b> ${escapeHtml(job.address)}<br>` : ""}
-    ${job.type ? `<b>Puna:</b> ${escapeHtml(job.type)}<br>` : ""}
-    ${job.notes ? `<b>Shënime:</b> ${escapeHtml(job.notes)}<br>` : ""}
+</header>
+
+<div class="wrap">
+  <div class="stats">
+    <div class="stat"><b id="countAll">0</b><span id="lblAll">Projekte</span></div>
+    <div class="stat"><b id="countActive">0</b><span id="lblActive">Aktive</span></div>
+    <div class="stat"><b id="countDone">0</b><span id="lblDone">Mbaruar</span></div>
   </div>
 
-  <table>
-    <tr><td><b>Puna</b></td><td style="text-align:right"><b>${labourPrice.toFixed(2)} kr</b></td></tr>
-    ${materialRows}
-    <tr><td>Materialet gjithsej</td><td style="text-align:right">${totalMaterials.toFixed(2)} kr</td></tr>
-    <tr><td>Nëntotali</td><td style="text-align:right">${subtotal.toFixed(2)} kr</td></tr>
-    <tr><td>TVSH ${vatRate}%</td><td style="text-align:right">${vatAmount.toFixed(2)} kr</td></tr>
-    <tr class="total"><td>Totali</td><td style="text-align:right">${grandTotal.toFixed(2)} kr</td></tr>
-  </table>
+  <section class="card">
+    <h2 id="formTitle" style="margin-top:0">Projekt i ri</h2>
+    <input type="hidden" id="projectId" />
+    <div class="grid">
+      <div><label id="lName">Klienti</label><input id="name" autocomplete="name" /></div>
+      <div><label id="lPhone">Telefoni</label><input id="phone" inputmode="tel" /></div>
+      <div><label id="lAddress">Adresa</label><input id="address" /></div>
+      <div><label id="lType">Lloji i punës</label><input id="type" placeholder="Målning, spackling..." /></div>
+      <div><label id="lStatus">Statusi</label><select id="status"><option value="active">Aktiv</option><option value="waiting">Në pritje</option><option value="done">Mbaruar</option></select></div>
+      <div><label id="lHours">Orë pune</label><input id="hours" type="number" min="0" step="0.5" /></div>
+      <div><label id="lMaterial">Materiale (kr)</label><input id="materials" type="number" min="0" step="1" /></div>
+      <div><label id="lPrice">Çmimi / oferta (kr)</label><input id="price" type="number" min="0" step="1" /></div>
+    </div>
+    <label id="lNotes">Shënime</label><textarea id="notes"></textarea>
+    <div class="row" style="margin-top:12px">
+      <button id="saveBtn" type="button">Ruaj projektin</button>
+      <button id="cancelBtn" class="secondary hidden" type="button">Anulo ndryshimin</button>
+    </div>
+  </section>
 
-  <div class="actions">
-    <button onclick="window.print()">Printo / Ruaj PDF</button>
-    <button onclick="window.close()">Mbyll</button>
-  </div>
+  <section class="card">
+    <div class="grid">
+      <div><label id="lSearch">Kërko</label><input id="search" placeholder="Emër, telefon, adresë..." /></div>
+      <div><label id="lFilter">Filtro</label><select id="filter"><option value="all">Të gjitha</option><option value="active">Aktive</option><option value="waiting">Në pritje</option><option value="done">Mbaruar</option></select></div>
+    </div>
+    <div id="projects"></div>
+  </section>
+
+  <section class="card">
+    <h2 id="backupTitle" style="margin-top:0">Rikthe backup</h2>
+    <input id="importFile" type="file" accept="application/json" />
+  </section>
 </div>
-</body>
-</html>`;
 
-      const win = window.open("", "_blank");
-      if(!win){
-        alert("Safari bllokoi hapjen. Lejo pop-up dhe provo përsëri.");
-        return;
-      }
-      win.document.open();
-      win.document.write(html);
-      win.document.close();
-    }
+<script>
+const STORAGE_KEY = 'iliri_maleri_projects_v2';
+const LANG_KEY = 'iliri_maleri_lang_v2';
+let projects = loadProjects();
+let lang = localStorage.getItem(LANG_KEY) || 'sq';
 
-    function saveInvoice(id){
-      const jobs = getJobs();
-      const job = jobs.find(j => j.id === id);
-      if(!job) return;
+const $ = id => document.getElementById(id);
 
-      const number = document.getElementById(`invoice-number-${id}`).value.trim();
-      const date = document.getElementById(`invoice-date-${id}`).value;
-      const dueDate = document.getElementById(`invoice-due-${id}`).value;
+const T = {
+  sq:{langBtn:'SV',all:'Projekte',active:'Aktive',done:'Mbaruar',form:'Projekt i ri',client:'Klienti',phone:'Telefoni',address:'Adresa',type:'Lloji i punës',status:'Statusi',hours:'Orë pune',materials:'Materiale (kr)',price:'Çmimi / oferta (kr)',notes:'Shënime',save:'Ruaj projektin',cancel:'Anulo ndryshimin',search:'Kërko',filter:'Filtro',backup:'Rikthe backup',empty:'Nuk ka projekte.',edit:'Ndrysho',del:'Fshi',confirm:'Ta fshij këtë projekt?',saved:'Projekti u ruajt.',updated:'Projekti u përditësua.',waiting:'Në pritje',allOpt:'Të gjitha',activeOpt:'Aktiv',doneOpt:'Mbaruar'},
+  sv:{langBtn:'SQ',all:'Projekt',active:'Aktiva',done:'Klara',form:'Nytt projekt',client:'Kund',phone:'Telefon',address:'Adress',type:'Typ av arbete',status:'Status',hours:'Arbetstimmar',materials:'Material (kr)',price:'Pris / offert (kr)',notes:'Anteckningar',save:'Spara projekt',cancel:'Avbryt ändring',search:'Sök',filter:'Filtrera',backup:'Återställ backup',empty:'Inga projekt.',edit:'Redigera',del:'Radera',confirm:'Radera projektet?',saved:'Projektet sparades.',updated:'Projektet uppdaterades.',waiting:'Väntar',allOpt:'Alla',activeOpt:'Aktiv',doneOpt:'Klar'}
+};
 
-      job.invoice = {number, date, dueDate};
-      saveJobs(jobs);
-      renderJobs();
-      alert("Fatura u ruajt.");
-    }
+function loadProjects(){
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch { return []; }
+}
+function persist(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); }
+function esc(s=''){ return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+function money(v){ return v ? Number(v).toLocaleString('sv-SE')+' kr' : '0 kr'; }
+function statusLabel(v){ const t=T[lang]; return v==='active'?t.activeOpt:v==='waiting'?t.waiting:t.doneOpt; }
 
-    function viewInvoice(id){
-      const jobs = getJobs();
-      const job = jobs.find(j => j.id === id);
-      if(!job) return;
+function saveProject(){
+  const id = $('projectId').value;
+  const item = {
+    id: id || (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString()),
+    name:$('name').value.trim(), phone:$('phone').value.trim(), address:$('address').value.trim(),
+    type:$('type').value.trim(), status:$('status').value, hours:Number($('hours').value||0),
+    materials:Number($('materials').value||0), price:Number($('price').value||0), notes:$('notes').value.trim(),
+    updatedAt:new Date().toISOString()
+  };
+  if(!item.name){ $('name').focus(); return; }
+  const i = projects.findIndex(p=>p.id===item.id);
+  const editing = i>=0;
+  if(editing) projects[i]=item; else projects.unshift(item);
+  persist();
+  clearForm();
+  render();
+  alert(editing ? T[lang].updated : T[lang].saved);
+}
 
-      const totalMaterials = (job.materials || []).reduce((sum, m) => sum + Number(m.cost || 0), 0);
-      const labourPrice = Number(job.offer?.labourPrice || 0);
-      const vatRate = Number(job.offer?.vatRate || 0);
-      const subtotal = labourPrice + totalMaterials;
-      const vatAmount = subtotal * vatRate / 100;
-      const grandTotal = subtotal + vatAmount;
+function editProject(id){
+  const p=projects.find(x=>x.id===id); if(!p)return;
+  $('projectId').value=p.id; $('name').value=p.name||''; $('phone').value=p.phone||''; $('address').value=p.address||'';
+  $('type').value=p.type||''; $('status').value=p.status||'active'; $('hours').value=p.hours||''; $('materials').value=p.materials||'';
+  $('price').value=p.price||''; $('notes').value=p.notes||'';
+  $('cancelBtn').classList.remove('hidden'); $('formTitle').textContent = lang==='sq'?'Ndrysho projektin':'Redigera projekt';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function deleteProject(id){ if(confirm(T[lang].confirm)){ projects=projects.filter(p=>p.id!==id); persist(); render(); } }
+function clearForm(){
+  ['projectId','name','phone','address','type','hours','materials','price','notes'].forEach(id=>$(id).value='');
+  $('status').value='active'; $('cancelBtn').classList.add('hidden'); $('formTitle').textContent=T[lang].form;
+}
 
-      const company = getCompany();
+function render(){
+  const q=$('search').value.toLowerCase().trim(), f=$('filter').value;
+  const list=projects.filter(p=>(f==='all'||p.status===f) && [p.name,p.phone,p.address,p.type,p.notes].join(' ').toLowerCase().includes(q));
+  $('projects').innerHTML = list.length ? list.map(p=>`<div class="project">
+    <h3>${esc(p.name)}</h3>
+    <div class="meta">${esc(p.phone||'')} ${p.phone&&p.address?'•':''} ${esc(p.address||'')}</div>
+    <div class="meta">${esc(p.type||'')} ${p.type?'•':''} ${statusLabel(p.status)}</div>
+    <div class="meta">${T[lang].hours}: ${p.hours||0} • ${T[lang].materials}: ${money(p.materials)} • ${T[lang].price}: ${money(p.price)}</div>
+    ${p.notes?`<div style="margin-top:8px">${esc(p.notes)}</div>`:''}
+    <span class="badge">${statusLabel(p.status)}</span>
+    <div class="row" style="margin-top:10px"><button class="secondary" onclick="editProject('${p.id}')">${T[lang].edit}</button><button class="danger" onclick="deleteProject('${p.id}')">${T[lang].del}</button></div>
+  </div>`).join('') : `<div class="empty">${T[lang].empty}</div>`;
+  $('countAll').textContent=projects.length;
+  $('countActive').textContent=projects.filter(p=>p.status==='active').length;
+  $('countDone').textContent=projects.filter(p=>p.status==='done').length;
+}
 
-      const number = job.invoice?.number || "";
-      const date = job.invoice?.date || "";
-      const dueDate = job.invoice?.dueDate || "";
+function applyLang(){
+  const t=T[lang];
+  $('langBtn').textContent=t.langBtn; $('lblAll').textContent=t.all; $('lblActive').textContent=t.active; $('lblDone').textContent=t.done;
+  $('formTitle').textContent=$('projectId').value?(lang==='sq'?'Ndrysho projektin':'Redigera projekt'):t.form;
+  $('lName').textContent=t.client; $('lPhone').textContent=t.phone; $('lAddress').textContent=t.address; $('lType').textContent=t.type;
+  $('lStatus').textContent=t.status; $('lHours').textContent=t.hours; $('lMaterial').textContent=t.materials; $('lPrice').textContent=t.price;
+  $('lNotes').textContent=t.notes; $('saveBtn').textContent=t.save; $('cancelBtn').textContent=t.cancel; $('lSearch').textContent=t.search;
+  $('lFilter').textContent=t.filter; $('backupTitle').textContent=t.backup;
+  $('filter').options[0].text=t.allOpt; $('filter').options[1].text=t.activeOpt; $('filter').options[2].text=t.waiting; $('filter').options[3].text=t.doneOpt;
+  $('status').options[0].text=t.activeOpt; $('status').options[1].text=t.waiting; $('status').options[2].text=t.doneOpt;
+  document.documentElement.lang=lang;
+  localStorage.setItem(LANG_KEY,lang); render();
+}
 
-      const html = `
-<!doctype html>
-<html lang="sq">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Faturë - ${escapeHtml(job.client)}</title>
-<style>
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;background:#f4f4f4;color:#111}
-.sheet{max-width:720px;margin:20px auto;background:white;padding:28px;border-radius:14px}
-.brand{font-weight:800;font-size:18px;margin-bottom:28px}
-h1{margin:0 0 16px;font-size:28px}
-.meta{line-height:1.7;margin-bottom:22px}
-table{width:100%;border-collapse:collapse;margin-top:16px}
-td{padding:10px 0;border-bottom:1px solid #ddd}
-.total{font-size:20px;font-weight:800}
-.actions{display:flex;gap:10px;margin-top:24px}
-button{padding:12px 16px;border:0;border-radius:10px;background:#111;color:white;font-size:16px}
-@media print{body{background:white}.sheet{margin:0;max-width:none;border-radius:0}.actions{display:none}}
-</style>
-</head>
-<body>
-<div class="sheet">
-  <div class="brand">${escapeHtml(company.name || "ILIRI MÅLERI")}</div>
-  <div class="meta">
-    ${company.org ? `<b>Org.nr:</b> ${escapeHtml(company.org)}<br>` : ""}
-    ${company.address ? `${escapeHtml(company.address)}<br>` : ""}
-    ${company.phone ? `${escapeHtml(company.phone)}<br>` : ""}
-    ${company.email ? `${escapeHtml(company.email)}<br>` : ""}
-    ${company.payment ? `<b>Pagesa:</b> ${escapeHtml(company.payment)}<br>` : ""}
-  </div>
-  <h1>FATURË</h1>
-  <div class="meta">
-    <b>Numri i faturës:</b> ${escapeHtml(number || "—")}<br>
-    <b>Data:</b> ${escapeHtml(date || "—")}<br>
-    <b>Afati i pagesës:</b> ${escapeHtml(dueDate || "—")}<br><br>
-    <b>Klienti:</b> ${escapeHtml(job.client)}<br>
-    ${job.phone ? `<b>Telefoni:</b> ${escapeHtml(job.phone)}<br>` : ""}
-    ${job.address ? `<b>Adresa:</b> ${escapeHtml(job.address)}<br>` : ""}
-    ${job.type ? `<b>Puna:</b> ${escapeHtml(job.type)}<br>` : ""}
-  </div>
+function exportBackup(){
+  const blob=new Blob([JSON.stringify({version:2,projects},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='iliri-maleri-backup.json'; a.click(); URL.revokeObjectURL(a.href);
+}
+function importBackup(file){
+  const r=new FileReader(); r.onload=()=>{ try{ const data=JSON.parse(r.result); const arr=Array.isArray(data)?data:data.projects; if(!Array.isArray(arr)) throw 0; projects=arr; persist(); render(); alert('OK'); }catch{ alert('Backup i pavlefshëm / Ogiltig backup'); } }; r.readAsText(file);
+}
 
-  <table>
-    <tr><td>Puna</td><td style="text-align:right">${labourPrice.toFixed(2)} kr</td></tr>
-    <tr><td>Materialet</td><td style="text-align:right">${totalMaterials.toFixed(2)} kr</td></tr>
-    <tr><td>Nëntotali</td><td style="text-align:right">${subtotal.toFixed(2)} kr</td></tr>
-    <tr><td>TVSH ${vatRate}%</td><td style="text-align:right">${vatAmount.toFixed(2)} kr</td></tr>
-    <tr class="total"><td>Totali</td><td style="text-align:right">${grandTotal.toFixed(2)} kr</td></tr>
-  </table>
+$('saveBtn').addEventListener('click',saveProject);
+$('cancelBtn').addEventListener('click',clearForm);
+$('search').addEventListener('input',render);
+$('filter').addEventListener('change',render);
+$('langBtn').addEventListener('click',()=>{lang=lang==='sq'?'sv':'sq';applyLang();});
+$('exportBtn').addEventListener('click',exportBackup);
+$('importFile').addEventListener('change',e=>{if(e.target.files[0])importBackup(e.target.files[0]);});
 
-  <div class="actions">
-    <button onclick="window.print()">Printo / Ruaj PDF</button>
-    <button onclick="window.close()">Mbyll</button>
-  </div>
-</div>
-</body>
-</html>`;
-
-      const win = window.open("", "_blank");
-      if(!win){
-        alert("Safari bllokoi hapjen. Lejo pop-up dhe provo përsëri.");
-        return;
-      }
-      win.document.open();
-      win.document.write(html);
-      win.document.close();
-    }
-
-    function saveOffer(id){
-      const jobs = getJobs();
-      const job = jobs.find(j => j.id === id);
-      if(!job) return;
-
-      const labourPrice = Number(document.getElementById(`labour-${id}`).value || 0);
-      const vatRate = Number(document.getElementById(`vat-${id}`).value || 0);
-
-      job.offer = { labourPrice, vatRate };
-      saveJobs(jobs);
-      renderJobs();
-      alert("Oferta u ruajt.");
-    }
-
-    async function savePhotos(id, category){
-      const input = document.getElementById(`${category === "para" ? "before" : "after"}-${id}`);
-      const files = Array.from(input.files || []);
-      if(!files.length){
-        alert("Zgjidh të paktën një foto.");
-        return;
-      }
-
-      try{
-        for(const file of files){
-          await photoDB.add(id, category, file);
-        }
-        input.value = "";
-        await renderJobs();
-        alert("Fotot u ruajtën.");
-      }catch(e){
-        console.error(e);
-        alert("Fotot nuk u ruajtën. Provo përsëri.");
-      }
-    }
-
-    function deleteJob(id){
-      if(!confirm("Ta fshij këtë projekt?")) return;
-      const jobs = getJobs().filter(j => j.id !== id);
-      saveJobs(jobs);
-      renderJobs();
-    }
-
-    function clearAll(){
-      if(confirm("T'i fshij të gjitha projektet?")){
-        localStorage.removeItem("iliriMaleriJobs");
-        renderJobs();
-      }
-    }
-
-    function escapeHtml(text){
-      return String(text)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-
-    renderJobs();
-  </script>
+applyLang();
+</script>
 </body>
 </html>

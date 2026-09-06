@@ -1,207 +1,173 @@
 <!doctype html>
 <html lang="sq">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>ILIRI Måleri</title>
 <style>
-  :root { --bg:#f4f5f7; --card:#fff; --text:#111; --muted:#6b7280; --line:#d1d5db; --accent:#111827; }
-  *{box-sizing:border-box}
-  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
-  header{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-  h1{font-size:20px;margin:0}
-  .wrap{max-width:900px;margin:0 auto;padding:16px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  @media(max-width:640px){.grid{grid-template-columns:1fr}}
-  label{font-size:13px;color:var(--muted);display:block;margin:8px 0 5px}
-  input,select,textarea,button{font:inherit}
-  input,select,textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;background:#fff}
-  textarea{min-height:90px;resize:vertical}
-  button{border:0;border-radius:10px;padding:11px 14px;background:var(--accent);color:#fff;font-weight:600}
-  button.secondary{background:#e5e7eb;color:#111}
-  button.danger{background:#b91c1c}
-  .row{display:flex;gap:8px;flex-wrap:wrap}
-  .row button{flex:1}
-  .project{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px;background:#fff}
-  .project h3{margin:0 0 6px;font-size:17px}
-  .meta{font-size:13px;color:var(--muted);line-height:1.5}
-  .empty{color:var(--muted);text-align:center;padding:18px}
-  .top-actions{display:flex;gap:8px}
-  .top-actions button{padding:8px 10px}
-  .badge{display:inline-block;padding:3px 8px;border-radius:999px;background:#eef2ff;font-size:12px;margin-top:6px}
-  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
-  .stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
-  .stat b{display:block;font-size:20px}
-  .hidden{display:none}
+:root{--bg:#f4f5f7;--card:#fff;--text:#111827;--muted:#6b7280;--line:#d1d5db;--green:#16a34a;--soft:#eef2f7}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+h1{font-size:21px;margin:0}.wrap{max-width:900px;margin:0 auto;padding:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}
+.menu{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}.menu button{min-height:82px;font-size:17px}.menu .wide{grid-column:1/-1}
+button{border:0;border-radius:12px;padding:12px 14px;background:var(--green);color:#fff;font-weight:700;font:inherit}button.secondary{background:#e5e7eb;color:#111827}button.danger{background:#b91c1c}.top-actions{display:flex;gap:8px}.top-actions button{padding:9px 11px}
+.hidden{display:none!important}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:640px){.grid{grid-template-columns:1fr}}
+label{font-size:13px;color:var(--muted);display:block;margin:9px 0 5px}input,select,textarea,button{font:inherit}input,select,textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:12px;background:#fff}textarea{min-height:90px;resize:vertical}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row button{flex:1}.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px}.section-title h2{margin:0;font-size:22px}
+.item{border:1px solid var(--line);border-radius:13px;padding:12px;margin-top:10px;background:#fff}.item h3{margin:0 0 6px;font-size:17px}.meta{font-size:13px;color:var(--muted);line-height:1.55}.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-size:12px;margin-top:7px}.clickable{cursor:pointer}.detail{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.statline{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}.stat b{display:block;font-size:20px}.empty{color:var(--muted);text-align:center;padding:18px}
 </style>
 </head>
 <body>
 <header>
-  <h1 id="appTitle">ILIRI Måleri</h1>
-  <div class="top-actions">
-    <button class="secondary" id="langBtn" type="button">SV</button>
-    <button class="secondary" id="exportBtn" type="button">Backup</button>
-  </div>
+  <h1>ILIRI Måleri</h1>
+  <div class="top-actions"><button class="secondary" id="langBtn" type="button">SV</button><button class="secondary" id="backupBtn" type="button">Backup</button></div>
 </header>
-
 <div class="wrap">
-  <div class="stats">
-    <div class="stat"><b id="countAll">0</b><span id="lblAll">Projekte</span></div>
-    <div class="stat"><b id="countActive">0</b><span id="lblActive">Aktive</span></div>
-    <div class="stat"><b id="countDone">0</b><span id="lblDone">Mbaruar</span></div>
-  </div>
+  <section id="homeView">
+    <div class="menu">
+      <button id="btnProjects" type="button">Projektet</button>
+      <button id="btnClients" type="button">Klientët</button>
+      <button id="btnHours" type="button">Orët</button>
+      <button id="btnMaterials" type="button">Materialet</button>
+      <button id="btnNewProject" class="wide" type="button">+ Projekt i ri</button>
+    </div>
+    <div class="statline">
+      <div class="stat"><b id="countProjects">0</b><span id="statProjects">Projekte</span></div>
+      <div class="stat"><b id="countClients">0</b><span id="statClients">Klientë</span></div>
+      <div class="stat"><b id="countHours">0</b><span id="statHours">Orë</span></div>
+    </div>
+  </section>
 
-  <section class="card">
-    <h2 id="formTitle" style="margin-top:0">Projekt i ri</h2>
-    <input type="hidden" id="projectId" />
+  <section id="projectFormView" class="hidden card">
+    <div class="section-title"><h2 id="projectFormTitle">Projekt i ri</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
+    <input type="hidden" id="projectId">
     <div class="grid">
-      <div><label id="lName">Klienti</label><input id="name" autocomplete="name" /></div>
-      <div><label id="lPhone">Telefoni</label><input id="phone" inputmode="tel" /></div>
-      <div><label id="lAddress">Adresa</label><input id="address" /></div>
-      <div><label id="lType">Lloji i punës</label><select id="type">
-        <option value="">Zgjidh</option>
-        <option value="Målning">Målning</option>
-        <option value="Spackling">Spackling</option>
-        <option value="Bredspackling">Bredspackling</option>
-        <option value="Tapetsering">Tapetsering</option>
-        <option value="Sprutmålning">Sprutmålning</option>
-        <option value="Fasadmålning">Fasadmålning</option>
-        <option value="Fönstermålning">Fönstermålning</option>
-        <option value="Snickerimålning">Snickerimålning</option>
-        <option value="Takmålning">Takmålning</option>
-        <option value="Renoveringsmålning">Renoveringsmålning</option>
-        <option value="Annat">Annat</option>
+      <div><label id="lblProjectName">Emri i projektit</label><input id="projectName" placeholder="p.sh. Kallebäck 28"></div>
+      <div><label id="lblProjectNumber">Numri i projektit</label><input id="projectNumber" placeholder="p.sh. 2026-001"></div>
+      <div><label id="lblClient">Klienti</label><input id="clientName"></div>
+      <div><label id="lblPhone">Telefoni</label><input id="phone" inputmode="tel"></div>
+      <div><label id="lblAddress">Adresa</label><input id="address"></div>
+      <div><label id="lblType">Lloji i punës</label><select id="type">
+        <option value="">Zgjidh llojin e punës</option>
+        <option>Målning</option><option>Spackling</option><option>Bredspackling</option><option>Tapetsering</option><option>Sprutmålning</option><option>Fasadmålning</option><option>Fönstermålning</option><option>Snickerimålning</option><option>Takmålning</option><option>Renoveringsmålning</option><option>Annat</option>
       </select></div>
-      <div><label id="lStatus">Statusi</label><select id="status"><option value="active">Aktiv</option><option value="waiting">Në pritje</option><option value="done">Mbaruar</option></select></div>
-      <div><label id="lHours">Orë pune</label><input id="hours" type="number" min="0" step="0.5" /></div>
-      <div><label id="lMaterial">Materiale (kr)</label><input id="materials" type="number" min="0" step="1" /></div>
-      <div><label id="lPrice">Çmimi / oferta (kr)</label><input id="price" type="number" min="0" step="1" /></div>
+      <div><label id="lblStatus">Statusi</label><select id="status"><option value="active">Aktiv</option><option value="waiting">Në pritje</option><option value="done">Mbaruar</option></select></div>
+      <div><label id="lblPrice">Çmimi / oferta (kr)</label><input id="price" type="number" min="0" step="1"></div>
     </div>
-    <label id="lNotes">Shënime</label><textarea id="notes"></textarea>
-    <div class="row" style="margin-top:12px">
-      <button id="saveBtn" type="button">Ruaj projektin</button>
-      <button id="cancelBtn" class="secondary hidden" type="button">Anulo ndryshimin</button>
-    </div>
+    <label id="lblNotes">Shënime</label><textarea id="notes"></textarea>
+    <div class="row" style="margin-top:12px"><button id="saveProjectBtn" type="button">Ruaj projektin</button><button id="cancelProjectBtn" class="secondary" type="button">Anulo</button></div>
   </section>
 
-  <section class="card">
+  <section id="projectsView" class="hidden card">
+    <div class="section-title"><h2 id="projectsTitle">Projektet</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
+    <label id="lblSearchProject">Kërko projekt</label><input id="projectSearch" placeholder="Emër ose numër projekti...">
+    <div id="projectsList"></div>
+  </section>
+
+  <section id="clientsView" class="hidden card">
+    <div class="section-title"><h2 id="clientsTitle">Klientët</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
+    <label id="lblSearchClient">Kërko klient</label><input id="clientSearch" placeholder="Emri i klientit...">
+    <div id="clientsList"></div>
+  </section>
+
+  <section id="hoursView" class="hidden card">
+    <div class="section-title"><h2 id="hoursTitle">Orët</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
     <div class="grid">
-      <div><label id="lSearch">Kërko</label><input id="search" placeholder="Emër, telefon, adresë..." /></div>
-      <div><label id="lFilter">Filtro</label><select id="filter"><option value="all">Të gjitha</option><option value="active">Aktive</option><option value="waiting">Në pritje</option><option value="done">Mbaruar</option></select></div>
+      <div><label class="lblProject">Projekti</label><select id="hoursProject"></select></div>
+      <div><label class="lblDate">Data</label><input id="hoursDate" type="date"></div>
+      <div><label id="lblStart">Fillimi</label><input id="startTime" type="time" value="07:00"></div>
+      <div><label id="lblEnd">Mbarimi</label><input id="endTime" type="time" value="15:30"></div>
     </div>
-    <div id="projects"></div>
+    <label id="lblBreak">Pushim (minuta)</label><input id="breakMinutes" type="number" min="0" step="5" value="30">
+    <div class="row" style="margin-top:12px"><button id="saveHoursBtn" type="button">Ruaj orët</button></div>
+    <div id="hoursList"></div>
+  </section>
+
+  <section id="materialsView" class="hidden card">
+    <div class="section-title"><h2 id="materialsTitle">Materialet</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
+    <div class="grid">
+      <div><label class="lblProject">Projekti</label><select id="materialProject"></select></div>
+      <div><label class="lblDate">Data</label><input id="materialDate" type="date"></div>
+      <div><label id="lblMaterialName">Materiali</label><input id="materialName" placeholder="p.sh. färg, spackel..."></div>
+      <div><label id="lblMaterialCost">Kosto (kr)</label><input id="materialCost" type="number" min="0" step="1"></div>
+    </div>
+    <label id="lblMaterialNote">Shënim</label><input id="materialNote">
+    <div class="row" style="margin-top:12px"><button id="saveMaterialBtn" type="button">Ruaj materialin</button></div>
+    <div id="materialsList"></div>
   </section>
 
   <section class="card">
-    <h2 id="backupTitle" style="margin-top:0">Rikthe backup</h2>
-    <input id="importFile" type="file" accept="application/json" />
+    <h3 id="restoreBackupTitle" style="margin-top:0">Rikthe backup</h3>
+    <input id="importFile" type="file" accept="application/json">
   </section>
 </div>
-
 <script>
-const STORAGE_KEY = 'iliri_maleri_projects_v2';
-const LANG_KEY = 'iliri_maleri_lang_v2';
-let projects = loadProjects();
-let lang = localStorage.getItem(LANG_KEY) || 'sq';
+'use strict';
+const PROJECTS_KEY='iliri_maleri_projects_v3';
+const HOURS_KEY='iliri_maleri_hours_v1';
+const MATERIALS_KEY='iliri_maleri_materials_v1';
+const LANG_KEY='iliri_maleri_lang_v4';
 
-const $ = id => document.getElementById(id);
-
-const T = {
-  sq:{langBtn:'SV',all:'Projekte',active:'Aktive',done:'Mbaruar',form:'Projekt i ri',client:'Klienti',phone:'Telefoni',address:'Adresa',type:'Lloji i punës',status:'Statusi',hours:'Orë pune',materials:'Materiale (kr)',price:'Çmimi / oferta (kr)',notes:'Shënime',save:'Ruaj projektin',cancel:'Anulo ndryshimin',search:'Kërko',filter:'Filtro',backup:'Rikthe backup',empty:'Nuk ka projekte.',edit:'Ndrysho',del:'Fshi',confirm:'Ta fshij këtë projekt?',saved:'Projekti u ruajt.',updated:'Projekti u përditësua.',waiting:'Në pritje',allOpt:'Të gjitha',activeOpt:'Aktiv',doneOpt:'Mbaruar'},
-  sv:{langBtn:'SQ',all:'Projekt',active:'Aktiva',done:'Klara',form:'Nytt projekt',client:'Kund',phone:'Telefon',address:'Adress',type:'Typ av arbete',status:'Status',hours:'Arbetstimmar',materials:'Material (kr)',price:'Pris / offert (kr)',notes:'Anteckningar',save:'Spara projekt',cancel:'Avbryt ändring',search:'Sök',filter:'Filtrera',backup:'Återställ backup',empty:'Inga projekt.',edit:'Redigera',del:'Radera',confirm:'Radera projektet?',saved:'Projektet sparades.',updated:'Projektet uppdaterades.',waiting:'Väntar',allOpt:'Alla',activeOpt:'Aktiv',doneOpt:'Klar'}
+const I18N={
+ sq:{langBtn:'SV',backup:'Backup',projects:'Projektet',clients:'Klientët',hours:'Orët',materials:'Materialet',newProject:'+ Projekt i ri',newProjectTitle:'Projekt i ri',project:'Projekti',date:'Data',projectName:'Emri i projektit',projectNumber:'Numri i projektit',client:'Klienti',phone:'Telefoni',address:'Adresa',workType:'Lloji i punës',chooseWork:'Zgjidh llojin e punës',status:'Statusi',active:'Aktiv',waiting:'Në pritje',done:'Mbaruar',offer:'Çmimi / oferta (kr)',notes:'Shënime',saveProject:'Ruaj projektin',cancel:'Anulo',back:'Kthehu',searchProject:'Kërko projekt',searchProjectPh:'Emër ose numër projekti...',searchClient:'Kërko klient',searchClientPh:'Emri i klientit...',start:'Fillimi',end:'Mbarimi',break:'Pushim (minuta)',saveHours:'Ruaj orët',material:'Materiali',cost:'Kosto (kr)',note:'Shënim',saveMaterial:'Ruaj materialin',restoreBackup:'Rikthe backup',editProject:'Ndrysho projektin',edit:'Ndrysho',noProjects:'Nuk ka projekte.',noClients:'Nuk ka klientë.',noHours:'Nuk ka orë të regjistruara.',noMaterials:'Nuk ka materiale të regjistruara.',hoursLower:'orë',breakLower:'pushim',backupRestored:'Backup u rikthye.',invalidBackup:'Backup i pavlefshëm.'},
+ sv:{langBtn:'SQ',backup:'Backup',projects:'Projekt',clients:'Kunder',hours:'Timmar',materials:'Material',newProject:'+ Nytt projekt',newProjectTitle:'Nytt projekt',project:'Projekt',date:'Datum',projectName:'Projektnamn',projectNumber:'Projektnummer',client:'Kund',phone:'Telefon',address:'Adress',workType:'Typ av arbete',chooseWork:'Välj typ av arbete',status:'Status',active:'Aktiv',waiting:'Väntar',done:'Klar',offer:'Pris / offert (kr)',notes:'Anteckningar',saveProject:'Spara projekt',cancel:'Avbryt',back:'Tillbaka',searchProject:'Sök projekt',searchProjectPh:'Projektnamn eller nummer...',searchClient:'Sök kund',searchClientPh:'Kundens namn...',start:'Starttid',end:'Sluttid',break:'Rast (minuter)',saveHours:'Spara timmar',material:'Material',cost:'Kostnad (kr)',note:'Anteckning',saveMaterial:'Spara material',restoreBackup:'Återställ backup',editProject:'Redigera projekt',edit:'Redigera',noProjects:'Inga projekt.',noClients:'Inga kunder.',noHours:'Inga registrerade timmar.',noMaterials:'Inga registrerade material.',hoursLower:'timmar',breakLower:'rast',backupRestored:'Backup återställd.',invalidBackup:'Ogiltig backup.'}
 };
 
-function loadProjects(){
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-  catch { return []; }
-}
-function persist(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); }
-function esc(s=''){ return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
-function money(v){ return v ? Number(v).toLocaleString('sv-SE')+' kr' : '0 kr'; }
-function statusLabel(v){ const t=T[lang]; return v==='active'?t.activeOpt:v==='waiting'?t.waiting:t.doneOpt; }
+let projects=load(PROJECTS_KEY,[]), hours=load(HOURS_KEY,[]), materials=load(MATERIALS_KEY,[]), currentLang=localStorage.getItem(LANG_KEY)||'sq';
+function $(id){return document.getElementById(id)}
+function load(k,d){try{const x=JSON.parse(localStorage.getItem(k));return Array.isArray(x)?x:d}catch(e){return d}}
+function persistAll(){localStorage.setItem(PROJECTS_KEY,JSON.stringify(projects));localStorage.setItem(HOURS_KEY,JSON.stringify(hours));localStorage.setItem(MATERIALS_KEY,JSON.stringify(materials))}
+function tr(k){return (I18N[currentLang]&&I18N[currentLang][k])||I18N.sq[k]||k}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function uid(){return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)}
+function today(){const d=new Date();const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}
+function statusText(s){return s==='done'?tr('done'):s==='waiting'?tr('waiting'):tr('active')}
+function projectHours(id){return hours.filter(h=>h.projectId===id).reduce((a,b)=>a+Number(b.total||0),0)}
+function projectMaterials(id){return materials.filter(m=>m.projectId===id).reduce((a,b)=>a+Number(m.cost||0),0)}
 
-function saveProject(){
-  const id = $('projectId').value;
-  const item = {
-    id: id || (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString()),
-    name:$('name').value.trim(), phone:$('phone').value.trim(), address:$('address').value.trim(),
-    type:$('type').value.trim(), status:$('status').value, hours:Number($('hours').value||0),
-    materials:Number($('materials').value||0), price:Number($('price').value||0), notes:$('notes').value.trim(),
-    updatedAt:new Date().toISOString()
-  };
-  if(!item.name){ $('name').focus(); return; }
-  const i = projects.findIndex(p=>p.id===item.id);
-  const editing = i>=0;
-  if(editing) projects[i]=item; else projects.unshift(item);
-  persist();
-  clearForm();
-  render();
-  alert(editing ? T[lang].updated : T[lang].saved);
-}
+function showView(id){['homeView','projectFormView','projectsView','clientsView','hoursView','materialsView'].forEach(v=>$(v).classList.toggle('hidden',v!==id));if(id==='projectsView')renderProjects();if(id==='clientsView')renderClients();if(id==='hoursView')renderHours();if(id==='materialsView')renderMaterials();window.scrollTo(0,0)}
+function newProject(){clearProjectForm();showView('projectFormView')}
+function clearProjectForm(){['projectId','projectName','projectNumber','clientName','phone','address','price','notes'].forEach(id=>$(id).value='');$('type').value='';$('status').value='active';$('projectFormTitle').textContent=tr('newProjectTitle')}
+function saveProject(){const id=$('projectId').value;const p={id:id||uid(),projectName:$('projectName').value.trim(),projectNumber:$('projectNumber').value.trim(),clientName:$('clientName').value.trim(),phone:$('phone').value.trim(),address:$('address').value.trim(),type:$('type').value,status:$('status').value,price:Number($('price').value||0),notes:$('notes').value.trim(),updatedAt:new Date().toISOString()};if(!p.projectName){$('projectName').focus();return}if(!p.projectNumber)p.projectNumber=String(projects.length+1).padStart(3,'0');const i=projects.findIndex(x=>x.id===p.id);if(i>=0)projects[i]=p;else projects.push(p);persistAll();refreshProjectSelectors();renderHome();showView('projectsView')}
+function editProject(id){const p=projects.find(x=>x.id===id);if(!p)return;$('projectId').value=p.id;$('projectName').value=p.projectName||'';$('projectNumber').value=p.projectNumber||'';$('clientName').value=p.clientName||'';$('phone').value=p.phone||'';$('address').value=p.address||'';$('type').value=p.type||'';$('status').value=p.status||'active';$('price').value=p.price||'';$('notes').value=p.notes||'';$('projectFormTitle').textContent=tr('editProject');showView('projectFormView')}
+function toggleDetail(id){const el=$('detail-'+id);if(el)el.classList.toggle('hidden')}
+function renderProjects(){const q=$('projectSearch').value.toLowerCase();const list=[...projects].sort((a,b)=>(a.projectNumber||'').localeCompare(b.projectNumber||'',undefined,{numeric:true})).filter(p=>[p.projectName,p.projectNumber,p.clientName].join(' ').toLowerCase().includes(q));$('projectsList').innerHTML=list.length?list.map(p=>`<div class="item clickable" data-detail="${esc(p.id)}"><h3>${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</h3><div class="meta">${tr('client')}: ${esc(p.clientName||'')} ${p.phone?'• '+esc(p.phone):''}</div><span class="badge">${statusText(p.status)}</span><div id="detail-${esc(p.id)}" class="detail hidden"><div class="meta"><b>${tr('address')}:</b> ${esc(p.address||'-')}<br><b>${tr('workType')}:</b> ${esc(p.type||'-')}<br><b>${tr('hours')}:</b> ${projectHours(p.id).toFixed(1)}<br><b>${tr('materials')}:</b> ${projectMaterials(p.id).toLocaleString('sv-SE')} kr<br><b>${tr('offer')}:</b> ${Number(p.price||0).toLocaleString('sv-SE')} kr<br><b>${tr('notes')}:</b> ${esc(p.notes||'-')}</div><div class="row" style="margin-top:10px"><button class="secondary editProjectBtn" data-id="${esc(p.id)}" type="button">${tr('edit')}</button></div></div></div>`).join(''):`<div class="empty">${tr('noProjects')}</div>`;document.querySelectorAll('[data-detail]').forEach(el=>el.addEventListener('click',e=>{if(e.target.closest('.editProjectBtn'))return;toggleDetail(el.dataset.detail)}));document.querySelectorAll('.editProjectBtn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();editProject(b.dataset.id)}))}
+function renderClients(){const q=$('clientSearch').value.toLowerCase();const map={};projects.forEach(p=>{const n=(p.clientName||'').trim();if(n){if(!map[n])map[n]=[];map[n].push(p)}});const names=Object.keys(map).sort((a,b)=>a.localeCompare(b,currentLang==='sv'?'sv-SE':'sq-AL')).filter(n=>n.toLowerCase().includes(q));$('clientsList').innerHTML=names.length?names.map(n=>`<div class="item"><h3>${esc(n)}</h3>${map[n].sort((a,b)=>(a.projectNumber||'').localeCompare(b.projectNumber||'',undefined,{numeric:true})).map(p=>`<div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')} ${p.phone?'• '+esc(p.phone):''}</div>`).join('')}</div>`).join(''):`<div class="empty">${tr('noClients')}</div>`}
+function calcHours(start,end,br){if(!start||!end)return 0;const [sh,sm]=start.split(':').map(Number),[eh,em]=end.split(':').map(Number);let mins=(eh*60+em)-(sh*60+sm)-Number(br||0);if(mins<0)mins+=1440;return Math.max(0,mins/60)}
+function saveHours(){const projectId=$('hoursProject').value;if(!projectId)return;const start=$('startTime').value,end=$('endTime').value,br=Number($('breakMinutes').value||0);hours.unshift({id:uid(),projectId,date:$('hoursDate').value||today(),start,end,breakMinutes:br,total:calcHours(start,end,br)});persistAll();renderHours();renderHome()}
+function renderHours(){refreshProjectSelectors();const list=[...hours].sort((a,b)=>(b.date||'').localeCompare(a.date||''));$('hoursList').innerHTML=list.length?list.map(h=>{const p=projects.find(x=>x.id===h.projectId)||{};return `<div class="item"><h3>${esc(h.date)} — ${Number(h.total||0).toFixed(1)} ${tr('hoursLower')}</h3><div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}<br>${esc(h.start)}–${esc(h.end)} • ${tr('breakLower')} ${Number(h.breakMinutes||0)} min</div></div>`}).join(''):`<div class="empty">${tr('noHours')}</div>`}
+function saveMaterial(){const projectId=$('materialProject').value;if(!projectId)return;materials.unshift({id:uid(),projectId,date:$('materialDate').value||today(),name:$('materialName').value.trim(),cost:Number($('materialCost').value||0),note:$('materialNote').value.trim()});persistAll();$('materialName').value='';$('materialCost').value='';$('materialNote').value='';renderMaterials();renderHome()}
+function renderMaterials(){refreshProjectSelectors();$('materialsList').innerHTML=materials.length?materials.map(m=>{const p=projects.find(x=>x.id===m.projectId)||{};return `<div class="item"><h3>${esc(m.name||tr('material'))} — ${Number(m.cost||0).toLocaleString('sv-SE')} kr</h3><div class="meta">${esc(m.date)} • ${esc(p.projectNumber||'')} — ${esc(p.projectName||'')} ${m.note?'<br>'+esc(m.note):''}</div></div>`}).join(''):`<div class="empty">${tr('noMaterials')}</div>`}
+function refreshProjectSelectors(){const opts=projects.map(p=>`<option value="${esc(p.id)}">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</option>`).join('');$('hoursProject').innerHTML=opts;$('materialProject').innerHTML=opts}
+function renderHome(){$('countProjects').textContent=projects.length;$('countClients').textContent=new Set(projects.map(p=>(p.clientName||'').trim()).filter(Boolean)).size;$('countHours').textContent=hours.reduce((a,b)=>a+Number(b.total||0),0).toFixed(1)}
+function exportBackup(){const blob=new Blob([JSON.stringify({version:4,projects,hours,materials},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='iliri-maleri-backup.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function importBackup(file){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);projects=Array.isArray(d.projects)?d.projects:[];hours=Array.isArray(d.hours)?d.hours:[];materials=Array.isArray(d.materials)?d.materials:[];persistAll();refreshProjectSelectors();renderHome();alert(tr('backupRestored'))}catch(e){alert(tr('invalidBackup'))}};r.readAsText(file)}
+function setText(id,key){const el=$(id);if(el)el.textContent=tr(key)}
+function applyLang(){document.documentElement.lang=currentLang;setText('langBtn','langBtn');setText('backupBtn','backup');setText('btnProjects','projects');setText('btnClients','clients');setText('btnHours','hours');setText('btnMaterials','materials');setText('btnNewProject','newProject');setText('statProjects','projects');setText('statClients','clients');setText('statHours','hours');setText('lblProjectName','projectName');setText('lblProjectNumber','projectNumber');setText('lblClient','client');setText('lblPhone','phone');setText('lblAddress','address');setText('lblType','workType');setText('lblStatus','status');setText('lblPrice','offer');setText('lblNotes','notes');setText('saveProjectBtn','saveProject');setText('cancelProjectBtn','cancel');setText('projectsTitle','projects');setText('clientsTitle','clients');setText('hoursTitle','hours');setText('materialsTitle','materials');setText('lblSearchProject','searchProject');setText('lblSearchClient','searchClient');$('projectSearch').placeholder=tr('searchProjectPh');$('clientSearch').placeholder=tr('searchClientPh');document.querySelectorAll('.backBtn').forEach(el=>el.textContent=tr('back'));document.querySelectorAll('.lblProject').forEach(el=>el.textContent=tr('project'));document.querySelectorAll('.lblDate').forEach(el=>el.textContent=tr('date'));setText('lblStart','start');setText('lblEnd','end');setText('lblBreak','break');setText('saveHoursBtn','saveHours');setText('lblMaterialName','material');setText('lblMaterialCost','cost');setText('lblMaterialNote','note');setText('saveMaterialBtn','saveMaterial');setText('restoreBackupTitle','restoreBackup');$('type').options[0].textContent=tr('chooseWork');$('status').options[0].textContent=tr('active');$('status').options[1].textContent=tr('waiting');$('status').options[2].textContent=tr('done');$('projectFormTitle').textContent=$('projectId').value?tr('editProject'):tr('newProjectTitle');renderHome();if(!$('projectsView').classList.contains('hidden'))renderProjects();if(!$('clientsView').classList.contains('hidden'))renderClients();if(!$('hoursView').classList.contains('hidden'))renderHours();if(!$('materialsView').classList.contains('hidden'))renderMaterials()}
+function toggleLang(){currentLang=currentLang==='sq'?'sv':'sq';localStorage.setItem(LANG_KEY,currentLang);applyLang()}
 
-function editProject(id){
-  const p=projects.find(x=>x.id===id); if(!p)return;
-  $('projectId').value=p.id; $('name').value=p.name||''; $('phone').value=p.phone||''; $('address').value=p.address||'';
-  $('type').value=p.type||''; $('status').value=p.status||'active'; $('hours').value=p.hours||''; $('materials').value=p.materials||'';
-  $('price').value=p.price||''; $('notes').value=p.notes||'';
-  $('cancelBtn').classList.remove('hidden'); $('formTitle').textContent = lang==='sq'?'Ndrysho projektin':'Redigera projekt';
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-function deleteProject(id){ if(confirm(T[lang].confirm)){ projects=projects.filter(p=>p.id!==id); persist(); render(); } }
-function clearForm(){
-  ['projectId','name','phone','address','type','hours','materials','price','notes'].forEach(id=>$(id).value='');
-  $('status').value='active'; $('cancelBtn').classList.add('hidden'); $('formTitle').textContent=T[lang].form;
-}
-
-function render(){
-  const q=$('search').value.toLowerCase().trim(), f=$('filter').value;
-  const list=projects.filter(p=>(f==='all'||p.status===f) && [p.name,p.phone,p.address,p.type,p.notes].join(' ').toLowerCase().includes(q));
-  $('projects').innerHTML = list.length ? list.map(p=>`<div class="project">
-    <h3>${esc(p.name)}</h3>
-    <div class="meta">${esc(p.phone||'')} ${p.phone&&p.address?'•':''} ${esc(p.address||'')}</div>
-    <div class="meta">${esc(p.type||'')} ${p.type?'•':''} ${statusLabel(p.status)}</div>
-    <div class="meta">${T[lang].hours}: ${p.hours||0} • ${T[lang].materials}: ${money(p.materials)} • ${T[lang].price}: ${money(p.price)}</div>
-    ${p.notes?`<div style="margin-top:8px">${esc(p.notes)}</div>`:''}
-    <span class="badge">${statusLabel(p.status)}</span>
-    <div class="row" style="margin-top:10px"><button class="secondary" onclick="editProject('${p.id}')">${T[lang].edit}</button><button class="danger" onclick="deleteProject('${p.id}')">${T[lang].del}</button></div>
-  </div>`).join('') : `<div class="empty">${T[lang].empty}</div>`;
-  $('countAll').textContent=projects.length;
-  $('countActive').textContent=projects.filter(p=>p.status==='active').length;
-  $('countDone').textContent=projects.filter(p=>p.status==='done').length;
+function bind(){
+ $('langBtn').addEventListener('click',toggleLang);
+ $('backupBtn').addEventListener('click',exportBackup);
+ $('btnProjects').addEventListener('click',()=>showView('projectsView'));
+ $('btnClients').addEventListener('click',()=>showView('clientsView'));
+ $('btnHours').addEventListener('click',()=>showView('hoursView'));
+ $('btnMaterials').addEventListener('click',()=>showView('materialsView'));
+ $('btnNewProject').addEventListener('click',newProject);
+ document.querySelectorAll('.backBtn').forEach(b=>b.addEventListener('click',()=>showView('homeView')));
+ $('saveProjectBtn').addEventListener('click',saveProject);
+ $('cancelProjectBtn').addEventListener('click',()=>{clearProjectForm();showView('homeView')});
+ $('projectSearch').addEventListener('input',renderProjects);
+ $('clientSearch').addEventListener('input',renderClients);
+ $('saveHoursBtn').addEventListener('click',saveHours);
+ $('saveMaterialBtn').addEventListener('click',saveMaterial);
+ $('importFile').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)importBackup(f)});
 }
 
-function applyLang(){
-  const t=T[lang];
-  $('langBtn').textContent=t.langBtn; $('lblAll').textContent=t.all; $('lblActive').textContent=t.active; $('lblDone').textContent=t.done;
-  $('formTitle').textContent=$('projectId').value?(lang==='sq'?'Ndrysho projektin':'Redigera projekt'):t.form;
-  $('lName').textContent=t.client; $('lPhone').textContent=t.phone; $('lAddress').textContent=t.address; $('lType').textContent=t.type;
-  $('lStatus').textContent=t.status; $('lHours').textContent=t.hours; $('lMaterial').textContent=t.materials; $('lPrice').textContent=t.price;
-  $('lNotes').textContent=t.notes; $('saveBtn').textContent=t.save; $('cancelBtn').textContent=t.cancel; $('lSearch').textContent=t.search;
-  $('lFilter').textContent=t.filter; $('backupTitle').textContent=t.backup;
-  $('filter').options[0].text=t.allOpt; $('filter').options[1].text=t.activeOpt; $('filter').options[2].text=t.waiting; $('filter').options[3].text=t.doneOpt;
-  $('status').options[0].text=t.activeOpt; $('status').options[1].text=t.waiting; $('status').options[2].text=t.doneOpt;
-  document.documentElement.lang=lang;
-  localStorage.setItem(LANG_KEY,lang); render();
-}
-
-function exportBackup(){
-  const blob=new Blob([JSON.stringify({version:2,projects},null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='iliri-maleri-backup.json'; a.click(); URL.revokeObjectURL(a.href);
-}
-function importBackup(file){
-  const r=new FileReader(); r.onload=()=>{ try{ const data=JSON.parse(r.result); const arr=Array.isArray(data)?data:data.projects; if(!Array.isArray(arr)) throw 0; projects=arr; persist(); render(); alert('OK'); }catch{ alert('Backup i pavlefshëm / Ogiltig backup'); } }; r.readAsText(file);
-}
-
-$('saveBtn').addEventListener('click',saveProject);
-$('cancelBtn').addEventListener('click',clearForm);
-$('search').addEventListener('input',render);
-$('filter').addEventListener('change',render);
-$('langBtn').addEventListener('click',()=>{lang=lang==='sq'?'sv':'sq';applyLang();});
-$('exportBtn').addEventListener('click',exportBackup);
-$('importFile').addEventListener('change',e=>{if(e.target.files[0])importBackup(e.target.files[0]);});
-
-applyLang();
+document.addEventListener('DOMContentLoaded',()=>{
+ $('hoursDate').value=today();$('materialDate').value=today();refreshProjectSelectors();bind();applyLang();renderHome();
+});
 </script>
 </body>
 </html>

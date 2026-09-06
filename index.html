@@ -44,70 +44,8 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
 
 
 
-<style id="iliri-final-print">
-@media print {
-  @page { size: A4; margin: 14mm; }
-
-  html, body {
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #fff !important;
-    height: auto !important;
-    overflow: visible !important;
-  }
-
-  body > *:not(#iphonePdfView) {
-    display: none !important;
-  }
-
-  #iphonePdfView {
-    display: block !important;
-    position: static !important;
-    inset: auto !important;
-    width: auto !important;
-    height: auto !important;
-    min-height: 0 !important;
-    overflow: visible !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    background: #fff !important;
-    color: #000 !important;
-  }
-
-  #iphonePdfView .pdf-actions {
-    display: none !important;
-  }
-
-  #iphonePdfView * {
-    visibility: visible !important;
-  }
-
-  #iphonePdfView table {
-    width: 100% !important;
-    border-collapse: collapse !important;
-    page-break-inside: auto;
-  }
-
-  #iphonePdfView tr {
-    page-break-inside: avoid;
-    page-break-after: auto;
-  }
-
-  #iphonePdfView h1,
-  #iphonePdfView h2,
-  #iphonePdfView div,
-  #iphonePdfView td,
-  #iphonePdfView th {
-    color: #000 !important;
-  }
-
-  a::after {
-    content: "" !important;
-  }
-}
-</style>
-
-<meta name="iliri-build" content="pdf-print-fixed-v3">
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<meta name="iliri-build" content="real-pdf-v4">
 </head>
 <body>
 <header>
@@ -333,14 +271,13 @@ async function translateSqToSv(text){
   }
 }
 
+
 async function buildOfferPdf(lang){
   const o=offers.find(x=>x.id===currentPdfOfferId); if(!o)return;
   const sv=lang==='sv';
-  const money=n=>Number(n||0).toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';
 
   const L=sv ? {
-    back:'← Tillbaka',
-    save:'📄 Spara / skriv ut PDF',
+    title:'OFFERT',
     date:'Datum',
     client:'Kund',
     phone:'Telefon',
@@ -357,8 +294,7 @@ async function buildOfferPdf(lang){
     notes:'Anteckningar',
     translating:'Översätter till svenska...'
   } : {
-    back:'← Kthehu',
-    save:'📄 Ruaj / Printo PDF',
+    title:'OFERTË',
     date:'Data',
     client:'Klienti',
     phone:'Telefoni',
@@ -377,17 +313,15 @@ async function buildOfferPdf(lang){
   };
 
   const view=document.getElementById('iphonePdfView');
-  if(!view)return;
-
-  if(sv){
+  if(view){
     view.innerHTML=`<div style="max-width:760px;margin:0 auto;text-align:center;padding:50px 20px">
-      <div style="font-size:22px;font-weight:800;margin-bottom:10px">${L.translating}</div>
-      <div style="color:#6b7280">Vänta ett ögonblick...</div>
+      <div style="font-size:22px;font-weight:800;margin-bottom:10px">${sv?L.translating:'Po krijohet PDF...'}</div>
+      <div style="color:#6b7280">Prisni pak...</div>
     </div>`;
   }
 
-  let work=o.work||[];
-  let materials=o.materials||[];
+  let work=(o.work||[]).map(x=>({...x}));
+  let materials=(o.materials||[]).map(x=>({...x}));
   let notes=o.notes||'';
 
   if(sv){
@@ -396,60 +330,127 @@ async function buildOfferPdf(lang){
     notes=await translateSqToSv(notes);
   }
 
-  const makeRows=(items)=>items&&items.length?items.map(x=>`
-    <tr>
-      <td>${esc(x.description||'')}</td>
-      <td>${Number(x.qty||0)}</td>
-      <td>${money(x.unitPrice)}</td>
-      <td style="text-align:right">${money(Number(x.qty||0)*Number(x.unitPrice||0))}</td>
-    </tr>`).join(''):'';
+  if(!window.jspdf || !window.jspdf.jsPDF){
+    alert('PDF library nuk u ngarkua. Hape aplikacionin me internet dhe provo përsëri.');
+    if(view) printOffer(currentPdfOfferId);
+    return;
+  }
 
-  const workRows=makeRows(work);
-  const materialRows=makeRows(materials);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'mm',format:'a4'});
+  const pageW = 210, margin = 16, right = pageW - margin;
+  let y = 18;
 
-  view.innerHTML=`
-    <div style="max-width:760px;margin:0 auto">
-      <div class="pdf-actions" style="display:flex;gap:10px;position:sticky;top:0;background:#fff;padding:0 0 14px;z-index:2">
-        <button class="pdf-close-btn" type="button" onclick="printOffer('${esc(o.id)}')" style="flex:1;padding:14px;border:0;border-radius:12px;font-size:17px;font-weight:800">${L.back}</button>
-        <button type="button" onclick="window.print()" style="flex:2;padding:14px;border:0;border-radius:12px;background:#159447;color:#fff;font-size:17px;font-weight:800">${L.save}</button>
-      </div>
+  const money=n=>Number(n||0).toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';
+  const safe=s=>String(s??'');
 
-      <h1 style="margin:10px 0 18px">ILIRI Måleri — ${esc(o.number||'')}</h1>
-      <div><b>${L.date}:</b> ${esc(o.date||'')}</div>
-      <div><b>${L.client}:</b> ${esc(o.client||'')}</div>
-      ${o.phone?`<div><b>${L.phone}:</b> ${esc(o.phone)}</div>`:''}
-      ${o.address?`<div><b>${L.address}:</b> ${esc(o.address)}</div>`:''}
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(18);
+  doc.text('ILIRI Måleri', margin, y);
+  doc.setFontSize(14);
+  doc.text(L.title, right, y, {align:'right'});
+  y += 10;
 
-      ${workRows?`<h2 style="margin-top:24px">${L.work}</h2>
-      <table style="width:100%;border-collapse:collapse">
-        <thead><tr>
-          <th style="text-align:left;border-bottom:1px solid #ccc;padding:8px 4px">${L.desc}</th>
-          <th style="text-align:left;border-bottom:1px solid #ccc;padding:8px 4px">${L.qty}</th>
-          <th style="text-align:left;border-bottom:1px solid #ccc;padding:8px 4px">${L.price}</th>
-          <th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">${L.amount}</th>
-        </tr></thead>
-        <tbody>${workRows}</tbody>
-      </table>`:''}
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(10.5);
+  const info = [
+    [L.date, safe(o.date||'')],
+    [L.client, safe(o.client||'')],
+    [L.phone, safe(o.phone||'')],
+    [L.address, safe(o.address||'')]
+  ].filter(r=>r[1]);
 
-      ${materialRows?`<h2 style="margin-top:24px">${L.materials}</h2>
-      <table style="width:100%;border-collapse:collapse">
-        <thead><tr>
-          <th style="text-align:left;border-bottom:1px solid #ccc;padding:8px 4px">${L.desc}</th>
-          <th style="text-align:left;border-bottom:1px solid #ccc;padding:8px 4px">${L.qty}</th>
-          <th style="text-align:left;border-bottom:1px solid #ccc;padding:8px 4px">${L.price}</th>
-          <th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">${L.amount}</th>
-        </tr></thead>
-        <tbody>${materialRows}</tbody>
-      </table>`:''}
+  info.forEach(([k,v])=>{
+    doc.setFont('helvetica','bold'); doc.text(k+':', margin, y);
+    doc.setFont('helvetica','normal'); doc.text(v, margin+28, y);
+    y += 6;
+  });
 
-      <div style="margin-top:24px;font-size:18px;line-height:1.8">
-        <div>${L.subtotal}: <b>${money(o.subtotal)}</b></div>
-        <div>${L.vat}: <b>${money(o.vat)}</b></div>
-        <div style="font-size:22px">${L.total}: <b>${money(o.total)}</b></div>
-      </div>
+  y += 3;
+  doc.setDrawColor(210);
+  doc.line(margin,y,right,y);
+  y += 7;
 
-      ${notes?`<h2 style="margin-top:24px">${L.notes}</h2><div>${esc(notes)}</div>`:''}
-    </div>`;
+  function addSection(title, items){
+    if(!items || !items.length) return;
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(12);
+    doc.text(title, margin, y);
+    y += 6;
+
+    doc.setFontSize(9.5);
+    doc.setFont('helvetica','bold');
+    doc.text(L.desc, margin, y);
+    doc.text(L.qty, 112, y, {align:'right'});
+    doc.text(L.price, 145, y, {align:'right'});
+    doc.text(L.amount, right, y, {align:'right'});
+    y += 4;
+    doc.setDrawColor(220); doc.line(margin,y,right,y); y += 5;
+
+    doc.setFont('helvetica','normal');
+    for(const x of items){
+      if(y > 270){ doc.addPage(); y = 18; }
+      const desc = safe(x.description||'');
+      const lines = doc.splitTextToSize(desc, 82);
+      doc.text(lines, margin, y);
+      doc.text(String(Number(x.qty||0)), 112, y, {align:'right'});
+      doc.text(money(x.unitPrice), 145, y, {align:'right'});
+      doc.text(money(Number(x.qty||0)*Number(x.unitPrice||0)), right, y, {align:'right'});
+      y += Math.max(6, lines.length*4.5);
+    }
+    y += 3;
+  }
+
+  addSection(L.work, work);
+  addSection(L.materials, materials);
+
+  if(y > 250){ doc.addPage(); y = 18; }
+  doc.setDrawColor(210); doc.line(112,y,right,y); y += 7;
+  doc.setFontSize(10.5);
+  doc.setFont('helvetica','normal');
+  doc.text(L.subtotal+':', 125, y, {align:'right'});
+  doc.text(money(o.subtotal), right, y, {align:'right'}); y += 6;
+  doc.text(L.vat+':', 125, y, {align:'right'});
+  doc.text(money(o.vat), right, y, {align:'right'}); y += 7;
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(12);
+  doc.text(L.total+':', 125, y, {align:'right'});
+  doc.text(money(o.total), right, y, {align:'right'}); y += 10;
+
+  if(notes){
+    if(y > 250){ doc.addPage(); y = 18; }
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.text(L.notes, margin, y); y += 6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10);
+    const noteLines = doc.splitTextToSize(safe(notes), right-margin);
+    doc.text(noteLines, margin, y);
+  }
+
+  const pdfBlob = doc.output('blob');
+  const filename = `${safe(o.number||'ofert')}-${sv?'sv':'sq'}.pdf`;
+  const file = new File([pdfBlob], filename, {type:'application/pdf'});
+
+  try{
+    if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+      await navigator.share({files:[file], title: filename});
+      if(view) printOffer(currentPdfOfferId);
+      return;
+    }
+  }catch(e){
+    if(e && e.name==='AbortError'){
+      if(view) printOffer(currentPdfOfferId);
+      return;
+    }
+  }
+
+  const url = URL.createObjectURL(pdfBlob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 60000);
+  if(view) printOffer(currentPdfOfferId);
 }
 
 function exportBackup(){const blob=new Blob([JSON.stringify({version:5,projects,hours,materials,offers},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='iliri-maleri-backup.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}

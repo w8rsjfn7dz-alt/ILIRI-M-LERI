@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="sq">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>ILIRI Måleri</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--text:#111827;--muted:#6b7280;--line:#d1d5db;--accent:#16a34a;--soft:#eef2f7}
+*{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+h1{font-size:21px;margin:0}.wrap{max-width:900px;margin:0 auto;padding:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}
+.menu{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}.menu button{min-height:82px;font-size:17px}.menu .wide{grid-column:1/-1}
+button{border:0;border-radius:12px;padding:12px 14px;background:var(--accent);color:#fff;font-weight:700;font:inherit}button.secondary{background:#e5e7eb;color:#111}button.danger{background:#b91c1c}button.soft{background:var(--soft);color:#111}
+.top-actions{display:flex;gap:8px}.top-actions button{padding:9px 11px}.hidden{display:none!important}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:640px){.grid{grid-template-columns:1fr}}
+label{font-size:13px;color:var(--muted);display:block;margin:9px 0 5px}input,select,textarea,button{font:inherit}input,select,textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:12px;background:#fff}textarea{min-height:90px;resize:vertical}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row button{flex:1}.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px}.section-title h2{margin:0;font-size:22px}
+.item{border:1px solid var(--line);border-radius:13px;padding:12px;margin-top:10px;background:#fff}.item.clickable{cursor:pointer}.item h3{margin:0 0 5px;font-size:17px}.meta{font-size:13px;color:var(--muted);line-height:1.55}.badge{display:inline-block;padding:3px 8px;border-radius:999px;background:#eef2ff;font-size:12px;margin-top:6px}.empty{color:var(--muted);text-align:center;padding:20px}
+.detail{border-top:1px solid var(--line);margin-top:10px;padding-top:10px}.statline{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.stat{background:var(--soft);border-radius:10px;padding:10px;text-align:center}.stat b{display:block;font-size:18px}
+.small{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <h1>ILIRI Måleri</h1>
+  <div class="top-actions"><button class="secondary" id="langBtn">SV</button><button class="secondary" id="exportBtn">Backup</button></div>
+</header>
+<div class="wrap">
+  <section id="homeView">
+    <div class="menu">
+      <button id="menuProjects" onclick="showView('projectsView')">Projektet</button>
+      <button id="menuClients" onclick="showView('clientsView')">Klientët</button>
+      <button id="menuHours" onclick="showView('hoursView')">Orët</button>
+      <button id="menuMaterials" onclick="showView('materialsView')">Materialet</button>
+      <button class="wide" id="menuNewProject" onclick="newProject()">+ Projekt i ri</button>
+    </div>
+    <div class="card">
+      <div class="statline"><div class="stat"><b id="countProjects">0</b><span id="statProjects">Projekte</span></div><div class="stat"><b id="countClients">0</b><span id="statClients">Klientë</span></div><div class="stat"><b id="countHours">0</b><span id="statHours">Orë</span></div></div>
+    </div>
+  </section>
+
+  <section id="projectFormView" class="hidden">
+    <div class="card">
+      <div class="section-title"><h2 id="projectFormTitle">Projekt i ri</h2><button class="secondary backBtn" onclick="showView('homeView')">Kthehu</button></div>
+      <input type="hidden" id="projectId">
+      <div class="grid">
+        <div><label id="lblProjectName">Emri i projektit</label><input id="projectName" placeholder="p.sh. Kallebäck 28"></div>
+        <div><label id="lblProjectNumber">Numri i projektit</label><input id="projectNumber" placeholder="p.sh. 2026-001"></div>
+        <div><label id="lblClient">Klienti</label><input id="clientName"></div>
+        <div><label id="lblPhone">Telefoni</label><input id="phone" inputmode="tel"></div>
+        <div><label id="lblAddress">Adresa</label><input id="address"></div>
+        <div><label id="lblType">Lloji i punës</label><select id="type">
+          <option id="typePlaceholder" value="">Zgjidh llojin e punës</option>
+          <option>Målning</option><option>Spackling</option><option>Bredspackling</option><option>Tapetsering</option><option>Sprutmålning</option><option>Fasadmålning</option><option>Fönstermålning</option><option>Snickerimålning</option><option>Takmålning</option><option>Renoveringsmålning</option><option>Annat</option>
+        </select></div>
+        <div><label id="lblStatus">Statusi</label><select id="status"><option id="statusActive" value="active">Aktiv</option><option id="statusWaiting" value="waiting">Në pritje</option><option id="statusDone" value="done">Mbaruar</option></select></div>
+        <div><label id="lblPrice">Çmimi / oferta (kr)</label><input id="price" type="number" min="0" step="1"></div>
+      </div>
+      <label id="lblNotes">Shënime</label><textarea id="notes"></textarea>
+      <div class="row" style="margin-top:12px"><button id="saveProjectBtn" onclick="saveProject()">Ruaj projektin</button><button id="cancelProjectBtn" class="secondary" onclick="clearProjectForm();showView('homeView')">Anulo</button></div>
+    </div>
+  </section>
+
+  <section id="projectsView" class="hidden">
+    <div class="card">
+      <div class="section-title"><h2 id="projectsTitle">Projektet</h2><button class="secondary backBtn" onclick="showView('homeView')">Kthehu</button></div>
+      <label id="lblSearchProject">Kërko projekt</label><input id="projectSearch" placeholder="Emër ose numër projekti..." oninput="renderProjects()">
+      <div id="projectsList"></div>
+    </div>
+  </section>
+
+  <section id="clientsView" class="hidden">
+    <div class="card">
+      <div class="section-title"><h2 id="clientsTitle">Klientët</h2><button class="secondary backBtn" onclick="showView('homeView')">Kthehu</button></div>
+      <label id="lblSearchClient">Kërko klient</label><input id="clientSearch" placeholder="Emri i klientit..." oninput="renderClients()">
+      <div id="clientsList"></div>
+    </div>
+  </section>
+
+  <section id="hoursView" class="hidden">
+    <div class="card">
+      <div class="section-title"><h2 id="hoursTitle">Orët</h2><button class="secondary backBtn" onclick="showView('homeView')">Kthehu</button></div>
+      <div class="grid">
+        <div><label class="lblProject">Projekti</label><select id="hoursProject"></select></div>
+        <div><label class="lblDate">Data</label><input id="hoursDate" type="date"></div>
+        <div><label id="lblStart">Fillimi</label><input id="startTime" type="time" value="07:00"></div>
+        <div><label id="lblEnd">Mbarimi</label><input id="endTime" type="time" value="15:30"></div>
+      </div>
+      <label id="lblBreak">Pushim (minuta)</label><input id="breakMinutes" type="number" min="0" step="5" value="30">
+      <div class="row" style="margin-top:12px"><button id="saveHoursBtn" onclick="saveHours()">Ruaj orët</button></div>
+      <div id="hoursList"></div>
+    </div>
+  </section>
+
+  <section id="materialsView" class="hidden">
+    <div class="card">
+      <div class="section-title"><h2 id="materialsTitle">Materialet</h2><button class="secondary backBtn" onclick="showView('homeView')">Kthehu</button></div>
+      <div class="grid">
+        <div><label class="lblProject">Projekti</label><select id="materialProject"></select></div>
+        <div><label class="lblDate">Data</label><input id="materialDate" type="date"></div>
+        <div><label id="lblMaterialName">Materiali</label><input id="materialName" placeholder="p.sh. färg, spackel..."></div>
+        <div><label id="lblMaterialCost">Kosto (kr)</label><input id="materialCost" type="number" min="0" step="1"></div>
+      </div>
+      <label id="lblMaterialNote">Shënim</label><input id="materialNote">
+      <div class="row" style="margin-top:12px"><button id="saveMaterialBtn" onclick="saveMaterial()">Ruaj materialin</button></div>
+      <div id="materialsList"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3 id="restoreBackupTitle" style="margin-top:0">Rikthe backup</h3><input id="importFile" type="file" accept="application/json">
+  </section>
+</div>
+<script>
+const PROJECTS_KEY='iliri_maleri_projects_v3', HOURS_KEY='iliri_maleri_hours_v1', MATERIALS_KEY='iliri_maleri_materials_v1', LANG_KEY='iliri_maleri_lang_v3';
+const OLD_PROJECTS_KEY='iliri_maleri_projects_v2';
+let projects=load(PROJECTS_KEY,[]), hours=load(HOURS_KEY,[]), materials=load(MATERIALS_KEY,[]);
+if(!projects.length){const old=load(OLD_PROJECTS_KEY,[]);if(old.length){projects=old.map((p,i)=>({...p,projectName:p.projectName||p.name||('Projekt '+(i+1)),projectNumber:p.projectNumber||String(i+1).padStart(3,'0'),clientName:p.clientName||p.name||'',name:undefined,hours:undefined,materials:undefined}));persistAll();}}
+function load(k,d){try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch{return d}}
+function persistAll(){localStorage.setItem(PROJECTS_KEY,JSON.stringify(projects));localStorage.setItem(HOURS_KEY,JSON.stringify(hours));localStorage.setItem(MATERIALS_KEY,JSON.stringify(materials));}
+function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function uid(){return crypto.randomUUID?crypto.randomUUID():Date.now().toString()+Math.random().toString(16).slice(2)}
+function today(){const d=new Date();return d.toISOString().slice(0,10)}
+function showView(id){['homeView','projectFormView','projectsView','clientsView','hoursView','materialsView'].forEach(v=>document.getElementById(v).classList.toggle('hidden',v!==id)); if(id==='projectsView')renderProjects();if(id==='clientsView')renderClients();if(id==='hoursView')renderHours();if(id==='materialsView')renderMaterials();window.scrollTo({top:0,behavior:'smooth'});}
+function newProject(){clearProjectForm();showView('projectFormView')}
+function clearProjectForm(){['projectId','projectName','projectNumber','clientName','phone','address','type','price','notes'].forEach(id=>document.getElementById(id).value='');document.getElementById('status').value='active';document.getElementById('projectFormTitle').textContent=tr('newProject')}
+function saveProject(){const id=document.getElementById('projectId').value;const p={id:id||uid(),projectName:document.getElementById('projectName').value.trim(),projectNumber:document.getElementById('projectNumber').value.trim(),clientName:document.getElementById('clientName').value.trim(),phone:document.getElementById('phone').value.trim(),address:document.getElementById('address').value.trim(),type:document.getElementById('type').value,status:document.getElementById('status').value,price:Number(document.getElementById('price').value||0),notes:document.getElementById('notes').value.trim(),updatedAt:new Date().toISOString()};if(!p.projectName){document.getElementById('projectName').focus();return}if(!p.projectNumber)p.projectNumber=String(projects.length+1).padStart(3,'0');const i=projects.findIndex(x=>x.id===p.id);if(i>=0)projects[i]=p;else projects.push(p);persistAll();refreshProjectSelectors();showView('projectsView')}
+function editProject(id){const p=projects.find(x=>x.id===id);if(!p)return;document.getElementById('projectId').value=p.id;document.getElementById('projectName').value=p.projectName||'';document.getElementById('projectNumber').value=p.projectNumber||'';document.getElementById('clientName').value=p.clientName||'';document.getElementById('phone').value=p.phone||'';document.getElementById('address').value=p.address||'';document.getElementById('type').value=p.type||'';document.getElementById('status').value=p.status||'active';document.getElementById('price').value=p.price||'';document.getElementById('notes').value=p.notes||'';document.getElementById('projectFormTitle').textContent=tr('editProject');showView('projectFormView')}
+function statusText(s){return s==='done'?tr('done'):s==='waiting'?tr('waiting'):tr('active')}
+function projectHours(id){return hours.filter(h=>h.projectId===id).reduce((a,b)=>a+Number(b.total||0),0)}
+function projectMaterials(id){return materials.filter(m=>m.projectId===id).reduce((a,b)=>a+Number(b.cost||0),0)}
+function renderProjects(){
+  const q=(document.getElementById('projectSearch').value||'').toLowerCase();
+  const list=[...projects].sort((a,b)=>(a.projectNumber||'').localeCompare(b.projectNumber||'',undefined,{numeric:true}))
+    .filter(p=>[p.projectName,p.projectNumber,p.clientName].join(' ').toLowerCase().includes(q));
+  document.getElementById('projectsList').innerHTML=list.length?list.map(p=>`
+    <div class="item clickable" onclick="toggleDetail('${p.id}')">
+      <h3>${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</h3>
+      <div class="meta">${tr('client')}: ${esc(p.clientName||'')} ${p.phone?'• '+esc(p.phone):''}</div>
+      <span class="badge">${statusText(p.status)}</span>
+      <div id="detail-${p.id}" class="detail hidden">
+        <div class="meta">
+          <b>${tr('address')}:</b> ${esc(p.address||'-')}<br>
+          <b>${tr('workType')}:</b> ${esc(p.type||'-')}<br>
+          <b>${tr('hours')}:</b> ${projectHours(p.id).toFixed(1)}<br>
+          <b>${tr('materials')}:</b> ${projectMaterials(p.id).toLocaleString('sv-SE')} kr<br>
+          <b>${tr('offer')}:</b> ${Number(p.price||0).toLocaleString('sv-SE')} kr<br>
+          <b>${tr('notes')}:</b> ${esc(p.notes||'-')}
+        </div>
+        <div class="row" style="margin-top:10px"><button class="secondary" onclick="event.stopPropagation();editProject('${p.id}')">${tr('edit')}</button></div>
+      </div>
+    </div>`).join(''):`<div class="empty">${tr('noProjects')}</div>`;
+}
+function toggleDetail(id){document.getElementById('detail-'+id).classList.toggle('hidden')}
+function renderClients(){
+  const q=(document.getElementById('clientSearch').value||'').toLowerCase();
+  const map={};
+  projects.forEach(p=>{const n=p.clientName||'';if(!n)return;(map[n]??=[]).push(p)});
+  const names=Object.keys(map).sort((a,b)=>a.localeCompare(b,currentLang==='sv'?'sv':'sq')).filter(n=>n.toLowerCase().includes(q));
+  document.getElementById('clientsList').innerHTML=names.length?names.map(n=>`
+    <div class="item"><h3>${esc(n)}</h3>
+      ${map[n].map(p=>`<div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')} ${p.phone?'• '+esc(p.phone):''}</div>`).join('')}
+    </div>`).join(''):`<div class="empty">${tr('noClients')}</div>`;
+}
+function calcHours(start,end,br){if(!start||!end)return 0;const [sh,sm]=start.split(':').map(Number),[eh,em]=end.split(':').map(Number);let mins=(eh*60+em)-(sh*60+sm)-Number(br||0);if(mins<0)mins+=24*60;return Math.max(0,mins/60)}
+function saveHours(){const projectId=document.getElementById('hoursProject').value;if(!projectId)return;const date=document.getElementById('hoursDate').value||today(),start=document.getElementById('startTime').value,end=document.getElementById('endTime').value,br=Number(document.getElementById('breakMinutes').value||0);hours.unshift({id:uid(),projectId,date,start,end,breakMinutes:br,total:calcHours(start,end,br)});persistAll();renderHours();renderHome()}
+function renderHours(){
+  refreshProjectSelectors();
+  const list=[...hours].sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('hoursList').innerHTML=list.length?list.map(h=>{
+    const p=projects.find(x=>x.id===h.projectId)||{};
+    return `<div class="item"><h3>${esc(h.date)} — ${Number(h.total||0).toFixed(1)} ${tr('hoursLower')}</h3>
+      <div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}<br>${esc(h.start)}–${esc(h.end)} • ${tr('breakLower')} ${h.breakMinutes||0} min</div></div>`
+  }).join(''):`<div class="empty">${tr('noHours')}</div>`;
+}
+function saveMaterial(){const projectId=document.getElementById('materialProject').value;if(!projectId)return;materials.unshift({id:uid(),projectId,date:document.getElementById('materialDate').value||today(),name:document.getElementById('materialName').value.trim(),cost:Number(document.getElementById('materialCost').value||0),note:document.getElementById('materialNote').value.trim()});persistAll();document.getElementById('materialName').value='';document.getElementById('materialCost').value='';document.getElementById('materialNote').value='';renderMaterials()}
+function renderMaterials(){
+  refreshProjectSelectors();
+  document.getElementById('materialsList').innerHTML=materials.length?materials.map(m=>{
+    const p=projects.find(x=>x.id===m.projectId)||{};
+    return `<div class="item"><h3>${esc(m.name||tr('material'))} — ${Number(m.cost||0).toLocaleString('sv-SE')} kr</h3>
+      <div class="meta">${esc(m.date)} • ${esc(p.projectNumber||'')} — ${esc(p.projectName||'')} ${m.note?'<br>'+esc(m.note):''}</div></div>`
+  }).join(''):`<div class="empty">${tr('noMaterials')}</div>`;
+}
+function refreshProjectSelectors(){const opts=projects.map(p=>`<option value="${p.id}">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</option>`).join('');document.getElementById('hoursProject').innerHTML=opts;document.getElementById('materialProject').innerHTML=opts}
+function renderHome(){document.getElementById('countProjects').textContent=projects.length;document.getElementById('countClients').textContent=new Set(projects.map(p=>p.clientName).filter(Boolean)).size;document.getElementById('countHours').textContent=hours.reduce((a,b)=>a+Number(b.total||0),0).toFixed(1)}
+function exportBackup(){const blob=new Blob([JSON.stringify({version:3,projects,hours,materials},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='iliri-maleri-backup.json';a.click();URL.revokeObjectURL(a.href)}
+function importBackup(file){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);projects=d.projects||[];hours=d.hours||[];materials=d.materials||[];persistAll();refreshProjectSelectors();renderHome();alert(tr('backupRestored'))}catch{alert(tr('invalidBackup'))}};r.readAsText(file)}
+
+const I18N={
+  sq:{
+    langBtn:'SV', backup:'Backup', projects:'Projektet', clients:'Klientët', hours:'Orët', materials:'Materialet',
+    newProject:'+ Projekt i ri', project:'Projekti', date:'Data', projectName:'Emri i projektit', projectNumber:'Numri i projektit',
+    client:'Klienti', phone:'Telefoni', address:'Adresa', workType:'Lloji i punës', chooseWork:'Zgjidh llojin e punës',
+    status:'Statusi', active:'Aktiv', waiting:'Në pritje', done:'Mbaruar', offer:'Çmimi / oferta (kr)', notes:'Shënime',
+    saveProject:'Ruaj projektin', cancel:'Anulo', back:'Kthehu', searchProject:'Kërko projekt',
+    searchProjectPh:'Emër ose numër projekti...', searchClient:'Kërko klient', searchClientPh:'Emri i klientit...',
+    start:'Fillimi', end:'Mbarimi', break:'Pushim (minuta)', saveHours:'Ruaj orët',
+    material:'Materiali', cost:'Kosto (kr)', note:'Shënim', saveMaterial:'Ruaj materialin',
+    restoreBackup:'Rikthe backup', editProject:'Ndrysho projektin', edit:'Ndrysho',
+    noProjects:'Nuk ka projekte.', noClients:'Nuk ka klientë.', noHours:'Nuk ka orë të regjistruara.',
+    noMaterials:'Nuk ka materiale të regjistruara.', hoursLower:'orë', breakLower:'pushim',
+    backupRestored:'Backup u rikthye.', invalidBackup:'Backup i pavlefshëm.'
+  },
+  sv:{
+    langBtn:'SQ', backup:'Backup', projects:'Projekt', clients:'Kunder', hours:'Timmar', materials:'Material',
+    newProject:'+ Nytt projekt', project:'Projekt', date:'Datum', projectName:'Projektnamn', projectNumber:'Projektnummer',
+    client:'Kund', phone:'Telefon', address:'Adress', workType:'Typ av arbete', chooseWork:'Välj typ av arbete',
+    status:'Status', active:'Aktiv', waiting:'Väntar', done:'Klar', offer:'Pris / offert (kr)', notes:'Anteckningar',
+    saveProject:'Spara projekt', cancel:'Avbryt', back:'Tillbaka', searchProject:'Sök projekt',
+    searchProjectPh:'Projektnamn eller nummer...', searchClient:'Sök kund', searchClientPh:'Kundens namn...',
+    start:'Starttid', end:'Sluttid', break:'Rast (minuter)', saveHours:'Spara timmar',
+    material:'Material', cost:'Kostnad (kr)', note:'Anteckning', saveMaterial:'Spara material',
+    restoreBackup:'Återställ backup', editProject:'Redigera projekt', edit:'Redigera',
+    noProjects:'Inga projekt.', noClients:'Inga kunder.', noHours:'Inga registrerade timmar.',
+    noMaterials:'Inga registrerade material.', hoursLower:'timmar', breakLower:'rast',
+    backupRestored:'Backup återställd.', invalidBackup:'Ogiltig backup.'
+  }
+};
+let currentLang=localStorage.getItem(LANG_KEY)||'sq';
+function tr(k){return (I18N[currentLang]&&I18N[currentLang][k])||I18N.sq[k]||k}
+function setText(id,key){const el=document.getElementById(id);if(el)el.textContent=tr(key)}
+function applyLang(){
+  document.documentElement.lang=currentLang;
+  setText('langBtn','langBtn'); setText('exportBtn','backup');
+  setText('menuProjects','projects'); setText('menuClients','clients'); setText('menuHours','hours'); setText('menuMaterials','materials'); setText('menuNewProject','newProject');
+  setText('statProjects','projects'); setText('statClients','clients'); setText('statHours','hours');
+  setText('lblProjectName','projectName'); setText('lblProjectNumber','projectNumber'); setText('lblClient','client'); setText('lblPhone','phone'); setText('lblAddress','address');
+  setText('lblType','workType'); setText('typePlaceholder','chooseWork'); setText('lblStatus','status'); setText('statusActive','active'); setText('statusWaiting','waiting'); setText('statusDone','done');
+  setText('lblPrice','offer'); setText('lblNotes','notes'); setText('saveProjectBtn','saveProject'); setText('cancelProjectBtn','cancel');
+  setText('projectsTitle','projects'); setText('clientsTitle','clients'); setText('hoursTitle','hours'); setText('materialsTitle','materials');
+  setText('lblSearchProject','searchProject'); setText('lblSearchClient','searchClient');
+  document.getElementById('projectSearch').placeholder=tr('searchProjectPh'); document.getElementById('clientSearch').placeholder=tr('searchClientPh');
+  document.querySelectorAll('.backBtn').forEach(x=>x.textContent=tr('back'));
+  document.querySelectorAll('.lblProject').forEach(x=>x.textContent=tr('project')); document.querySelectorAll('.lblDate').forEach(x=>x.textContent=tr('date'));
+  setText('lblStart','start'); setText('lblEnd','end'); setText('lblBreak','break'); setText('saveHoursBtn','saveHours');
+  setText('lblMaterialName','material'); setText('lblMaterialCost','cost'); setText('lblMaterialNote','note'); setText('saveMaterialBtn','saveMaterial'); setText('restoreBackupTitle','restoreBackup');
+  const pf=document.getElementById('projectFormTitle'); if(pf) pf.textContent=document.getElementById('projectId').value?tr('editProject'):tr('newProject').replace('+ ','');
+  renderHome();
+  if(!document.getElementById('projectsView').classList.contains('hidden'))renderProjects();
+  if(!document.getElementById('clientsView').classList.contains('hidden'))renderClients();
+  if(!document.getElementById('hoursView').classList.contains('hidden'))renderHours();
+  if(!document.getElementById('materialsView').classList.contains('hidden'))renderMaterials();
+}
+function toggleLang(){currentLang=currentLang==='sq'?'sv':'sq';localStorage.setItem(LANG_KEY,currentLang);applyLang();}
+document.getElementById('hoursDate').value=today();document.getElementById('materialDate').value=today();document.getElementById('exportBtn').onclick=exportBackup;document.getElementById('importFile').onchange=e=>{if(e.target.files[0])importBackup(e.target.files[0])};document.getElementById('langBtn').onclick=toggleLang;refreshProjectSelectors();applyLang();
+</script>
+</body>
+</html>

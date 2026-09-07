@@ -77,7 +77,6 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
       <button id="btnMaterials" type="button">Materialet</button>
       <button id="btnPhotos" type="button">📷 Before / After</button>
       <button id="btnMeasure" type="button">📐 Matjet</button>
-      <button id="btnVoice" class="wide" type="button">🎙️ Raporti me zë</button>
       <button id="btnNewProject" class="wide" type="button">+ Projekt i ri</button>
     </div>
     <div class="statline">
@@ -118,28 +117,7 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
     <div id="measureHistory"></div>
   </section>
 
-  <section id="voiceView" class="hidden card">
-    <div class="section-title"><h2 id="voiceTitle">Raporti me zë</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
-    <label class="lblProject">Projekti</label><select id="voiceProject"></select>
-    <div class="voice-box">
-      <div class="row">
-        <button id="voiceStartSqBtn" class="voice-mic" type="button">🎙️ Fol shqip</button>
-        <button id="voiceStartSvBtn" class="voice-mic secondary" type="button">🎙️ Prata svenska</button>
-      </div>
-      <div id="voiceStatus" class="small-note">Zgjidh gjuhën dhe fol. Raporti ndahet automatikisht në datë, orë, vend dhe punë.</div>
-      <div class="small-note">Shembull: “Sot punova 8 orë në Kållered, spatullova dhe lyeva me bojë.”</div>
-    </div>
-    <label style="margin-top:12px">Teksti shqip</label><textarea id="voiceText" rows="5" placeholder="Fol ose shkruaj raportin këtu..."></textarea>
-    <div class="row" style="margin-top:10px"><button id="parseVoiceBtn" type="button">Kupto raportin</button><button id="translateVoiceBtn" class="secondary" type="button">🇸🇪 Suedisht</button></div>
-    <div class="grid" style="margin-top:12px">
-      <div><label>Data</label><input id="voiceDate" type="date"></div>
-      <div><label>Orët</label><input id="voiceHours" type="number" min="0" step="0.5"></div>
-      <div><label>Vendi</label><input id="voicePlace"></div>
-      <div><label>Punët</label><input id="voiceWork"></div>
-    </div>
-    <label style="margin-top:10px">Suedisht / Svenska</label><textarea id="voiceSwedish" rows="4" placeholder="Përkthimi suedez del këtu..."></textarea>
-    <button id="saveVoiceReportBtn" type="button" style="width:100%;margin-top:10px">Ruaj te orët dhe projekti</button>
-  </section>
+
 
   <section id="projectFormView" class="hidden card">
     <div class="section-title"><h2 id="projectFormTitle">Projekt i ri</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
@@ -736,7 +714,7 @@ function bind(){
  $('btnMaterials').addEventListener('click',()=>showView('materialsView'));
  $('btnPhotos').addEventListener('click',()=>showView('photosView'));
  $('btnMeasure').addEventListener('click',()=>showView('measureView'));
- $('btnVoice').addEventListener('click',()=>showView('voiceView'));
+ 
  $('photoProject').addEventListener('change',renderPhotos);
  $('takePhotoBtn').addEventListener('click',()=>$('photoInput').click());
  $('galleryPhotoBtn').addEventListener('click',()=>$('galleryInput').click());

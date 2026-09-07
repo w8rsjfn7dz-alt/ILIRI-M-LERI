@@ -726,6 +726,7 @@ function exportBackup(){
   a.click();
   a.remove();
   localStorage.setItem(LAST_BACKUP_KEY,String(Date.now()));
+  alert('Backup u ruajt me sukses ✅');
   setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
 function checkWeeklyBackupReminder(){

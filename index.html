@@ -122,7 +122,11 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
     <div class="section-title"><h2 id="voiceTitle">Raporti me zë</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
     <label class="lblProject">Projekti</label><select id="voiceProject"></select>
     <div class="voice-box">
-      <button id="voiceStartBtn" class="voice-mic" type="button" style="width:100%">🎙️ Fol shqip</button>
+      <div class="row">
+        <button id="voiceStartSqBtn" class="voice-mic" type="button">🎙️ Fol shqip</button>
+        <button id="voiceStartSvBtn" class="voice-mic secondary" type="button">🎙️ Prata svenska</button>
+      </div>
+      <div id="voiceStatus" class="small-note">Zgjidh gjuhën dhe fol. Raporti ndahet automatikisht në datë, orë, vend dhe punë.</div>
       <div class="small-note">Shembull: “Sot punova 8 orë në Kållered, spatullova dhe lyeva me bojë.”</div>
     </div>
     <label style="margin-top:12px">Teksti shqip</label><textarea id="voiceText" rows="5" placeholder="Fol ose shkruaj raportin këtu..."></textarea>
@@ -596,16 +600,71 @@ async function translateVoice(){
   const t=$('voiceText').value.trim();if(!t)return;parseAlbanianReport();
   try{$('voiceSwedish').value=await translateSqToSv(t)}catch(e){$('voiceSwedish').value=t}
 }
-function startVoice(){
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){alert('Shfletuesi nuk e mbështet mikrofonin direkt. Përdor mikrofonin e tastierës së iPhone dhe fol shqip në kutinë e tekstit.');$('voiceText').focus();return}
-  const r=new SR();r.lang='sq-AL';r.interimResults=false;r.maxAlternatives=1;
-  $('voiceStartBtn').textContent='🔴 Po dëgjoj...';
-  r.onresult=e=>{$('voiceText').value=e.results[0][0].transcript;parseAlbanianReport()};
-  r.onerror=()=>alert('Nuk u lexua zëri. Provo përsëri ose përdor diktimin e iPhone.');
-  r.onend=()=>{$('voiceStartBtn').textContent='🎙️ Fol shqip'};
-  r.start()
+
+function parseSwedishReport(){
+  const t=$('voiceText').value.trim(); if(!t)return;
+  const hm=t.match(/(\d+(?:[.,]\d+)?)\s*(?:timmar|timme|h)\b/i);
+  if(hm)$('voiceHours').value=hm[1].replace(',','.');
+  const pm=t.match(/\b(?:i|på)\s+([A-ZÅÄÖa-zåäö0-9\- ]+?)(?=,|\.|;|\s+(?:spackl|mål|tapet|sprut|slip|grund|jobb|arbet)\b|$)/i);
+  if(pm)$('voicePlace').value=pm[1].trim();
+  const jobs=[];
+  if(/spackl/i.test(t))jobs.push('Spackling');
+  if(/mål|målade|målat|målning/i.test(t))jobs.push('Målning');
+  if(/tapet/i.test(t))jobs.push('Tapetsering');
+  if(/sprut/i.test(t))jobs.push('Sprutmålning');
+  if(/slip/i.test(t))jobs.push('Slipning');
+  if(/grund/i.test(t))jobs.push('Grundmålning');
+  $('voiceWork').value=jobs.length?jobs.join(', '):t;
+  if(!$('voiceDate').value)$('voiceDate').value=today();
+  $('voiceSwedish').value=t;
 }
+
+function startVoiceLang(lang){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const status=$('voiceStatus');
+  const sqBtn=$('voiceStartSqBtn'), svBtn=$('voiceStartSvBtn');
+
+  if(!SR){
+    status.textContent='Safari nuk e mbështet njohjen direkte të zërit. Përdor mikrofonin e tastierës së iPhone në kutinë “Teksti shqip”.';
+    $('voiceText').focus();
+    return;
+  }
+
+  const r=new SR();
+  r.lang=lang==='sv'?'sv-SE':'sq-AL';
+  r.interimResults=false;
+  r.continuous=false;
+  r.maxAlternatives=1;
+
+  sqBtn.disabled=true; svBtn.disabled=true;
+  if(lang==='sv'){
+    svBtn.textContent='🔴 Lyssnar...';
+    status.textContent='Po dëgjoj suedisht...';
+  }else{
+    sqBtn.textContent='🔴 Po dëgjoj...';
+    status.textContent='Po dëgjoj shqip...';
+  }
+
+  r.onresult=e=>{
+    const txt=e.results[0][0].transcript;
+    $('voiceText').value=txt;
+    if(lang==='sv') parseSwedishReport();
+    else parseAlbanianReport();
+    status.textContent='U lexua. Fushat u plotësuan automatikisht.';
+  };
+
+  r.onerror=e=>{
+    status.textContent='Nuk u lexua zëri. Provo përsëri ose kontrollo lejen e mikrofonit.';
+  };
+
+  r.onend=()=>{
+    sqBtn.disabled=false; svBtn.disabled=false;
+    sqBtn.textContent='🎙️ Fol shqip';
+    svBtn.textContent='🎙️ Prata svenska';
+  };
+  try{r.start()}catch(e){status.textContent='Mikrofoni është i zënë. Provo përsëri.'}
+}
+
 function saveVoiceReport(){
   parseAlbanianReport();const pid=$('voiceProject').value,h=Number($('voiceHours').value||0),d=$('voiceDate').value||today(),place=$('voicePlace').value.trim(),work=$('voiceWork').value.trim(),sq=$('voiceText').value.trim(),sv=$('voiceSwedish').value.trim();
   if(!pid){alert('Zgjidh projektin.');return}
@@ -650,8 +709,13 @@ function bind(){
  $('calcMeasureBtn').addEventListener('click',calcMeasure);
  $('saveMeasureBtn').addEventListener('click',saveMeasure);
  $('measureToOfferBtn').addEventListener('click',measureToOffer);
- $('voiceStartBtn').addEventListener('click',startVoice);
- $('parseVoiceBtn').addEventListener('click',parseAlbanianReport);
+ $('voiceStartSqBtn').addEventListener('click',()=>startVoiceLang('sq'));
+ $('voiceStartSvBtn').addEventListener('click',()=>startVoiceLang('sv'));
+ $('parseVoiceBtn').addEventListener('click',()=>{
+   const t=$('voiceText').value||'';
+   if(/\b(jag|idag|målade|spacklade|arbetade|timmar|på|i)\b/i.test(t)) parseSwedishReport();
+   else parseAlbanianReport();
+ });
  $('translateVoiceBtn').addEventListener('click',translateVoice);
  $('saveVoiceReportBtn').addEventListener('click',saveVoiceReport);
  $('btnNewProject').addEventListener('click',newProject);

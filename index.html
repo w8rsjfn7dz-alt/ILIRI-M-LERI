@@ -55,6 +55,8 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
 .price-row{display:grid;grid-template-columns:1.4fr .7fr;gap:8px;margin-top:8px}
 @media(max-width:640px){.photo-grid{grid-template-columns:repeat(2,1fr)}.price-row{grid-template-columns:1fr}}
 
+
+#btnVoice{display:none !important;}
 </style>
 
 
@@ -77,6 +79,7 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
       <button id="btnMaterials" type="button">Materialet</button>
       <button id="btnPhotos" type="button">📷 Before / After</button>
       <button id="btnMeasure" type="button">📐 Matjet</button>
+      <button id="btnVoice" class="wide" type="button">🎙️ Raporti me zë</button>
       <button id="btnNewProject" class="wide" type="button">+ Projekt i ri</button>
     </div>
     <div class="statline">
@@ -117,7 +120,28 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
     <div id="measureHistory"></div>
   </section>
 
-
+  <section id="voiceView" class="hidden card">
+    <div class="section-title"><h2 id="voiceTitle">Raporti me zë</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
+    <label class="lblProject">Projekti</label><select id="voiceProject"></select>
+    <div class="voice-box">
+      <div class="row">
+        <button id="voiceStartSqBtn" class="voice-mic" type="button">🎙️ Fol shqip</button>
+        <button id="voiceStartSvBtn" class="voice-mic secondary" type="button">🎙️ Prata svenska</button>
+      </div>
+      <div id="voiceStatus" class="small-note">Zgjidh gjuhën dhe fol. Raporti ndahet automatikisht në datë, orë, vend dhe punë.</div>
+      <div class="small-note">Shembull: “Sot punova 8 orë në Kållered, spatullova dhe lyeva me bojë.”</div>
+    </div>
+    <label style="margin-top:12px">Teksti shqip</label><textarea id="voiceText" rows="5" placeholder="Fol ose shkruaj raportin këtu..."></textarea>
+    <div class="row" style="margin-top:10px"><button id="parseVoiceBtn" type="button">Kupto raportin</button><button id="translateVoiceBtn" class="secondary" type="button">🇸🇪 Suedisht</button></div>
+    <div class="grid" style="margin-top:12px">
+      <div><label>Data</label><input id="voiceDate" type="date"></div>
+      <div><label>Orët</label><input id="voiceHours" type="number" min="0" step="0.5"></div>
+      <div><label>Vendi</label><input id="voicePlace"></div>
+      <div><label>Punët</label><input id="voiceWork"></div>
+    </div>
+    <label style="margin-top:10px">Suedisht / Svenska</label><textarea id="voiceSwedish" rows="4" placeholder="Përkthimi suedez del këtu..."></textarea>
+    <button id="saveVoiceReportBtn" type="button" style="width:100%;margin-top:10px">Ruaj te orët dhe projekti</button>
+  </section>
 
   <section id="projectFormView" class="hidden card">
     <div class="section-title"><h2 id="projectFormTitle">Projekt i ri</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
@@ -696,56 +720,56 @@ function applyLang(){document.documentElement.lang=currentLang;setText('langBtn'
 function toggleLang(){currentLang=currentLang==='sq'?'sv':'sq';localStorage.setItem(LANG_KEY,currentLang);applyLang()}
 
 function bind(){
- $('langBtn').addEventListener('click',toggleLang);
- $('backupBtn').addEventListener('click',exportBackup);
- $('btnOffers').addEventListener('click',()=>showView('offersView'));
- $('newOfferBtn').addEventListener('click',newOffer);
+ $('langBtn')?.addEventListener('click',toggleLang);
+ $('backupBtn')?.addEventListener('click',exportBackup);
+ $('btnOffers')?.addEventListener('click',()=>showView('offersView'));
+ $('newOfferBtn')?.addEventListener('click',newOffer);
  document.querySelectorAll('.offerFilter').forEach(b=>b.addEventListener('click',()=>{offerFilter=b.dataset.status;renderOffers()}));
- $('addWorkLineBtn').addEventListener('click',()=>addOfferLine('work'));
- $('addMaterialLineBtn').addEventListener('click',()=>addOfferLine('material'));
- $('offerVat').addEventListener('input',calcOffer);
- $('saveOfferBtn').addEventListener('click',saveOffer);
- $('cancelOfferBtn').addEventListener('click',()=>showView('offersView'));
+ $('addWorkLineBtn')?.addEventListener('click',()=>addOfferLine('work'));
+ $('addMaterialLineBtn')?.addEventListener('click',()=>addOfferLine('material'));
+ $('offerVat')?.addEventListener('input',calcOffer);
+ $('saveOfferBtn')?.addEventListener('click',saveOffer);
+ $('cancelOfferBtn')?.addEventListener('click',()=>showView('offersView'));
  document.querySelectorAll('.backToOffersBtn').forEach(b=>b.addEventListener('click',()=>showView('offersView')));
- $('deleteOfferBtn').addEventListener('click',()=>{const id=$('offerId').value;if(id)deleteOffer(id)});
- $('btnProjects').addEventListener('click',()=>showView('projectsView'));
- $('btnClients').addEventListener('click',()=>showView('clientsView'));
- $('btnHours').addEventListener('click',()=>showView('hoursView'));
- $('btnMaterials').addEventListener('click',()=>showView('materialsView'));
- $('btnPhotos').addEventListener('click',()=>showView('photosView'));
- $('btnMeasure').addEventListener('click',()=>showView('measureView'));
- 
- $('photoProject').addEventListener('change',renderPhotos);
- $('takePhotoBtn').addEventListener('click',()=>$('photoInput').click());
- $('galleryPhotoBtn').addEventListener('click',()=>$('galleryInput').click());
- $('photoInput').addEventListener('change',e=>{if(e.target.files&&e.target.files.length)addPhotos(e.target.files);e.target.value=''});
- $('galleryInput').addEventListener('change',e=>{if(e.target.files&&e.target.files.length)addPhotos(e.target.files);e.target.value=''});
- $('measureProject').addEventListener('change',renderMeasureHistory);
- $('calcMeasureBtn').addEventListener('click',calcMeasure);
- $('saveMeasureBtn').addEventListener('click',saveMeasure);
- $('measureToOfferBtn').addEventListener('click',measureToOffer);
- $('voiceStartSqBtn').addEventListener('click',()=>startVoiceLang('sq'));
- $('voiceStartSvBtn').addEventListener('click',()=>startVoiceLang('sv'));
- $('parseVoiceBtn').addEventListener('click',()=>{
+ $('deleteOfferBtn')?.addEventListener('click',()=>{const id=$('offerId').value;if(id)deleteOffer(id)});
+ $('btnProjects')?.addEventListener('click',()=>showView('projectsView'));
+ $('btnClients')?.addEventListener('click',()=>showView('clientsView'));
+ $('btnHours')?.addEventListener('click',()=>showView('hoursView'));
+ $('btnMaterials')?.addEventListener('click',()=>showView('materialsView'));
+ $('btnPhotos')?.addEventListener('click',()=>showView('photosView'));
+ $('btnMeasure')?.addEventListener('click',()=>showView('measureView'));
+ $('btnVoice')?.addEventListener('click',()=>showView('voiceView'));
+ $('photoProject')?.addEventListener('change',renderPhotos);
+ $('takePhotoBtn')?.addEventListener('click',()=>$('photoInput').click());
+ $('galleryPhotoBtn')?.addEventListener('click',()=>$('galleryInput').click());
+ $('photoInput')?.addEventListener('change',e=>{if(e.target.files&&e.target.files.length)addPhotos(e.target.files);e.target.value=''});
+ $('galleryInput')?.addEventListener('change',e=>{if(e.target.files&&e.target.files.length)addPhotos(e.target.files);e.target.value=''});
+ $('measureProject')?.addEventListener('change',renderMeasureHistory);
+ $('calcMeasureBtn')?.addEventListener('click',calcMeasure);
+ $('saveMeasureBtn')?.addEventListener('click',saveMeasure);
+ $('measureToOfferBtn')?.addEventListener('click',measureToOffer);
+ $('voiceStartSqBtn')?.addEventListener('click',()=>startVoiceLang('sq'));
+ $('voiceStartSvBtn')?.addEventListener('click',()=>startVoiceLang('sv'));
+ $('parseVoiceBtn')?.addEventListener('click',()=>{
    const t=$('voiceText').value||'';
    if(/\b(jag|idag|målade|spacklade|arbetade|timmar|på|i)\b/i.test(t)) parseSwedishReport();
    else parseAlbanianReport();
  });
- $('translateVoiceBtn').addEventListener('click',translateVoice);
- $('saveVoiceReportBtn').addEventListener('click',saveVoiceReport);
- $('btnNewProject').addEventListener('click',newProject);
- $('statProjectsCard').addEventListener('click',()=>showView('projectsView'));
- $('statClientsCard').addEventListener('click',()=>showView('clientsView'));
- $('statHoursCard').addEventListener('click',()=>showView('hoursView'));
+ $('translateVoiceBtn')?.addEventListener('click',translateVoice);
+ $('saveVoiceReportBtn')?.addEventListener('click',saveVoiceReport);
+ $('btnNewProject')?.addEventListener('click',newProject);
+ $('statProjectsCard')?.addEventListener('click',()=>showView('projectsView'));
+ $('statClientsCard')?.addEventListener('click',()=>showView('clientsView'));
+ $('statHoursCard')?.addEventListener('click',()=>showView('hoursView'));
  document.querySelectorAll('.backBtn').forEach(b=>b.addEventListener('click',()=>showView('homeView')));
- $('saveProjectBtn').addEventListener('click',saveProject);
- $('cancelProjectBtn').addEventListener('click',()=>{clearProjectForm();showView('homeView')});
- $('deleteCurrentProjectBtn').addEventListener('click',()=>{const id=$('projectId').value;if(id)deleteProject(id);clearProjectForm();showView('projectsView')});
- $('projectSearch').addEventListener('input',renderProjects);
- $('clientSearch').addEventListener('input',renderClients);
- $('saveHoursBtn').addEventListener('click',saveHours);
- $('saveMaterialBtn').addEventListener('click',saveMaterial);
- $('importFile').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)importBackup(f)});
+ $('saveProjectBtn')?.addEventListener('click',saveProject);
+ $('cancelProjectBtn')?.addEventListener('click',()=>{clearProjectForm();showView('homeView')});
+ $('deleteCurrentProjectBtn')?.addEventListener('click',()=>{const id=$('projectId').value;if(id)deleteProject(id);clearProjectForm();showView('projectsView')});
+ $('projectSearch')?.addEventListener('input',renderProjects);
+ $('clientSearch')?.addEventListener('input',renderClients);
+ $('saveHoursBtn')?.addEventListener('click',saveHours);
+ $('saveMaterialBtn')?.addEventListener('click',saveMaterial);
+ $('importFile')?.addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)importBackup(f)});
 }
 
 document.addEventListener('DOMContentLoaded',()=>{

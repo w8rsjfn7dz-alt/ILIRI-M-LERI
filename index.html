@@ -137,7 +137,7 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
       <div><label>Vendi</label><input id="voicePlace"></div>
       <div><label>Punët</label><input id="voiceWork"></div>
     </div>
-    <label style="margin-top:10px">Suedisht</label><textarea id="voiceSwedish" rows="4"></textarea>
+    <label style="margin-top:10px">Suedisht / Svenska</label><textarea id="voiceSwedish" rows="4" placeholder="Përkthimi suedez del këtu..."></textarea>
     <button id="saveVoiceReportBtn" type="button" style="width:100%;margin-top:10px">Ruaj te orët dhe projekti</button>
   </section>
 
@@ -597,8 +597,45 @@ function parseAlbanianReport(){
   if(!$('voiceDate').value)$('voiceDate').value=today()
 }
 async function translateVoice(){
-  const t=$('voiceText').value.trim();if(!t)return;parseAlbanianReport();
-  try{$('voiceSwedish').value=await translateSqToSv(t)}catch(e){$('voiceSwedish').value=t}
+  const t=$('voiceText').value.trim();
+  if(!t)return;
+  parseAlbanianReport();
+
+  // First try the existing online translator.
+  try{
+    const online=await translateSqToSv(t);
+    if(online && online.trim() && online.trim().toLowerCase()!==t.toLowerCase()){
+      $('voiceSwedish').value=online.trim();
+      return;
+    }
+  }catch(e){}
+
+  // Reliable offline fallback for common painter daily reports.
+  const hours=$('voiceHours').value;
+  const place=$('voicePlace').value.trim();
+  const low=t.toLowerCase();
+  let tasks=[];
+
+  if(/spatull|spakl|spack/i.test(low)) tasks.push('spacklade');
+  if(/l[eë]m|lemov|slip|zmeril/i.test(low)) tasks.push('slipade');
+  if(/astar|grund/i.test(low)) tasks.push('grundmålade');
+  if(/lye|lyeva|lyem|boj[eë]|m[ëe] boj/i.test(low)) tasks.push('målade');
+  if(/hoq.*tapet|hiq.*tapet/i.test(low)) tasks.push('tog bort tapet');
+  else if(/tapet/i.test(low)) tasks.push('tapetserade');
+  if(/spray|sp[ëe]rkat/i.test(low)) tasks.push('sprutmålade');
+  if(/fug|silikon/i.test(low)) tasks.push('fogade');
+
+  let first='Idag arbetade jag';
+  if(hours) first+=` ${hours} timmar`;
+  if(place) first+=` i ${place}`;
+  first+='.';
+
+  let second='';
+  if(tasks.length===1) second=` Jag ${tasks[0]}.`;
+  if(tasks.length===2) second=` Jag ${tasks[0]} och ${tasks[1]}.`;
+  if(tasks.length>2) second=` Jag ${tasks.slice(0,-1).join(', ')} och ${tasks[tasks.length-1]}.`;
+
+  $('voiceSwedish').value=(first+second).trim();
 }
 
 function parseSwedishReport(){

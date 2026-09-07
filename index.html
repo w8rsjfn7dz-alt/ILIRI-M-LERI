@@ -93,7 +93,12 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
     <label class="lblProject">Projekti</label><select id="photoProject"></select>
     <label style="margin-top:10px">Kategoria</label>
     <select id="photoStage"><option value="before">Före / Para</option><option value="during">Under arbete / Gjatë punës</option><option value="after">Efter / Pas</option></select>
-    <input id="photoInput" type="file" accept="image/*" capture="environment" multiple style="margin-top:10px">
+    <div class="row" style="margin-top:10px">
+      <button id="takePhotoBtn" type="button">📷 Bëj foto</button>
+      <button id="galleryPhotoBtn" class="secondary" type="button">🖼️ Galeria</button>
+    </div>
+    <input id="photoInput" type="file" accept="image/*" capture="environment" style="display:none">
+    <input id="galleryInput" type="file" accept="image/*" multiple style="display:none">
     <div id="photoList"></div>
   </section>
 
@@ -637,7 +642,10 @@ function bind(){
  $('btnMeasure').addEventListener('click',()=>showView('measureView'));
  $('btnVoice').addEventListener('click',()=>showView('voiceView'));
  $('photoProject').addEventListener('change',renderPhotos);
+ $('takePhotoBtn').addEventListener('click',()=>$('photoInput').click());
+ $('galleryPhotoBtn').addEventListener('click',()=>$('galleryInput').click());
  $('photoInput').addEventListener('change',e=>{if(e.target.files&&e.target.files.length)addPhotos(e.target.files);e.target.value=''});
+ $('galleryInput').addEventListener('change',e=>{if(e.target.files&&e.target.files.length)addPhotos(e.target.files);e.target.value=''});
  $('measureProject').addEventListener('change',renderMeasureHistory);
  $('calcMeasureBtn').addEventListener('click',calcMeasure);
  $('saveMeasureBtn').addEventListener('click',saveMeasure);

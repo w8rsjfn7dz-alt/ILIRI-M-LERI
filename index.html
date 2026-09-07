@@ -60,7 +60,7 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
 
 
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-<meta name="iliri-build" content="iliri-backup-save-restore-sv-sq-v10">
+<meta name="iliri-build" content="iliri-backup-working-v11">
 </head>
 <body>
 <header>
@@ -766,7 +766,7 @@ function bind(){
  $('btnMaterials').addEventListener('click',()=>showView('materialsView'));
  $('btnPhotos').addEventListener('click',()=>showView('photosView'));
  $('btnMeasure').addEventListener('click',()=>showView('measureView'));
- $('btnVoice').addEventListener('click',()=>showView('voiceView'));
+ if($('btnVoice')) $('btnVoice').addEventListener('click',()=>showView('voiceView'));
  $('photoProject').addEventListener('change',renderPhotos);
  $('takePhotoBtn').addEventListener('click',()=>$('photoInput').click());
  $('galleryPhotoBtn').addEventListener('click',()=>$('galleryInput').click());
@@ -776,15 +776,15 @@ function bind(){
  $('calcMeasureBtn').addEventListener('click',calcMeasure);
  $('saveMeasureBtn').addEventListener('click',saveMeasure);
  $('measureToOfferBtn').addEventListener('click',measureToOffer);
- $('voiceStartSqBtn').addEventListener('click',()=>startVoiceLang('sq'));
- $('voiceStartSvBtn').addEventListener('click',()=>startVoiceLang('sv'));
- $('parseVoiceBtn').addEventListener('click',()=>{
+ if($('voiceStartSqBtn')) $('voiceStartSqBtn').addEventListener('click',()=>startVoiceLang('sq'));
+ if($('voiceStartSvBtn')) $('voiceStartSvBtn').addEventListener('click',()=>startVoiceLang('sv'));
+ if($('parseVoiceBtn')) $('parseVoiceBtn').addEventListener('click',()=>{
    const t=$('voiceText').value||'';
    if(/\b(jag|idag|målade|spacklade|arbetade|timmar|på|i)\b/i.test(t)) parseSwedishReport();
    else parseAlbanianReport();
  });
- $('translateVoiceBtn').addEventListener('click',translateVoice);
- $('saveVoiceReportBtn').addEventListener('click',saveVoiceReport);
+ if($('translateVoiceBtn')) $('translateVoiceBtn').addEventListener('click',translateVoice);
+ if($('saveVoiceReportBtn')) $('saveVoiceReportBtn').addEventListener('click',saveVoiceReport);
  $('btnNewProject').addEventListener('click',newProject);
  $('statProjectsCard').addEventListener('click',()=>showView('projectsView'));
  $('statClientsCard').addEventListener('click',()=>showView('clientsView'));
@@ -803,7 +803,7 @@ function bind(){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
- $('hoursDate').value=today();$('materialDate').value=today();$('voiceDate').value=today();refreshProjectSelectors();bind();applyLang();renderHome();checkWeeklyBackupReminder();
+ $('hoursDate').value=today();$('materialDate').value=today();if($('voiceDate')) $('voiceDate').value=today();refreshProjectSelectors();bind();applyLang();renderHome();checkWeeklyBackupReminder();
 });
 </script>
 <div id="printOfferArea"></div>

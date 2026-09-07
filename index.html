@@ -40,12 +40,27 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
   background:var(--green)!important;
   color:#fff!important;
 }
+
+/* ILIRI PLUS: Foto, Matje, Zë */
+.plus-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:12px}
+.plus-grid .wide{grid-column:1/-1}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.photo-card{border:1px solid var(--line);border-radius:12px;padding:7px;background:#fff}
+.photo-card img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:9px;display:block}
+.photo-card button{width:100%;margin-top:6px;padding:7px}
+.measure-result{background:var(--soft);padding:12px;border-radius:12px;margin-top:12px;line-height:1.65}
+.voice-box{background:var(--soft);padding:12px;border-radius:12px;margin-top:10px}
+.voice-mic{font-size:18px;min-height:52px}
+.small-note{font-size:12px;color:var(--muted);margin-top:6px}
+.price-row{display:grid;grid-template-columns:1.4fr .7fr;gap:8px;margin-top:8px}
+@media(max-width:640px){.photo-grid{grid-template-columns:repeat(2,1fr)}.price-row{grid-template-columns:1fr}}
+
 </style>
 
 
 
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-<meta name="iliri-build" content="offer-groups-preview-v5">
+<meta name="iliri-build" content="iliri-plus-photos-measure-voice-v6">
 </head>
 <body>
 <header>
@@ -60,6 +75,9 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
       <button id="btnClients" type="button">Klientët</button>
       <button id="btnHours" type="button">Orët</button>
       <button id="btnMaterials" type="button">Materialet</button>
+      <button id="btnPhotos" type="button">📷 Before / After</button>
+      <button id="btnMeasure" type="button">📐 Matjet</button>
+      <button id="btnVoice" class="wide" type="button">🎙️ Raporti me zë</button>
       <button id="btnNewProject" class="wide" type="button">+ Projekt i ri</button>
     </div>
     <div class="statline">
@@ -67,6 +85,51 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
       <div class="stat clickable" id="statClientsCard"><b id="countClients">0</b><span id="statClients">Klientë</span></div>
       <div class="stat clickable" id="statHoursCard"><b id="countHours">0</b><span id="statHours">Orë</span></div>
     </div>
+  </section>
+
+
+  <section id="photosView" class="hidden card">
+    <div class="section-title"><h2 id="photosTitle">Before / After</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
+    <label class="lblProject">Projekti</label><select id="photoProject"></select>
+    <label style="margin-top:10px">Kategoria</label>
+    <select id="photoStage"><option value="before">Före / Para</option><option value="during">Under arbete / Gjatë punës</option><option value="after">Efter / Pas</option></select>
+    <input id="photoInput" type="file" accept="image/*" capture="environment" multiple style="margin-top:10px">
+    <div id="photoList"></div>
+  </section>
+
+  <section id="measureView" class="hidden card">
+    <div class="section-title"><h2 id="measureTitle">Matjet automatike</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
+    <label class="lblProject">Projekti</label><select id="measureProject"></select>
+    <div class="grid" style="margin-top:10px">
+      <div><label>Gjatësia / Längd (m)</label><input id="roomLength" type="number" min="0" step="0.01"></div>
+      <div><label>Gjerësia / Bredd (m)</label><input id="roomWidth" type="number" min="0" step="0.01"></div>
+      <div><label>Lartësia / Höjd (m)</label><input id="roomHeight" type="number" min="0" step="0.01"></div>
+      <div><label>Dyer + dritare / Avdrag (m²)</label><input id="roomOpenings" type="number" min="0" step="0.01" value="0"></div>
+    </div>
+    <div class="price-row"><div><label>Çmimi punës / Arbetspris kr/m²</label><input id="laborM2Price" type="number" min="0" step="1" value="120"></div><div><label>Material kr/m²</label><input id="materialM2Price" type="number" min="0" step="1" value="35"></div></div>
+    <button id="calcMeasureBtn" type="button" style="width:100%;margin-top:12px">Llogarit / Beräkna</button>
+    <div id="measureResult" class="measure-result">Vendos dimensionet.</div>
+    <div class="row" style="margin-top:10px"><button id="measureToOfferBtn" type="button">Krijo ofertë</button><button id="saveMeasureBtn" class="secondary" type="button">Ruaj matjen</button></div>
+    <div id="measureHistory"></div>
+  </section>
+
+  <section id="voiceView" class="hidden card">
+    <div class="section-title"><h2 id="voiceTitle">Raporti me zë</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
+    <label class="lblProject">Projekti</label><select id="voiceProject"></select>
+    <div class="voice-box">
+      <button id="voiceStartBtn" class="voice-mic" type="button" style="width:100%">🎙️ Fol shqip</button>
+      <div class="small-note">Shembull: “Sot punova 8 orë në Kållered, spatullova dhe lyeva me bojë.”</div>
+    </div>
+    <label style="margin-top:12px">Teksti shqip</label><textarea id="voiceText" rows="5" placeholder="Fol ose shkruaj raportin këtu..."></textarea>
+    <div class="row" style="margin-top:10px"><button id="parseVoiceBtn" type="button">Kupto raportin</button><button id="translateVoiceBtn" class="secondary" type="button">🇸🇪 Suedisht</button></div>
+    <div class="grid" style="margin-top:12px">
+      <div><label>Data</label><input id="voiceDate" type="date"></div>
+      <div><label>Orët</label><input id="voiceHours" type="number" min="0" step="0.5"></div>
+      <div><label>Vendi</label><input id="voicePlace"></div>
+      <div><label>Punët</label><input id="voiceWork"></div>
+    </div>
+    <label style="margin-top:10px">Suedisht</label><textarea id="voiceSwedish" rows="4"></textarea>
+    <button id="saveVoiceReportBtn" type="button" style="width:100%;margin-top:10px">Ruaj te orët dhe projekti</button>
   </section>
 
   <section id="projectFormView" class="hidden card">
@@ -174,17 +237,19 @@ const MATERIALS_KEY='iliri_maleri_materials_v1';
 const LANG_KEY='iliri_maleri_lang_v4';
 const OFFERS_KEY='iliri_maleri_offers_v1';
 
+const PHOTOS_KEY='iliri_photos_v1', MEASURES_KEY='iliri_measures_v1', REPORTS_KEY='iliri_reports_v1';
 const I18N={
  sq:{langBtn:'SV',backup:'Backup',projects:'Projektet',clients:'Klientët',hours:'Orët',materials:'Materialet',newProject:'+ Projekt i ri',newProjectTitle:'Projekt i ri',project:'Projekti',date:'Data',projectName:'Emri i projektit',projectNumber:'Numri i projektit',client:'Klienti',phone:'Telefoni',address:'Adresa',workType:'Lloji i punës',chooseWork:'Zgjidh llojin e punës',status:'Statusi',active:'Aktiv',waiting:'Në pritje',done:'Mbaruar',offer:'Çmimi / oferta (kr)',notes:'Shënime',saveProject:'Ruaj projektin',cancel:'Anulo',back:'Kthehu',searchProject:'Kërko projekt',searchProjectPh:'Emër ose numër projekti...',searchClient:'Kërko klient',searchClientPh:'Emri i klientit...',start:'Fillimi',end:'Mbarimi',break:'Pushim (minuta)',saveHours:'Ruaj orët',material:'Materiali',cost:'Kosto (kr)',note:'Shënim',saveMaterial:'Ruaj materialin',restoreBackup:'Rikthe backup',editProject:'Ndrysho projektin',edit:'Ndrysho',deleteProject:'Fshi',deleteCurrentProject:'Fshi projektin',deleteConfirm:'Je i sigurt që dëshiron ta fshish këtë projekt?',noProjects:'Nuk ka projekte.',noClients:'Nuk ka klientë.',noHours:'Nuk ka orë të regjistruara.',noMaterials:'Nuk ka materiale të regjistruara.',hoursLower:'orë',breakLower:'pushim',backupRestored:'Backup u rikthye.',invalidBackup:'Backup i pavlefshëm.',offers:'OFERTA',newOffer:'+ Krijo ofertë të re',newOfferTitle:'Ofertë e re',editOffer:'Edito ofertën',offerNumber:'Nr. ofertës',offerUnsent:'E pa dërguar',offerSent:'E dërguar',offerUnpaid:'E pa paguar',offerPaid:'E paguar',offerSaved:'E ruajtur',all:'Të gjitha',workLines:'Punët',addWork:'+ Shto punë',addMaterial:'+ Shto material',description:'Përshkrimi',quantity:'Sasia',vat:'Moms (%)',subtotal:'Pa moms',total:'TOTALI',saveOffer:'Ruaj ofertën',deleteOffer:'Fshi ofertën',deleteOfferConfirm:'Je i sigurt që dëshiron ta fshish këtë ofertë?',noOffers:'Nuk ka oferta në këtë kategori.',pdf:'PDF'},
  sv:{langBtn:'SQ',backup:'Backup',projects:'Projekt',clients:'Kunder',hours:'Timmar',materials:'Material',newProject:'+ Nytt projekt',newProjectTitle:'Nytt projekt',project:'Projekt',date:'Datum',projectName:'Projektnamn',projectNumber:'Projektnummer',client:'Kund',phone:'Telefon',address:'Adress',workType:'Typ av arbete',chooseWork:'Välj typ av arbete',status:'Status',active:'Aktiv',waiting:'Väntar',done:'Klar',offer:'Pris / offert (kr)',notes:'Anteckningar',saveProject:'Spara projekt',cancel:'Avbryt',back:'Tillbaka',searchProject:'Sök projekt',searchProjectPh:'Projektnamn eller nummer...',searchClient:'Sök kund',searchClientPh:'Kundens namn...',start:'Starttid',end:'Sluttid',break:'Rast (minuter)',saveHours:'Spara timmar',material:'Material',cost:'Kostnad (kr)',note:'Anteckning',saveMaterial:'Spara material',restoreBackup:'Återställ backup',editProject:'Redigera projekt',edit:'Redigera',deleteProject:'Ta bort',deleteCurrentProject:'Ta bort projektet',deleteConfirm:'Är du säker på att du vill ta bort projektet?',noProjects:'Inga projekt.',noClients:'Inga kunder.',noHours:'Inga registrerade timmar.',noMaterials:'Inga registrerade material.',hoursLower:'timmar',breakLower:'rast',backupRestored:'Backup återställd.',invalidBackup:'Ogiltig backup.',offers:'OFFERTER',newOffer:'+ Skapa ny offert',newOfferTitle:'Ny offert',editOffer:'Redigera offert',offerNumber:'Offertnummer',offerUnsent:'Ej skickad',offerSent:'Skickad',offerUnpaid:'Obetald',offerPaid:'Betald',offerSaved:'Sparad',all:'Alla',workLines:'Arbeten',addWork:'+ Lägg till arbete',addMaterial:'+ Lägg till material',description:'Beskrivning',quantity:'Antal',vat:'Moms (%)',subtotal:'Exkl. moms',total:'TOTALT',saveOffer:'Spara offert',deleteOffer:'Ta bort offert',deleteOfferConfirm:'Är du säker på att du vill ta bort offerten?',noOffers:'Inga offerter i denna kategori.',pdf:'PDF'}
 };
 
 let projects=load(PROJECTS_KEY,[]), hours=load(HOURS_KEY,[]), materials=load(MATERIALS_KEY,[]), offers=load(OFFERS_KEY,[]), currentLang=localStorage.getItem(LANG_KEY)||'sq';
+let photos=load(PHOTOS_KEY,[]), measures=load(MEASURES_KEY,[]), reports=load(REPORTS_KEY,[]);
 offers=offers.map(o=>({...o,status:o.status==='accepted'?'unpaid':(o.status||'unsent')}));persistAll();
 let offerFilter='all';
 function $(id){return document.getElementById(id)}
 function load(k,d){try{const x=JSON.parse(localStorage.getItem(k));return Array.isArray(x)?x:d}catch(e){return d}}
-function persistAll(){localStorage.setItem(PROJECTS_KEY,JSON.stringify(projects));localStorage.setItem(HOURS_KEY,JSON.stringify(hours));localStorage.setItem(MATERIALS_KEY,JSON.stringify(materials));localStorage.setItem(OFFERS_KEY,JSON.stringify(offers))}
+function persistAll(){localStorage.setItem(PROJECTS_KEY,JSON.stringify(projects));localStorage.setItem(HOURS_KEY,JSON.stringify(hours));localStorage.setItem(MATERIALS_KEY,JSON.stringify(materials));localStorage.setItem(OFFERS_KEY,JSON.stringify(offers));localStorage.setItem(PHOTOS_KEY,JSON.stringify(photos));localStorage.setItem(MEASURES_KEY,JSON.stringify(measures));localStorage.setItem(REPORTS_KEY,JSON.stringify(reports))}
 function tr(k){return (I18N[currentLang]&&I18N[currentLang][k])||I18N.sq[k]||k}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function uid(){return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)}
@@ -193,7 +258,7 @@ function statusText(s){return s==='done'?tr('done'):s==='waiting'?tr('waiting'):
 function projectHours(id){return hours.filter(h=>h.projectId===id).reduce((a,b)=>a+Number(b.total||0),0)}
 function projectMaterials(id){return materials.filter(m=>m.projectId===id).reduce((a,b)=>a+Number(m.cost||0),0)}
 
-function showView(id){['homeView','projectFormView','projectsView','clientsView','hoursView','materialsView','offersView','offerFormView'].forEach(v=>$(v).classList.toggle('hidden',v!==id));if(id==='projectsView')renderProjects();if(id==='clientsView')renderClients();if(id==='hoursView')renderHours();if(id==='materialsView')renderMaterials();if(id==='offersView')renderOffers();window.scrollTo(0,0)}
+function showView(id){['homeView','projectFormView','projectsView','clientsView','hoursView','materialsView','offersView','offerFormView','photosView','measureView','voiceView'].forEach(v=>$(v).classList.toggle('hidden',v!==id));if(id==='projectsView')renderProjects();if(id==='clientsView')renderClients();if(id==='hoursView')renderHours();if(id==='materialsView')renderMaterials();if(id==='offersView')renderOffers();if(id==='photosView')renderPhotos();if(id==='measureView')renderMeasureHistory();window.scrollTo(0,0)}
 function newProject(){clearProjectForm();showView('projectFormView')}
 function clearProjectForm(){$('deleteCurrentProjectBtn').classList.add('hidden');['projectId','projectName','projectNumber','clientName','phone','address','price','notes'].forEach(id=>$(id).value='');$('type').value='';$('status').value='active';$('projectFormTitle').textContent=tr('newProjectTitle')}
 function saveProject(){const id=$('projectId').value;const p={id:id||uid(),projectName:$('projectName').value.trim(),projectNumber:$('projectNumber').value.trim(),clientName:$('clientName').value.trim(),phone:$('phone').value.trim(),address:$('address').value.trim(),type:$('type').value,status:$('status').value,price:Number($('price').value||0),notes:$('notes').value.trim(),updatedAt:new Date().toISOString()};if(!p.projectName){$('projectName').focus();return}if(!p.projectNumber)p.projectNumber=String(projects.length+1).padStart(3,'0');const i=projects.findIndex(x=>x.id===p.id);if(i>=0)projects[i]=p;else projects.push(p);persistAll();refreshProjectSelectors();renderHome();showView('projectsView')}
@@ -207,7 +272,7 @@ function saveHours(){const projectId=$('hoursProject').value;if(!projectId)retur
 function renderHours(){refreshProjectSelectors();const list=[...hours].sort((a,b)=>(b.date||'').localeCompare(a.date||''));$('hoursList').innerHTML=list.length?list.map(h=>{const p=projects.find(x=>x.id===h.projectId)||{};return `<div class="item"><h3>${esc(h.date)} — ${Number(h.total||0).toFixed(1)} ${tr('hoursLower')}</h3><div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}<br>${esc(h.start)}–${esc(h.end)} • ${tr('breakLower')} ${Number(h.breakMinutes||0)} min</div></div>`}).join(''):`<div class="empty">${tr('noHours')}</div>`}
 function saveMaterial(){const projectId=$('materialProject').value;if(!projectId)return;materials.unshift({id:uid(),projectId,date:$('materialDate').value||today(),name:$('materialName').value.trim(),cost:Number($('materialCost').value||0),note:$('materialNote').value.trim()});persistAll();$('materialName').value='';$('materialCost').value='';$('materialNote').value='';renderMaterials();renderHome()}
 function renderMaterials(){refreshProjectSelectors();$('materialsList').innerHTML=materials.length?materials.map(m=>{const p=projects.find(x=>x.id===m.projectId)||{};return `<div class="item"><h3>${esc(m.name||tr('material'))} — ${Number(m.cost||0).toLocaleString('sv-SE')} kr</h3><div class="meta">${esc(m.date)} • ${esc(p.projectNumber||'')} — ${esc(p.projectName||'')} ${m.note?'<br>'+esc(m.note):''}</div></div>`}).join(''):`<div class="empty">${tr('noMaterials')}</div>`}
-function refreshProjectSelectors(){const opts=projects.map(p=>`<option value="${esc(p.id)}">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</option>`).join('');$('hoursProject').innerHTML=opts;$('materialProject').innerHTML=opts}
+function refreshProjectSelectors(){const opts=projects.map(p=>`<option value="${esc(p.id)}">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</option>`).join('');['hoursProject','materialProject','photoProject','measureProject','voiceProject'].forEach(id=>{if($(id))$(id).innerHTML=opts})}
 function renderHome(){$('countProjects').textContent=projects.length;$('countClients').textContent=new Set(projects.map(p=>(p.clientName||'').trim()).filter(Boolean)).size;$('countHours').textContent=hours.reduce((a,b)=>a+Number(b.total||0),0).toFixed(1)}
 function normalizeOfferStatus(s){return s==='accepted'?'unpaid':(s||'unsent')}
 function offerStatusText(s){s=normalizeOfferStatus(s);return s==='unsent'?tr('offerUnsent'):s==='sent'?tr('offerSent'):s==='unpaid'?tr('offerUnpaid'):tr('offerPaid')}
@@ -470,8 +535,83 @@ async function buildOfferPdf(lang,action='share'){
   if(view) printOffer(currentPdfOfferId);
 }
 
-function exportBackup(){const blob=new Blob([JSON.stringify({version:5,projects,hours,materials,offers},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='iliri-maleri-backup.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-function importBackup(file){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);projects=Array.isArray(d.projects)?d.projects:[];hours=Array.isArray(d.hours)?d.hours:[];materials=Array.isArray(d.materials)?d.materials:[];offers=Array.isArray(d.offers)?d.offers:[];persistAll();refreshProjectSelectors();renderHome();alert(tr('backupRestored'))}catch(e){alert(tr('invalidBackup'))}};r.readAsText(file)}
+
+function projectLabel(id){const p=projects.find(x=>x.id===id);return p?((p.projectNumber||'')+' — '+(p.projectName||'')):'-'}
+
+function compressPhoto(file,cb){
+  const r=new FileReader();r.onload=e=>{const im=new Image();im.onload=()=>{let w=im.width,h=im.height,max=1200;if(w>max||h>max){const k=Math.min(max/w,max/h);w*=k;h*=k}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);cb(c.toDataURL('image/jpeg',.72))};im.src=e.target.result};r.readAsDataURL(file)
+}
+function addPhotos(files){
+  const pid=$('photoProject').value, stage=$('photoStage').value;if(!pid){alert('Krijo ose zgjidh një projekt.');return}
+  [...files].forEach(f=>compressPhoto(f,data=>{photos.push({id:uid(),projectId:pid,stage,data,date:new Date().toISOString()});persistAll();renderPhotos()}))
+}
+function deletePhoto(id){photos=photos.filter(x=>x.id!==id);persistAll();renderPhotos()}
+function renderPhotos(){
+  const pid=$('photoProject')?$('photoProject').value:''; const box=$('photoList');if(!box)return;
+  const groups=[['before','Före / Para'],['during','Under arbete / Gjatë punës'],['after','Efter / Pas']];
+  box.innerHTML=groups.map(([st,title])=>{const a=photos.filter(x=>x.projectId===pid&&x.stage===st);return `<h3 style="margin-top:18px">${title} (${a.length})</h3><div class="photo-grid">${a.map(x=>`<div class="photo-card"><img src="${x.data}"><button class="danger" onclick="deletePhoto('${x.id}')">Fshi</button></div>`).join('')}</div>`}).join('');
+}
+
+let lastMeasure=null;
+function calcMeasure(){
+  const L=Number($('roomLength').value||0),W=Number($('roomWidth').value||0),H=Number($('roomHeight').value||0),O=Number($('roomOpenings').value||0);
+  const ceiling=L*W, walls=Math.max(0,2*(L+W)*H-O), total=walls+ceiling;
+  const laborPrice=Number($('laborM2Price').value||0), materialPrice=Number($('materialM2Price').value||0);
+  lastMeasure={projectId:$('measureProject').value,length:L,width:W,height:H,openings:O,walls,ceiling,total,laborPrice,materialPrice,labor:total*laborPrice,material:total*materialPrice,grand:total*(laborPrice+materialPrice),date:today()};
+  $('measureResult').innerHTML=`<b>Muret / Väggar:</b> ${walls.toFixed(2)} m²<br><b>Tavani / Tak:</b> ${ceiling.toFixed(2)} m²<br><b>Gjithsej / Totalt:</b> ${total.toFixed(2)} m²<br><b>Puna / Arbete:</b> ${lastMeasure.labor.toLocaleString('sv-SE',{maximumFractionDigits:0})} kr<br><b>Material:</b> ${lastMeasure.material.toLocaleString('sv-SE',{maximumFractionDigits:0})} kr<br><b>TOTAL:</b> ${lastMeasure.grand.toLocaleString('sv-SE',{maximumFractionDigits:0})} kr`;
+  return lastMeasure
+}
+function saveMeasure(){const m=calcMeasure();if(!m.projectId){alert('Zgjidh projektin.');return}m.id=uid();measures.push(m);persistAll();renderMeasureHistory()}
+function renderMeasureHistory(){const box=$('measureHistory');if(!box)return;const pid=$('measureProject').value;const a=measures.filter(x=>x.projectId===pid);box.innerHTML=a.length?'<h3 style="margin-top:18px">Matjet e ruajtura</h3>'+a.slice().reverse().map(x=>`<div class="item"><b>${x.date}</b><div class="meta">${x.walls.toFixed(2)} m² mure • ${x.ceiling.toFixed(2)} m² tavan • ${x.grand.toLocaleString('sv-SE',{maximumFractionDigits:0})} kr</div></div>`).join(''):''}
+function measureToOffer(){
+  const m=calcMeasure();if(!m.projectId){alert('Zgjidh projektin.');return}
+  const p=projects.find(x=>x.id===m.projectId);newOffer();
+  if(p){$('offerClient').value=p.clientName||'';$('offerPhone').value=p.phone||'';$('offerAddress').value=p.address||''}
+  $('workLines').innerHTML='';$('materialLines').innerHTML='';
+  addOfferLine('work',{description:`Måleriarbete ${m.total.toFixed(2)} m²`,qty:m.total.toFixed(2),unitPrice:m.laborPrice});
+  addOfferLine('material',{description:`Målerimaterial ${m.total.toFixed(2)} m²`,qty:m.total.toFixed(2),unitPrice:m.materialPrice});
+  calcOffer()
+}
+
+function parseAlbanianReport(){
+  const t=$('voiceText').value.trim(); if(!t)return;
+  const hm=t.match(/(\d+(?:[.,]\d+)?)\s*(?:orë|ore|ora)/i); if(hm)$('voiceHours').value=hm[1].replace(',','.');
+  const pm=t.match(/\b(?:në|ne)\s+([A-ZÅÄÖÇËa-zåäöçë0-9\- ]+?)(?=,|\.|;|\s+(?:spatull|lye|boj|tapet|spray|pun|bëra|bera|dhe)\b|$)/i); if(pm)$('voicePlace').value=pm[1].trim();
+  const jobs=[];
+  if(/spatull|spack/i.test(t))jobs.push('Spatullim');
+  if(/lye|boj[ëe]|m[ëe] boj/i.test(t))jobs.push('Lyerje');
+  if(/tapet/i.test(t))jobs.push('Tapet');
+  if(/spray|sp[ëe]rkat/i.test(t))jobs.push('Spray');
+  if(/lëm|lem|slip|smeril/i.test(t))jobs.push('Lëmim');
+  if(/grund|astar/i.test(t))jobs.push('Astar');
+  $('voiceWork').value=jobs.length?jobs.join(', '):t;
+  if(!$('voiceDate').value)$('voiceDate').value=today()
+}
+async function translateVoice(){
+  const t=$('voiceText').value.trim();if(!t)return;parseAlbanianReport();
+  try{$('voiceSwedish').value=await translateSqToSv(t)}catch(e){$('voiceSwedish').value=t}
+}
+function startVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert('Shfletuesi nuk e mbështet mikrofonin direkt. Përdor mikrofonin e tastierës së iPhone dhe fol shqip në kutinë e tekstit.');$('voiceText').focus();return}
+  const r=new SR();r.lang='sq-AL';r.interimResults=false;r.maxAlternatives=1;
+  $('voiceStartBtn').textContent='🔴 Po dëgjoj...';
+  r.onresult=e=>{$('voiceText').value=e.results[0][0].transcript;parseAlbanianReport()};
+  r.onerror=()=>alert('Nuk u lexua zëri. Provo përsëri ose përdor diktimin e iPhone.');
+  r.onend=()=>{$('voiceStartBtn').textContent='🎙️ Fol shqip'};
+  r.start()
+}
+function saveVoiceReport(){
+  parseAlbanianReport();const pid=$('voiceProject').value,h=Number($('voiceHours').value||0),d=$('voiceDate').value||today(),place=$('voicePlace').value.trim(),work=$('voiceWork').value.trim(),sq=$('voiceText').value.trim(),sv=$('voiceSwedish').value.trim();
+  if(!pid){alert('Zgjidh projektin.');return}
+  reports.push({id:uid(),projectId:pid,date:d,hours:h,place,work,sq,sv,createdAt:new Date().toISOString()});
+  if(h>0)hours.push({id:uid(),projectId:pid,date:d,start:'',end:'',breakMin:0,total:h,note:[place,work].filter(Boolean).join(' — ')});
+  const p=projects.find(x=>x.id===pid);if(p){const add=`${d}: ${h||''} orë ${place?'- '+place:''} ${work?'- '+work:''}`.trim();p.notes=((p.notes||'')+(p.notes?'\n':'')+add).trim()}
+  persistAll();renderHome();renderHours();alert('Raporti u ruajt.')
+}
+
+function exportBackup(){const blob=new Blob([JSON.stringify({version:6,projects,hours,materials,offers,photos,measures,reports},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='iliri-maleri-backup.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function importBackup(file){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);projects=Array.isArray(d.projects)?d.projects:[];hours=Array.isArray(d.hours)?d.hours:[];materials=Array.isArray(d.materials)?d.materials:[];offers=Array.isArray(d.offers)?d.offers:[];photos=Array.isArray(d.photos)?d.photos:[];measures=Array.isArray(d.measures)?d.measures:[];reports=Array.isArray(d.reports)?d.reports:[];persistAll();refreshProjectSelectors();renderHome();alert(tr('backupRestored'))}catch(e){alert(tr('invalidBackup'))}};r.readAsText(file)}
 function setText(id,key){const el=$(id);if(el)el.textContent=tr(key)}
 function applyLang(){document.documentElement.lang=currentLang;setText('langBtn','langBtn');setText('backupBtn','backup');setText('btnProjects','projects');setText('btnClients','clients');setText('btnHours','hours');setText('btnMaterials','materials');setText('btnNewProject','newProject');setText('statProjects','projects');setText('statClients','clients');setText('statHours','hours');setText('lblProjectName','projectName');setText('lblProjectNumber','projectNumber');setText('lblClient','client');setText('lblPhone','phone');setText('lblAddress','address');setText('lblType','workType');setText('lblStatus','status');setText('lblPrice','offer');setText('lblNotes','notes');setText('saveProjectBtn','saveProject');setText('cancelProjectBtn','cancel');setText('deleteCurrentProjectBtn','deleteCurrentProject');setText('projectsTitle','projects');setText('clientsTitle','clients');setText('hoursTitle','hours');setText('materialsTitle','materials');setText('lblSearchProject','searchProject');setText('lblSearchClient','searchClient');$('projectSearch').placeholder=tr('searchProjectPh');$('clientSearch').placeholder=tr('searchClientPh');document.querySelectorAll('.backBtn').forEach(el=>el.textContent=tr('back'));document.querySelectorAll('.lblProject').forEach(el=>el.textContent=tr('project'));document.querySelectorAll('.lblDate').forEach(el=>el.textContent=tr('date'));setText('lblStart','start');setText('lblEnd','end');setText('lblBreak','break');setText('saveHoursBtn','saveHours');setText('lblMaterialName','material');setText('lblMaterialCost','cost');setText('lblMaterialNote','note');setText('saveMaterialBtn','saveMaterial');setText('restoreBackupTitle','restoreBackup');$('type').options[0].textContent=tr('chooseWork');$('status').options[0].textContent=tr('active');$('status').options[1].textContent=tr('waiting');$('status').options[2].textContent=tr('done');$('projectFormTitle').textContent=$('projectId').value?tr('editProject'):tr('newProjectTitle');setText('btnOffers','offers');setText('offersTitle','offers');setText('newOfferBtn','newOffer');setText('filterUnsent','offerUnsent');setText('filterSent','offerSent');setText('filterUnpaid','offerUnpaid');setText('filterPaid','offerPaid');setText('filterAll','all');setText('lblOfferNumber','offerNumber');setText('lblOfferDate','date');setText('lblOfferClient','client');setText('lblOfferPhone','phone');setText('lblOfferAddress','address');setText('lblOfferStatus','status');if($('offerStatus')){const so=$('offerStatus').options; if(so[0])so[0].textContent=tr('offerUnsent'); if(so[1])so[1].textContent=tr('offerSent'); if(so[2])so[2].textContent=tr('offerUnpaid'); if(so[3])so[3].textContent=tr('offerPaid');}setText('workLinesTitle','workLines');setText('materialLinesTitle','materials');setText('addWorkLineBtn','addWork');setText('addMaterialLineBtn','addMaterial');setText('lblVat','vat');setText('subtotalLabel','subtotal');setText('vatLabel','vat');setText('totalLabel','total');setText('lblOfferNotes','notes');setText('saveOfferBtn','saveOffer');setText('cancelOfferBtn','cancel');setText('deleteOfferBtn','deleteOffer');document.querySelectorAll('.backToOffersBtn').forEach(el=>el.textContent=tr('back'));$('offerFormTitle').textContent=$('offerId').value?tr('editOffer'):tr('newOfferTitle');renderHome();if(!$('projectsView').classList.contains('hidden'))renderProjects();if(!$('clientsView').classList.contains('hidden'))renderClients();if(!$('hoursView').classList.contains('hidden'))renderHours();if(!$('materialsView').classList.contains('hidden'))renderMaterials();if(!$('offersView').classList.contains('hidden'))renderOffers()}
 function toggleLang(){currentLang=currentLang==='sq'?'sv':'sq';localStorage.setItem(LANG_KEY,currentLang);applyLang()}
@@ -493,6 +633,19 @@ function bind(){
  $('btnClients').addEventListener('click',()=>showView('clientsView'));
  $('btnHours').addEventListener('click',()=>showView('hoursView'));
  $('btnMaterials').addEventListener('click',()=>showView('materialsView'));
+ $('btnPhotos').addEventListener('click',()=>showView('photosView'));
+ $('btnMeasure').addEventListener('click',()=>showView('measureView'));
+ $('btnVoice').addEventListener('click',()=>showView('voiceView'));
+ $('photoProject').addEventListener('change',renderPhotos);
+ $('photoInput').addEventListener('change',e=>{if(e.target.files&&e.target.files.length)addPhotos(e.target.files);e.target.value=''});
+ $('measureProject').addEventListener('change',renderMeasureHistory);
+ $('calcMeasureBtn').addEventListener('click',calcMeasure);
+ $('saveMeasureBtn').addEventListener('click',saveMeasure);
+ $('measureToOfferBtn').addEventListener('click',measureToOffer);
+ $('voiceStartBtn').addEventListener('click',startVoice);
+ $('parseVoiceBtn').addEventListener('click',parseAlbanianReport);
+ $('translateVoiceBtn').addEventListener('click',translateVoice);
+ $('saveVoiceReportBtn').addEventListener('click',saveVoiceReport);
  $('btnNewProject').addEventListener('click',newProject);
  $('statProjectsCard').addEventListener('click',()=>showView('projectsView'));
  $('statClientsCard').addEventListener('click',()=>showView('clientsView'));
@@ -509,7 +662,7 @@ function bind(){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
- $('hoursDate').value=today();$('materialDate').value=today();refreshProjectSelectors();bind();applyLang();renderHome();
+ $('hoursDate').value=today();$('materialDate').value=today();$('voiceDate').value=today();refreshProjectSelectors();bind();applyLang();renderHome();
 });
 </script>
 <div id="printOfferArea"></div>

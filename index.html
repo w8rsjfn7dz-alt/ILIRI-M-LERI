@@ -239,6 +239,19 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
   
   <section id="reportsView" class="hidden card">
     <div class="section-title"><h2>📋 Raportet</h2><button class="secondary reportsBackBtn" type="button">Kthehu</button></div>
+    <button id="newReportBtn" type="button" style="width:100%;margin:12px 0">+ Raport i ri</button>
+    <div id="reportFormBox" class="hidden" style="margin:12px 0">
+      <div class="grid">
+        <div><label>Data</label><input id="reportDate" type="date"></div>
+        <div><label>Projekti / Vendi</label><input id="reportProject" placeholder="p.sh. Kållered"></div>
+        <div><label>Orët</label><input id="reportHours" type="number" step="0.5" min="0" placeholder="8"></div>
+      </div>
+      <label style="margin-top:10px">Puna e kryer</label>
+      <textarea id="reportWork" placeholder="p.sh. Spatullova muret dhe lyeva tavanin"></textarea>
+      <label>Shënime</label>
+      <textarea id="reportNotes" placeholder="Shënime shtesë"></textarea>
+      <div class="row"><button id="saveReportBtn" type="button">Ruaj raportin</button><button id="cancelReportBtn" class="secondary" type="button">Anulo</button></div>
+    </div>
     <div id="reportsList"></div>
   </section>
 
@@ -880,13 +893,29 @@ function buildInvoicePdf(id,lang='sq'){
 
 function renderReportsView(){
   const box=$('reportsList'); if(!box)return;
-  const list=Array.isArray(reports)?[...reports].reverse():[];
-  box.innerHTML=list.length?list.map((r,i)=>{
-    const date=esc(r.date||r.createdAt||'');
-    const text=esc(r.text||r.report||r.note||r.content||'');
-    return `<div class="item"><h3>${date||('Raporti '+(list.length-i))}</h3><div class="meta" style="white-space:pre-wrap">${text||'Raport i ruajtur'}</div></div>`;
-  }).join(''):'<div class="empty">Nuk ka raporte të ruajtura.</div>';
+  const list=Array.isArray(reports)?[...reports].sort((a,b)=>String(b.date||b.createdAt||'').localeCompare(String(a.date||a.createdAt||''))):[];
+  box.innerHTML=list.length?list.map((r,i)=>`<div class="item">
+    <div class="section-title"><h3>${esc(r.date||'Raport')}</h3><button type="button" class="danger deleteReportBtn" data-id="${esc(r.id||'')}">Fshi</button></div>
+    ${r.project?`<div><b>Projekti / Vendi:</b> ${esc(r.project)}</div>`:''}
+    ${r.hours!==''&&r.hours!=null?`<div><b>Orët:</b> ${esc(String(r.hours))}</div>`:''}
+    ${r.work?`<div style="margin-top:6px"><b>Puna e kryer:</b><br>${esc(r.work)}</div>`:''}
+    ${r.notes?`<div style="margin-top:6px"><b>Shënime:</b><br>${esc(r.notes)}</div>`:''}
+  </div>`).join(''):'<div class="empty">Nuk ka raporte të ruajtura.</div>';
+  document.querySelectorAll('.deleteReportBtn').forEach(b=>b.addEventListener('click',()=>{
+    if(!confirm('Ta fshij këtë raport?'))return;
+    reports=reports.filter(r=>r.id!==b.dataset.id);persistAll();renderReportsView();
+  }));
 }
+function openNewReport(){
+  $('reportDate').value=today();$('reportProject').value='';$('reportHours').value='';$('reportWork').value='';$('reportNotes').value='';
+  $('reportFormBox').classList.remove('hidden');$('reportProject').focus();
+}
+function saveNewReport(){
+  const r={id:uid(),date:$('reportDate').value||today(),project:$('reportProject').value.trim(),hours:$('reportHours').value===''?'':Number($('reportHours').value),work:$('reportWork').value.trim(),notes:$('reportNotes').value.trim(),createdAt:new Date().toISOString()};
+  if(!r.project && !r.work){$('reportProject').focus();return}
+  reports.push(r);persistAll();$('reportFormBox').classList.add('hidden');renderReportsView();
+}
+
 function toggleLang(){currentLang=currentLang==='sq'?'sv':'sq';localStorage.setItem(LANG_KEY,currentLang);applyLang()}
 
 function bind(){
@@ -986,6 +1015,10 @@ document.addEventListener('click',function(e){
   }
   if(b.classList.contains('reportsBackBtn')){e.preventDefault();showView('homeView');}
 });
+
+if($('newReportBtn')) $('newReportBtn').addEventListener('click',openNewReport);
+if($('saveReportBtn')) $('saveReportBtn').addEventListener('click',saveNewReport);
+if($('cancelReportBtn')) $('cancelReportBtn').addEventListener('click',()=>{$('reportFormBox').classList.add('hidden')});
 </script>
 <div id="printOfferArea"></div>
 </body>

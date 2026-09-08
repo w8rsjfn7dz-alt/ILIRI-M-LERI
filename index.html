@@ -236,7 +236,13 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
   </section>
 
 
-  <section id="invoicesView" class="hidden card">
+  
+  <section id="reportsView" class="hidden card">
+    <div class="section-title"><h2>📋 Raportet</h2><button class="secondary reportsBackBtn" type="button">Kthehu</button></div>
+    <div id="reportsList"></div>
+  </section>
+
+<section id="invoicesView" class="hidden card">
     <div class="section-title"><h2 id="invoicesTitle">FATURAT</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
     <button id="newInvoiceBtn" type="button" style="width:100%;margin-top:12px">+ Krijo faturë të re</button>
     <div id="invoiceStatusFilters" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0">
@@ -311,7 +317,7 @@ function statusText(s){return s==='done'?tr('done'):s==='waiting'?tr('waiting'):
 function projectHours(id){return hours.filter(h=>h.projectId===id).reduce((a,b)=>a+Number(b.total||0),0)}
 function projectMaterials(id){return materials.filter(m=>m.projectId===id).reduce((a,b)=>a+Number(m.cost||0),0)}
 
-function showView(id){['homeView','projectFormView','projectsView','clientsView','hoursView','materialsView','offersView','offerFormView','invoicesView','invoiceFormView','photosView','measureView','reportsView','voiceView'].forEach(v=>{const el=$(v);if(el)el.classList.toggle('hidden',v!==id)});if(id==='projectsView')renderProjects();if(id==='clientsView')renderClients();if(id==='hoursView')renderHours();if(id==='materialsView')renderMaterials();if(id==='offersView')renderOffers();if(id==='invoicesView')renderInvoices();if(id==='photosView')renderPhotos();if(id==='measureView')renderMeasureHistory();window.scrollTo(0,0)}
+function showView(id){['homeView','projectFormView','projectsView','clientsView','hoursView','materialsView','offersView','offerFormView','invoicesView','invoiceFormView','photosView','measureView','reportsView','voiceView'].forEach(v=>{const el=$(v);if(el)el.classList.toggle('hidden',v!==id)});if(id==='projectsView')renderProjects();if(id==='clientsView')renderClients();if(id==='hoursView')renderHours();if(id==='materialsView')renderMaterials();if(id==='offersView')renderOffers();if(id==='invoicesView')renderInvoices();if(id==='photosView')renderPhotos();if(id==='measureView')renderMeasureHistory();if(id==='reportsView')renderReportsView();window.scrollTo(0,0)}
 function newProject(){clearProjectForm();showView('projectFormView')}
 function clearProjectForm(){$('deleteCurrentProjectBtn').classList.add('hidden');['projectId','projectName','projectNumber','clientName','phone','address','price','notes'].forEach(id=>$(id).value='');$('type').value='';$('status').value='active';$('projectFormTitle').textContent=tr('newProjectTitle')}
 function saveProject(){const id=$('projectId').value;const p={id:id||uid(),projectName:$('projectName').value.trim(),projectNumber:$('projectNumber').value.trim(),clientName:$('clientName').value.trim(),phone:$('phone').value.trim(),address:$('address').value.trim(),type:$('type').value,status:$('status').value,price:Number($('price').value||0),notes:$('notes').value.trim(),updatedAt:new Date().toISOString()};if(!p.projectName){$('projectName').focus();return}if(!p.projectNumber)p.projectNumber=String(projects.length+1).padStart(3,'0');const i=projects.findIndex(x=>x.id===p.id);if(i>=0)projects[i]=p;else projects.push(p);persistAll();refreshProjectSelectors();renderHome();showView('projectsView')}
@@ -871,6 +877,16 @@ function buildInvoicePdf(id,lang='sq'){
   const prefix=lang==='sv'?'Faktura':'Fatura';
   doc.save(`${prefix}_${String(o.number||'').replace(/[^0-9A-Za-z_-]/g,'_')}.pdf`);
 }
+
+function renderReportsView(){
+  const box=$('reportsList'); if(!box)return;
+  const list=Array.isArray(reports)?[...reports].reverse():[];
+  box.innerHTML=list.length?list.map((r,i)=>{
+    const date=esc(r.date||r.createdAt||'');
+    const text=esc(r.text||r.report||r.note||r.content||'');
+    return `<div class="item"><h3>${date||('Raporti '+(list.length-i))}</h3><div class="meta" style="white-space:pre-wrap">${text||'Raport i ruajtur'}</div></div>`;
+  }).join(''):'<div class="empty">Nuk ka raporte të ruajtura.</div>';
+}
 function toggleLang(){currentLang=currentLang==='sq'?'sv':'sq';localStorage.setItem(LANG_KEY,currentLang);applyLang()}
 
 function bind(){
@@ -941,10 +957,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  $('hoursDate').value=today();$('materialDate').value=today();if($('voiceDate')) $('voiceDate').value=today();refreshProjectSelectors();bind();applyLang();renderHome();checkWeeklyBackupReminder();
 });
 
-if($('btnReportsHome')) $('btnReportsHome').addEventListener('click',()=>{
-  if(document.getElementById('reportsView')) showView('reportsView');
-  else if(document.getElementById('btnReports')) document.getElementById('btnReports').click();
-});
+
 
 document.addEventListener('click',function(e){
   const b=e.target.closest && e.target.closest('.invoiceFilterBtn');
@@ -963,6 +976,15 @@ document.addEventListener('click',function(e){
     invoiceFilter='all';
     showView('invoicesView');
   }
+});
+
+document.addEventListener('click',function(e){
+  const b=e.target.closest && e.target.closest('button');
+  if(!b)return;
+  if((b.id==='btnReportsHome'||(b.textContent||'').includes('Raportet')) && !b.classList.contains('reportsBackBtn')){
+    e.preventDefault(); showView('reportsView');
+  }
+  if(b.classList.contains('reportsBackBtn')){e.preventDefault();showView('homeView');}
 });
 </script>
 <div id="printOfferArea"></div>

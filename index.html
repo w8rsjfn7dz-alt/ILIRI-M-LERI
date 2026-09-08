@@ -40,12 +40,27 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
   background:var(--green)!important;
   color:#fff!important;
 }
+
+/* ILIRI PLUS: Foto, Matje, Zë */
+.plus-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:12px}
+.plus-grid .wide{grid-column:1/-1}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.photo-card{border:1px solid var(--line);border-radius:12px;padding:7px;background:#fff}
+.photo-card img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:9px;display:block}
+.photo-card button{width:100%;margin-top:6px;padding:7px}
+.measure-result{background:var(--soft);padding:12px;border-radius:12px;margin-top:12px;line-height:1.65}
+.voice-box{background:var(--soft);padding:12px;border-radius:12px;margin-top:10px}
+.voice-mic{font-size:18px;min-height:52px}
+.small-note{font-size:12px;color:var(--muted);margin-top:6px}
+.price-row{display:grid;grid-template-columns:1.4fr .7fr;gap:8px;margin-top:8px}
+@media(max-width:640px){.photo-grid{grid-template-columns:repeat(2,1fr)}.price-row{grid-template-columns:1fr}}
+
 </style>
 
 
 
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-<meta name="iliri-build" content="offer-groups-preview-v5">
+<meta name="iliri-build" content="iliri-complete-offers-invoices-photos-backup-v12">
 </head>
 <body>
 <header>
@@ -56,10 +71,14 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
   <section id="homeView">
     <div class="menu">
       <button id="btnOffers" class="wide main-offer" type="button">OFERTA</button>
+      <button id="btnInvoices" class="wide main-offer" type="button">🧾 FATURAT</button>
       <button id="btnProjects" type="button">Projektet</button>
       <button id="btnClients" type="button">Klientët</button>
       <button id="btnHours" type="button">Orët</button>
       <button id="btnMaterials" type="button">Materialet</button>
+      <button id="btnPhotos" type="button">📷 Before / After</button>
+      <button id="btnMeasure" type="button">📐 Matjet</button>
+      
       <button id="btnNewProject" class="wide" type="button">+ Projekt i ri</button>
     </div>
     <div class="statline">
@@ -67,6 +86,60 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
       <div class="stat clickable" id="statClientsCard"><b id="countClients">0</b><span id="statClients">Klientë</span></div>
       <div class="stat clickable" id="statHoursCard"><b id="countHours">0</b><span id="statHours">Orë</span></div>
     </div>
+  </section>
+
+
+  <section id="photosView" class="hidden card">
+    <div class="section-title"><h2 id="photosTitle">Before / After</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
+    <label class="lblProject">Projekti</label><select id="photoProject"></select>
+    <label style="margin-top:10px">Kategoria</label>
+    <select id="photoStage"><option value="before">Före / Para</option><option value="during">Under arbete / Gjatë punës</option><option value="after">Efter / Pas</option></select>
+    <div class="row" style="margin-top:10px">
+      <button id="takePhotoBtn" type="button">📷 Bëj foto</button>
+      <button id="galleryPhotoBtn" class="secondary" type="button">🖼️ Galeria</button>
+    </div>
+    <input id="photoInput" type="file" accept="image/*" capture="environment" style="display:none">
+    <input id="galleryInput" type="file" accept="image/*" multiple style="display:none">
+    <div id="photoList"></div>
+  </section>
+
+  <section id="measureView" class="hidden card">
+    <div class="section-title"><h2 id="measureTitle">Matjet automatike</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
+    <label class="lblProject">Projekti</label><select id="measureProject"></select>
+    <div class="grid" style="margin-top:10px">
+      <div><label>Gjatësia / Längd (m)</label><input id="roomLength" type="number" min="0" step="0.01"></div>
+      <div><label>Gjerësia / Bredd (m)</label><input id="roomWidth" type="number" min="0" step="0.01"></div>
+      <div><label>Lartësia / Höjd (m)</label><input id="roomHeight" type="number" min="0" step="0.01"></div>
+      <div><label>Dyer + dritare / Avdrag (m²)</label><input id="roomOpenings" type="number" min="0" step="0.01" value="0"></div>
+    </div>
+    <div class="price-row"><div><label>Çmimi punës / Arbetspris kr/m²</label><input id="laborM2Price" type="number" min="0" step="1" value="120"></div><div><label>Material kr/m²</label><input id="materialM2Price" type="number" min="0" step="1" value="35"></div></div>
+    <button id="calcMeasureBtn" type="button" style="width:100%;margin-top:12px">Llogarit / Beräkna</button>
+    <div id="measureResult" class="measure-result">Vendos dimensionet.</div>
+    <div class="row" style="margin-top:10px"><button id="measureToOfferBtn" type="button">Krijo ofertë</button><button id="saveMeasureBtn" class="secondary" type="button">Ruaj matjen</button></div>
+    <div id="measureHistory"></div>
+  </section>
+
+  <section id="voiceView" class="hidden card">
+    <div class="section-title"><h2 id="voiceTitle">Raporti me zë</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
+    <label class="lblProject">Projekti</label><select id="voiceProject"></select>
+    <div class="voice-box">
+      <div class="row">
+        <button id="voiceStartSqBtn" class="voice-mic" type="button">🎙️ Fol shqip</button>
+        <button id="voiceStartSvBtn" class="voice-mic secondary" type="button">🎙️ Prata svenska</button>
+      </div>
+      <div id="voiceStatus" class="small-note">Zgjidh gjuhën dhe fol. Raporti ndahet automatikisht në datë, orë, vend dhe punë.</div>
+      <div class="small-note">Shembull: “Sot punova 8 orë në Kållered, spatullova dhe lyeva me bojë.”</div>
+    </div>
+    <label style="margin-top:12px">Teksti shqip</label><textarea id="voiceText" rows="5" placeholder="Fol ose shkruaj raportin këtu..."></textarea>
+    <div class="row" style="margin-top:10px"><button id="parseVoiceBtn" type="button">Kupto raportin</button><button id="translateVoiceBtn" class="secondary" type="button">🇸🇪 Suedisht</button></div>
+    <div class="grid" style="margin-top:12px">
+      <div><label>Data</label><input id="voiceDate" type="date"></div>
+      <div><label>Orët</label><input id="voiceHours" type="number" min="0" step="0.5"></div>
+      <div><label>Vendi</label><input id="voicePlace"></div>
+      <div><label>Punët</label><input id="voiceWork"></div>
+    </div>
+    <label style="margin-top:10px">Suedisht / Svenska</label><textarea id="voiceSwedish" rows="4" placeholder="Përkthimi suedez del këtu..."></textarea>
+    <button id="saveVoiceReportBtn" type="button" style="width:100%;margin-top:10px">Ruaj te orët dhe projekti</button>
   </section>
 
   <section id="projectFormView" class="hidden card">
@@ -161,11 +234,41 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
     <button id="deleteOfferBtn" class="danger hidden" type="button" style="width:100%;margin-top:10px">Fshi ofertën</button>
   </section>
 
-  <section class="card">
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <button class="secondary" id="backupBtn" type="button">💾 Ruaj backup</button>
-      <button class="secondary" id="restoreBackupBtn" type="button">↩️ Rikthe backup</button>
+
+  <section id="invoicesView" class="hidden card">
+    <div class="section-title"><h2 id="invoicesTitle">FATURAT</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
+    <button id="newInvoiceBtn" type="button" style="width:100%;margin-top:12px">+ Krijo faturë të re</button>
+    <div id="invoicesList"></div>
+  </section>
+
+  <section id="invoiceFormView" class="hidden card">
+    <div class="section-title"><h2 id="invoiceFormTitle">Faturë e re</h2><button class="secondary backToInvoicesBtn" type="button">Kthehu</button></div>
+    <input type="hidden" id="invoiceId">
+    <div class="grid">
+      <div><label>Nr. faturës</label><input id="invoiceNumber"></div>
+      <div><label>Data</label><input id="invoiceDate" type="date"></div>
+      <div><label>Afati</label><input id="invoiceDueDate" type="date"></div>
+      <div><label>Klienti</label><input id="invoiceClient"></div>
+      <div><label>Telefoni</label><input id="invoicePhone" inputmode="tel"></div>
+      <div><label>Adresa</label><input id="invoiceAddress"></div>
+      <div><label>Statusi</label><select id="invoiceStatus"><option value="unpaid">E pa paguar</option><option value="paid">E paguar</option></select></div>
+      <div><label>Moms (%)</label><input id="invoiceVat" type="number" value="25" min="0" step="1"></div>
     </div>
+    <h3 style="margin-top:18px">Punët</h3><div id="invoiceLines"></div>
+    <button id="addInvoiceLineBtn" class="secondary" type="button" style="width:100%;margin-top:8px">+ Shto punë</button>
+    <label style="margin-top:14px">Shënime</label><textarea id="invoiceNotes"></textarea>
+    <div class="totalbox">
+      <div>Pa moms: <b id="invoiceSubtotal">0 kr</b></div>
+      <div>Moms: <b id="invoiceVatAmount">0 kr</b></div>
+      <div>TOTALI: <b id="invoiceTotal">0 kr</b></div>
+    </div>
+    <div class="row" style="margin-top:12px"><button id="saveInvoiceBtn" type="button">Ruaj faturën</button><button id="cancelInvoiceBtn" class="secondary" type="button">Anulo</button></div>
+    <button id="deleteInvoiceBtn" class="danger hidden" type="button" style="width:100%;margin-top:10px">Fshi faturën</button>
+  </section>
+
+  <section class="card">
+    <button id="saveBackupVisibleBtn" type="button" style="width:100%;margin-bottom:12px">💾 Ruaj backup</button>
+    <button id="restoreBackupVisibleBtn" type="button" style="width:100%">↩️ Rikthe backup</button>
     <input id="importFile" type="file" accept="application/json" style="display:none">
   </section>
 </div>
@@ -176,18 +279,23 @@ const HOURS_KEY='iliri_maleri_hours_v1';
 const MATERIALS_KEY='iliri_maleri_materials_v1';
 const LANG_KEY='iliri_maleri_lang_v4';
 const OFFERS_KEY='iliri_maleri_offers_v1';
+const INVOICES_KEY='iliri_maleri_invoices_v1';
+const LAST_BACKUP_KEY='iliri_maleri_last_backup_v1';
+const BACKUP_INTERVAL_MS=7*24*60*60*1000;
 
+const PHOTOS_KEY='iliri_photos_v1', MEASURES_KEY='iliri_measures_v1', REPORTS_KEY='iliri_reports_v1';
 const I18N={
- sq:{langBtn:'SV',backup:'Backup',projects:'Projektet',clients:'Klientët',hours:'Orët',materials:'Materialet',newProject:'+ Projekt i ri',newProjectTitle:'Projekt i ri',project:'Projekti',date:'Data',projectName:'Emri i projektit',projectNumber:'Numri i projektit',client:'Klienti',phone:'Telefoni',address:'Adresa',workType:'Lloji i punës',chooseWork:'Zgjidh llojin e punës',status:'Statusi',active:'Aktiv',waiting:'Në pritje',done:'Mbaruar',offer:'Çmimi / oferta (kr)',notes:'Shënime',saveProject:'Ruaj projektin',cancel:'Anulo',back:'Kthehu',searchProject:'Kërko projekt',searchProjectPh:'Emër ose numër projekti...',searchClient:'Kërko klient',searchClientPh:'Emri i klientit...',start:'Fillimi',end:'Mbarimi',break:'Pushim (minuta)',saveHours:'Ruaj orët',material:'Materiali',cost:'Kosto (kr)',note:'Shënim',saveMaterial:'Ruaj materialin',restoreBackup:'Rikthe backup',editProject:'Ndrysho projektin',edit:'Ndrysho',deleteProject:'Fshi',deleteCurrentProject:'Fshi projektin',deleteConfirm:'Je i sigurt që dëshiron ta fshish këtë projekt?',noProjects:'Nuk ka projekte.',noClients:'Nuk ka klientë.',noHours:'Nuk ka orë të regjistruara.',noMaterials:'Nuk ka materiale të regjistruara.',hoursLower:'orë',breakLower:'pushim',backupRestored:'Backup u rikthye.',invalidBackup:'Backup i pavlefshëm.',offers:'OFERTA',newOffer:'+ Krijo ofertë të re',newOfferTitle:'Ofertë e re',editOffer:'Edito ofertën',offerNumber:'Nr. ofertës',offerUnsent:'E pa dërguar',offerSent:'E dërguar',offerUnpaid:'E pa paguar',offerPaid:'E paguar',offerSaved:'E ruajtur',all:'Të gjitha',workLines:'Punët',addWork:'+ Shto punë',addMaterial:'+ Shto material',description:'Përshkrimi',quantity:'Sasia',vat:'Moms (%)',subtotal:'Pa moms',total:'TOTALI',saveOffer:'Ruaj ofertën',deleteOffer:'Fshi ofertën',deleteOfferConfirm:'Je i sigurt që dëshiron ta fshish këtë ofertë?',noOffers:'Nuk ka oferta në këtë kategori.',pdf:'PDF'},
- sv:{langBtn:'SQ',backup:'Backup',projects:'Projekt',clients:'Kunder',hours:'Timmar',materials:'Material',newProject:'+ Nytt projekt',newProjectTitle:'Nytt projekt',project:'Projekt',date:'Datum',projectName:'Projektnamn',projectNumber:'Projektnummer',client:'Kund',phone:'Telefon',address:'Adress',workType:'Typ av arbete',chooseWork:'Välj typ av arbete',status:'Status',active:'Aktiv',waiting:'Väntar',done:'Klar',offer:'Pris / offert (kr)',notes:'Anteckningar',saveProject:'Spara projekt',cancel:'Avbryt',back:'Tillbaka',searchProject:'Sök projekt',searchProjectPh:'Projektnamn eller nummer...',searchClient:'Sök kund',searchClientPh:'Kundens namn...',start:'Starttid',end:'Sluttid',break:'Rast (minuter)',saveHours:'Spara timmar',material:'Material',cost:'Kostnad (kr)',note:'Anteckning',saveMaterial:'Spara material',restoreBackup:'Återställ backup',editProject:'Redigera projekt',edit:'Redigera',deleteProject:'Ta bort',deleteCurrentProject:'Ta bort projektet',deleteConfirm:'Är du säker på att du vill ta bort projektet?',noProjects:'Inga projekt.',noClients:'Inga kunder.',noHours:'Inga registrerade timmar.',noMaterials:'Inga registrerade material.',hoursLower:'timmar',breakLower:'rast',backupRestored:'Backup återställd.',invalidBackup:'Ogiltig backup.',offers:'OFFERTER',newOffer:'+ Skapa ny offert',newOfferTitle:'Ny offert',editOffer:'Redigera offert',offerNumber:'Offertnummer',offerUnsent:'Ej skickad',offerSent:'Skickad',offerUnpaid:'Obetald',offerPaid:'Betald',offerSaved:'Sparad',all:'Alla',workLines:'Arbeten',addWork:'+ Lägg till arbete',addMaterial:'+ Lägg till material',description:'Beskrivning',quantity:'Antal',vat:'Moms (%)',subtotal:'Exkl. moms',total:'TOTALT',saveOffer:'Spara offert',deleteOffer:'Ta bort offert',deleteOfferConfirm:'Är du säker på att du vill ta bort offerten?',noOffers:'Inga offerter i denna kategori.',pdf:'PDF'}
+ sq:{langBtn:'SV',backup:'Backup',projects:'Projektet',clients:'Klientët',hours:'Orët',materials:'Materialet',newProject:'+ Projekt i ri',newProjectTitle:'Projekt i ri',project:'Projekti',date:'Data',projectName:'Emri i projektit',projectNumber:'Numri i projektit',client:'Klienti',phone:'Telefoni',address:'Adresa',workType:'Lloji i punës',chooseWork:'Zgjidh llojin e punës',status:'Statusi',active:'Aktiv',waiting:'Në pritje',done:'Mbaruar',offer:'Çmimi / oferta (kr)',notes:'Shënime',saveProject:'Ruaj projektin',cancel:'Anulo',back:'Kthehu',searchProject:'Kërko projekt',searchProjectPh:'Emër ose numër projekti...',searchClient:'Kërko klient',searchClientPh:'Emri i klientit...',start:'Fillimi',end:'Mbarimi',break:'Pushim (minuta)',saveHours:'Ruaj orët',material:'Materiali',cost:'Kosto (kr)',note:'Shënim',saveMaterial:'Ruaj materialin',saveBackup:'Ruaj backup',restoreBackup:'Rikthe backup',editProject:'Ndrysho projektin',edit:'Ndrysho',deleteProject:'Fshi',deleteCurrentProject:'Fshi projektin',deleteConfirm:'Je i sigurt që dëshiron ta fshish këtë projekt?',noProjects:'Nuk ka projekte.',noClients:'Nuk ka klientë.',noHours:'Nuk ka orë të regjistruara.',noMaterials:'Nuk ka materiale të regjistruara.',hoursLower:'orë',breakLower:'pushim',backupRestored:'Backup u rikthye.',invalidBackup:'Backup i pavlefshëm.',offers:'OFERTA',newOffer:'+ Krijo ofertë të re',newOfferTitle:'Ofertë e re',editOffer:'Edito ofertën',offerNumber:'Nr. ofertës',offerUnsent:'E pa dërguar',offerSent:'E dërguar',offerUnpaid:'E pa paguar',offerPaid:'E paguar',offerSaved:'E ruajtur',all:'Të gjitha',workLines:'Punët',addWork:'+ Shto punë',addMaterial:'+ Shto material',description:'Përshkrimi',quantity:'Sasia',vat:'Moms (%)',subtotal:'Pa moms',total:'TOTALI',saveOffer:'Ruaj ofertën',deleteOffer:'Fshi ofertën',deleteOfferConfirm:'Je i sigurt që dëshiron ta fshish këtë ofertë?',noOffers:'Nuk ka oferta në këtë kategori.',pdf:'PDF'},
+ sv:{langBtn:'SQ',backup:'Backup',projects:'Projekt',clients:'Kunder',hours:'Timmar',materials:'Material',newProject:'+ Nytt projekt',newProjectTitle:'Nytt projekt',project:'Projekt',date:'Datum',projectName:'Projektnamn',projectNumber:'Projektnummer',client:'Kund',phone:'Telefon',address:'Adress',workType:'Typ av arbete',chooseWork:'Välj typ av arbete',status:'Status',active:'Aktiv',waiting:'Väntar',done:'Klar',offer:'Pris / offert (kr)',notes:'Anteckningar',saveProject:'Spara projekt',cancel:'Avbryt',back:'Tillbaka',searchProject:'Sök projekt',searchProjectPh:'Projektnamn eller nummer...',searchClient:'Sök kund',searchClientPh:'Kundens namn...',start:'Starttid',end:'Sluttid',break:'Rast (minuter)',saveHours:'Spara timmar',material:'Material',cost:'Kostnad (kr)',note:'Anteckning',saveMaterial:'Spara material',saveBackup:'Spara backup',restoreBackup:'Återställ backup',editProject:'Redigera projekt',edit:'Redigera',deleteProject:'Ta bort',deleteCurrentProject:'Ta bort projektet',deleteConfirm:'Är du säker på att du vill ta bort projektet?',noProjects:'Inga projekt.',noClients:'Inga kunder.',noHours:'Inga registrerade timmar.',noMaterials:'Inga registrerade material.',hoursLower:'timmar',breakLower:'rast',backupRestored:'Backup återställd.',invalidBackup:'Ogiltig backup.',offers:'OFFERTER',newOffer:'+ Skapa ny offert',newOfferTitle:'Ny offert',editOffer:'Redigera offert',offerNumber:'Offertnummer',offerUnsent:'Ej skickad',offerSent:'Skickad',offerUnpaid:'Obetald',offerPaid:'Betald',offerSaved:'Sparad',all:'Alla',workLines:'Arbeten',addWork:'+ Lägg till arbete',addMaterial:'+ Lägg till material',description:'Beskrivning',quantity:'Antal',vat:'Moms (%)',subtotal:'Exkl. moms',total:'TOTALT',saveOffer:'Spara offert',deleteOffer:'Ta bort offert',deleteOfferConfirm:'Är du säker på att du vill ta bort offerten?',noOffers:'Inga offerter i denna kategori.',pdf:'PDF'}
 };
 
-let projects=load(PROJECTS_KEY,[]), hours=load(HOURS_KEY,[]), materials=load(MATERIALS_KEY,[]), offers=load(OFFERS_KEY,[]), currentLang=localStorage.getItem(LANG_KEY)||'sq';
+let projects=load(PROJECTS_KEY,[]), hours=load(HOURS_KEY,[]), materials=load(MATERIALS_KEY,[]), offers=load(OFFERS_KEY,[]), invoices=load(INVOICES_KEY,[]), currentLang=localStorage.getItem(LANG_KEY)||'sq';
+let photos=load(PHOTOS_KEY,[]), measures=load(MEASURES_KEY,[]), reports=load(REPORTS_KEY,[]);
 offers=offers.map(o=>({...o,status:o.status==='accepted'?'unpaid':(o.status||'unsent')}));persistAll();
 let offerFilter='all';
 function $(id){return document.getElementById(id)}
 function load(k,d){try{const x=JSON.parse(localStorage.getItem(k));return Array.isArray(x)?x:d}catch(e){return d}}
-function persistAll(){localStorage.setItem(PROJECTS_KEY,JSON.stringify(projects));localStorage.setItem(HOURS_KEY,JSON.stringify(hours));localStorage.setItem(MATERIALS_KEY,JSON.stringify(materials));localStorage.setItem(OFFERS_KEY,JSON.stringify(offers))}
+function persistAll(){localStorage.setItem(PROJECTS_KEY,JSON.stringify(projects));localStorage.setItem(HOURS_KEY,JSON.stringify(hours));localStorage.setItem(MATERIALS_KEY,JSON.stringify(materials));localStorage.setItem(OFFERS_KEY,JSON.stringify(offers));localStorage.setItem(INVOICES_KEY,JSON.stringify(invoices));localStorage.setItem(PHOTOS_KEY,JSON.stringify(photos));localStorage.setItem(MEASURES_KEY,JSON.stringify(measures));localStorage.setItem(REPORTS_KEY,JSON.stringify(reports))}
 function tr(k){return (I18N[currentLang]&&I18N[currentLang][k])||I18N.sq[k]||k}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function uid(){return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)}
@@ -196,7 +304,7 @@ function statusText(s){return s==='done'?tr('done'):s==='waiting'?tr('waiting'):
 function projectHours(id){return hours.filter(h=>h.projectId===id).reduce((a,b)=>a+Number(b.total||0),0)}
 function projectMaterials(id){return materials.filter(m=>m.projectId===id).reduce((a,b)=>a+Number(m.cost||0),0)}
 
-function showView(id){['homeView','projectFormView','projectsView','clientsView','hoursView','materialsView','offersView','offerFormView'].forEach(v=>$(v).classList.toggle('hidden',v!==id));if(id==='projectsView')renderProjects();if(id==='clientsView')renderClients();if(id==='hoursView')renderHours();if(id==='materialsView')renderMaterials();if(id==='offersView')renderOffers();window.scrollTo(0,0)}
+function showView(id){['homeView','projectFormView','projectsView','clientsView','hoursView','materialsView','offersView','offerFormView','photosView','measureView','voiceView'].forEach(v=>$(v).classList.toggle('hidden',v!==id));if(id==='projectsView')renderProjects();if(id==='clientsView')renderClients();if(id==='hoursView')renderHours();if(id==='materialsView')renderMaterials();if(id==='offersView')renderOffers();if(id==='invoicesView')renderInvoices();if(id==='photosView')renderPhotos();if(id==='measureView')renderMeasureHistory();window.scrollTo(0,0)}
 function newProject(){clearProjectForm();showView('projectFormView')}
 function clearProjectForm(){$('deleteCurrentProjectBtn').classList.add('hidden');['projectId','projectName','projectNumber','clientName','phone','address','price','notes'].forEach(id=>$(id).value='');$('type').value='';$('status').value='active';$('projectFormTitle').textContent=tr('newProjectTitle')}
 function saveProject(){const id=$('projectId').value;const p={id:id||uid(),projectName:$('projectName').value.trim(),projectNumber:$('projectNumber').value.trim(),clientName:$('clientName').value.trim(),phone:$('phone').value.trim(),address:$('address').value.trim(),type:$('type').value,status:$('status').value,price:Number($('price').value||0),notes:$('notes').value.trim(),updatedAt:new Date().toISOString()};if(!p.projectName){$('projectName').focus();return}if(!p.projectNumber)p.projectNumber=String(projects.length+1).padStart(3,'0');const i=projects.findIndex(x=>x.id===p.id);if(i>=0)projects[i]=p;else projects.push(p);persistAll();refreshProjectSelectors();renderHome();showView('projectsView')}
@@ -210,7 +318,7 @@ function saveHours(){const projectId=$('hoursProject').value;if(!projectId)retur
 function renderHours(){refreshProjectSelectors();const list=[...hours].sort((a,b)=>(b.date||'').localeCompare(a.date||''));$('hoursList').innerHTML=list.length?list.map(h=>{const p=projects.find(x=>x.id===h.projectId)||{};return `<div class="item"><h3>${esc(h.date)} — ${Number(h.total||0).toFixed(1)} ${tr('hoursLower')}</h3><div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}<br>${esc(h.start)}–${esc(h.end)} • ${tr('breakLower')} ${Number(h.breakMinutes||0)} min</div></div>`}).join(''):`<div class="empty">${tr('noHours')}</div>`}
 function saveMaterial(){const projectId=$('materialProject').value;if(!projectId)return;materials.unshift({id:uid(),projectId,date:$('materialDate').value||today(),name:$('materialName').value.trim(),cost:Number($('materialCost').value||0),note:$('materialNote').value.trim()});persistAll();$('materialName').value='';$('materialCost').value='';$('materialNote').value='';renderMaterials();renderHome()}
 function renderMaterials(){refreshProjectSelectors();$('materialsList').innerHTML=materials.length?materials.map(m=>{const p=projects.find(x=>x.id===m.projectId)||{};return `<div class="item"><h3>${esc(m.name||tr('material'))} — ${Number(m.cost||0).toLocaleString('sv-SE')} kr</h3><div class="meta">${esc(m.date)} • ${esc(p.projectNumber||'')} — ${esc(p.projectName||'')} ${m.note?'<br>'+esc(m.note):''}</div></div>`}).join(''):`<div class="empty">${tr('noMaterials')}</div>`}
-function refreshProjectSelectors(){const opts=projects.map(p=>`<option value="${esc(p.id)}">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</option>`).join('');$('hoursProject').innerHTML=opts;$('materialProject').innerHTML=opts}
+function refreshProjectSelectors(){const opts=projects.map(p=>`<option value="${esc(p.id)}">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</option>`).join('');['hoursProject','materialProject','photoProject','measureProject','voiceProject'].forEach(id=>{if($(id))$(id).innerHTML=opts})}
 function renderHome(){$('countProjects').textContent=projects.length;$('countClients').textContent=new Set(projects.map(p=>(p.clientName||'').trim()).filter(Boolean)).size;$('countHours').textContent=hours.reduce((a,b)=>a+Number(b.total||0),0).toFixed(1)}
 function normalizeOfferStatus(s){return s==='accepted'?'unpaid':(s||'unsent')}
 function offerStatusText(s){s=normalizeOfferStatus(s);return s==='unsent'?tr('offerUnsent'):s==='sent'?tr('offerSent'):s==='unpaid'?tr('offerUnpaid'):tr('offerPaid')}
@@ -473,17 +581,290 @@ async function buildOfferPdf(lang,action='share'){
   if(view) printOffer(currentPdfOfferId);
 }
 
-function exportBackup(){const blob=new Blob([JSON.stringify({version:5,projects,hours,materials,offers},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='iliri-maleri-backup.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);alert('Backup u ruajt me sukses ✅')}
-function importBackup(file){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);projects=Array.isArray(d.projects)?d.projects:[];hours=Array.isArray(d.hours)?d.hours:[];materials=Array.isArray(d.materials)?d.materials:[];offers=Array.isArray(d.offers)?d.offers:[];persistAll();refreshProjectSelectors();renderHome();alert(tr('backupRestored'))}catch(e){alert(tr('invalidBackup'))}};r.readAsText(file)}
+
+function projectLabel(id){const p=projects.find(x=>x.id===id);return p?((p.projectNumber||'')+' — '+(p.projectName||'')):'-'}
+
+function compressPhoto(file,cb){
+  const r=new FileReader();r.onload=e=>{const im=new Image();im.onload=()=>{let w=im.width,h=im.height,max=1200;if(w>max||h>max){const k=Math.min(max/w,max/h);w*=k;h*=k}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);cb(c.toDataURL('image/jpeg',.72))};im.src=e.target.result};r.readAsDataURL(file)
+}
+function addPhotos(files){
+  const pid=$('photoProject').value, stage=$('photoStage').value;if(!pid){alert('Krijo ose zgjidh një projekt.');return}
+  [...files].forEach(f=>compressPhoto(f,data=>{photos.push({id:uid(),projectId:pid,stage,data,date:new Date().toISOString()});persistAll();renderPhotos()}))
+}
+function deletePhoto(id){photos=photos.filter(x=>x.id!==id);persistAll();renderPhotos()}
+function renderPhotos(){
+  const pid=$('photoProject')?$('photoProject').value:''; const box=$('photoList');if(!box)return;
+  const groups=[['before','Före / Para'],['during','Under arbete / Gjatë punës'],['after','Efter / Pas']];
+  box.innerHTML=groups.map(([st,title])=>{const a=photos.filter(x=>x.projectId===pid&&x.stage===st);return `<h3 style="margin-top:18px">${title} (${a.length})</h3><div class="photo-grid">${a.map(x=>`<div class="photo-card"><img src="${x.data}"><button class="danger" onclick="deletePhoto('${x.id}')">Fshi</button></div>`).join('')}</div>`}).join('');
+}
+
+let lastMeasure=null;
+function calcMeasure(){
+  const L=Number($('roomLength').value||0),W=Number($('roomWidth').value||0),H=Number($('roomHeight').value||0),O=Number($('roomOpenings').value||0);
+  const ceiling=L*W, walls=Math.max(0,2*(L+W)*H-O), total=walls+ceiling;
+  const laborPrice=Number($('laborM2Price').value||0), materialPrice=Number($('materialM2Price').value||0);
+  lastMeasure={projectId:$('measureProject').value,length:L,width:W,height:H,openings:O,walls,ceiling,total,laborPrice,materialPrice,labor:total*laborPrice,material:total*materialPrice,grand:total*(laborPrice+materialPrice),date:today()};
+  $('measureResult').innerHTML=`<b>Muret / Väggar:</b> ${walls.toFixed(2)} m²<br><b>Tavani / Tak:</b> ${ceiling.toFixed(2)} m²<br><b>Gjithsej / Totalt:</b> ${total.toFixed(2)} m²<br><b>Puna / Arbete:</b> ${lastMeasure.labor.toLocaleString('sv-SE',{maximumFractionDigits:0})} kr<br><b>Material:</b> ${lastMeasure.material.toLocaleString('sv-SE',{maximumFractionDigits:0})} kr<br><b>TOTAL:</b> ${lastMeasure.grand.toLocaleString('sv-SE',{maximumFractionDigits:0})} kr`;
+  return lastMeasure
+}
+function saveMeasure(){const m=calcMeasure();if(!m.projectId){alert('Zgjidh projektin.');return}m.id=uid();measures.push(m);persistAll();renderMeasureHistory()}
+function renderMeasureHistory(){const box=$('measureHistory');if(!box)return;const pid=$('measureProject').value;const a=measures.filter(x=>x.projectId===pid);box.innerHTML=a.length?'<h3 style="margin-top:18px">Matjet e ruajtura</h3>'+a.slice().reverse().map(x=>`<div class="item"><b>${x.date}</b><div class="meta">${x.walls.toFixed(2)} m² mure • ${x.ceiling.toFixed(2)} m² tavan • ${x.grand.toLocaleString('sv-SE',{maximumFractionDigits:0})} kr</div></div>`).join(''):''}
+function measureToOffer(){
+  const m=calcMeasure();if(!m.projectId){alert('Zgjidh projektin.');return}
+  const p=projects.find(x=>x.id===m.projectId);newOffer();
+  if(p){$('offerClient').value=p.clientName||'';$('offerPhone').value=p.phone||'';$('offerAddress').value=p.address||''}
+  $('workLines').innerHTML='';$('materialLines').innerHTML='';
+  addOfferLine('work',{description:`Måleriarbete ${m.total.toFixed(2)} m²`,qty:m.total.toFixed(2),unitPrice:m.laborPrice});
+  addOfferLine('material',{description:`Målerimaterial ${m.total.toFixed(2)} m²`,qty:m.total.toFixed(2),unitPrice:m.materialPrice});
+  calcOffer()
+}
+
+function parseAlbanianReport(){
+  const t=$('voiceText').value.trim(); if(!t)return;
+  const hm=t.match(/(\d+(?:[.,]\d+)?)\s*(?:orë|ore|ora)/i); if(hm)$('voiceHours').value=hm[1].replace(',','.');
+  const pm=t.match(/\b(?:në|ne)\s+([A-ZÅÄÖÇËa-zåäöçë0-9\- ]+?)(?=,|\.|;|\s+(?:spatull|lye|boj|tapet|spray|pun|bëra|bera|dhe)\b|$)/i); if(pm)$('voicePlace').value=pm[1].trim();
+  const jobs=[];
+  if(/spatull|spack/i.test(t))jobs.push('Spatullim');
+  if(/lye|boj[ëe]|m[ëe] boj/i.test(t))jobs.push('Lyerje');
+  if(/tapet/i.test(t))jobs.push('Tapet');
+  if(/spray|sp[ëe]rkat/i.test(t))jobs.push('Spray');
+  if(/lëm|lem|slip|smeril/i.test(t))jobs.push('Lëmim');
+  if(/grund|astar/i.test(t))jobs.push('Astar');
+  $('voiceWork').value=jobs.length?jobs.join(', '):t;
+  if(!$('voiceDate').value)$('voiceDate').value=today()
+}
+async function translateVoice(){
+  const t=$('voiceText').value.trim();
+  if(!t)return;
+  parseAlbanianReport();
+
+  // First try the existing online translator.
+  try{
+    const online=await translateSqToSv(t);
+    if(online && online.trim() && online.trim().toLowerCase()!==t.toLowerCase()){
+      $('voiceSwedish').value=online.trim();
+      return;
+    }
+  }catch(e){}
+
+  // Reliable offline fallback for common painter daily reports.
+  const hours=$('voiceHours').value;
+  const place=$('voicePlace').value.trim();
+  const low=t.toLowerCase();
+  let tasks=[];
+
+  if(/spatull|spakl|spack/i.test(low)) tasks.push('spacklade');
+  if(/l[eë]m|lemov|slip|zmeril/i.test(low)) tasks.push('slipade');
+  if(/astar|grund/i.test(low)) tasks.push('grundmålade');
+  if(/lye|lyeva|lyem|boj[eë]|m[ëe] boj/i.test(low)) tasks.push('målade');
+  if(/hoq.*tapet|hiq.*tapet/i.test(low)) tasks.push('tog bort tapet');
+  else if(/tapet/i.test(low)) tasks.push('tapetserade');
+  if(/spray|sp[ëe]rkat/i.test(low)) tasks.push('sprutmålade');
+  if(/fug|silikon/i.test(low)) tasks.push('fogade');
+
+  let first='Idag arbetade jag';
+  if(hours) first+=` ${hours} timmar`;
+  if(place) first+=` i ${place}`;
+  first+='.';
+
+  let second='';
+  if(tasks.length===1) second=` Jag ${tasks[0]}.`;
+  if(tasks.length===2) second=` Jag ${tasks[0]} och ${tasks[1]}.`;
+  if(tasks.length>2) second=` Jag ${tasks.slice(0,-1).join(', ')} och ${tasks[tasks.length-1]}.`;
+
+  $('voiceSwedish').value=(first+second).trim();
+}
+
+function parseSwedishReport(){
+  const t=$('voiceText').value.trim(); if(!t)return;
+  const hm=t.match(/(\d+(?:[.,]\d+)?)\s*(?:timmar|timme|h)\b/i);
+  if(hm)$('voiceHours').value=hm[1].replace(',','.');
+  const pm=t.match(/\b(?:i|på)\s+([A-ZÅÄÖa-zåäö0-9\- ]+?)(?=,|\.|;|\s+(?:spackl|mål|tapet|sprut|slip|grund|jobb|arbet)\b|$)/i);
+  if(pm)$('voicePlace').value=pm[1].trim();
+  const jobs=[];
+  if(/spackl/i.test(t))jobs.push('Spackling');
+  if(/mål|målade|målat|målning/i.test(t))jobs.push('Målning');
+  if(/tapet/i.test(t))jobs.push('Tapetsering');
+  if(/sprut/i.test(t))jobs.push('Sprutmålning');
+  if(/slip/i.test(t))jobs.push('Slipning');
+  if(/grund/i.test(t))jobs.push('Grundmålning');
+  $('voiceWork').value=jobs.length?jobs.join(', '):t;
+  if(!$('voiceDate').value)$('voiceDate').value=today();
+  $('voiceSwedish').value=t;
+}
+
+function startVoiceLang(lang){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const status=$('voiceStatus');
+  const sqBtn=$('voiceStartSqBtn'), svBtn=$('voiceStartSvBtn');
+
+  if(!SR){
+    status.textContent='Safari nuk e mbështet njohjen direkte të zërit. Përdor mikrofonin e tastierës së iPhone në kutinë “Teksti shqip”.';
+    $('voiceText').focus();
+    return;
+  }
+
+  const r=new SR();
+  r.lang=lang==='sv'?'sv-SE':'sq-AL';
+  r.interimResults=false;
+  r.continuous=false;
+  r.maxAlternatives=1;
+
+  sqBtn.disabled=true; svBtn.disabled=true;
+  if(lang==='sv'){
+    svBtn.textContent='🔴 Lyssnar...';
+    status.textContent='Po dëgjoj suedisht...';
+  }else{
+    sqBtn.textContent='🔴 Po dëgjoj...';
+    status.textContent='Po dëgjoj shqip...';
+  }
+
+  r.onresult=e=>{
+    const txt=e.results[0][0].transcript;
+    $('voiceText').value=txt;
+    if(lang==='sv') parseSwedishReport();
+    else parseAlbanianReport();
+    status.textContent='U lexua. Fushat u plotësuan automatikisht.';
+  };
+
+  r.onerror=e=>{
+    status.textContent='Nuk u lexua zëri. Provo përsëri ose kontrollo lejen e mikrofonit.';
+  };
+
+  r.onend=()=>{
+    sqBtn.disabled=false; svBtn.disabled=false;
+    sqBtn.textContent='🎙️ Fol shqip';
+    svBtn.textContent='🎙️ Prata svenska';
+  };
+  try{r.start()}catch(e){status.textContent='Mikrofoni është i zënë. Provo përsëri.'}
+}
+
+function saveVoiceReport(){
+  parseAlbanianReport();const pid=$('voiceProject').value,h=Number($('voiceHours').value||0),d=$('voiceDate').value||today(),place=$('voicePlace').value.trim(),work=$('voiceWork').value.trim(),sq=$('voiceText').value.trim(),sv=$('voiceSwedish').value.trim();
+  if(!pid){alert('Zgjidh projektin.');return}
+  reports.push({id:uid(),projectId:pid,date:d,hours:h,place,work,sq,sv,createdAt:new Date().toISOString()});
+  if(h>0)hours.push({id:uid(),projectId:pid,date:d,start:'',end:'',breakMin:0,total:h,note:[place,work].filter(Boolean).join(' — ')});
+  const p=projects.find(x=>x.id===pid);if(p){const add=`${d}: ${h||''} orë ${place?'- '+place:''} ${work?'- '+work:''}`.trim();p.notes=((p.notes||'')+(p.notes?'\n':'')+add).trim()}
+  persistAll();renderHome();renderHours();alert('Raporti u ruajt.')
+}
+
+function exportBackup(){
+  const blob=new Blob([JSON.stringify({version:7,projects,hours,materials,offers,invoices,photos,measures,reports},null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  const d=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  const stamp=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  a.href=URL.createObjectURL(blob);
+  a.download=`ILIRI_Maleri_Backup_${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  localStorage.setItem(LAST_BACKUP_KEY,String(Date.now()));
+  alert('Backup u ruajt me sukses ✅');
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function checkWeeklyBackupReminder(){
+  const now=Date.now();
+  const raw=localStorage.getItem(LAST_BACKUP_KEY);
+  if(!raw){
+    localStorage.setItem(LAST_BACKUP_KEY,String(now));
+    return;
+  }
+  const last=Number(raw);
+  if(!Number.isFinite(last) || now-last>=BACKUP_INTERVAL_MS){
+    const msg='Ka kaluar një javë nga backup-i i fundit. Shtyp Ruaj backup për të ruajtur një kopje të re.';
+    setTimeout(()=>alert(msg),450);
+  }
+}
+
+function importBackup(file){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);projects=Array.isArray(d.projects)?d.projects:[];hours=Array.isArray(d.hours)?d.hours:[];materials=Array.isArray(d.materials)?d.materials:[];offers=Array.isArray(d.offers)?d.offers:[];invoices=Array.isArray(d.invoices)?d.invoices:[];photos=Array.isArray(d.photos)?d.photos:[];measures=Array.isArray(d.measures)?d.measures:[];reports=Array.isArray(d.reports)?d.reports:[];persistAll();refreshProjectSelectors();renderHome();alert(tr('backupRestored'))}catch(e){alert(tr('invalidBackup'))}};r.readAsText(file)}
 function setText(id,key){const el=$(id);if(el)el.textContent=tr(key)}
-function applyLang(){document.documentElement.lang=currentLang;setText('langBtn','langBtn');setText('btnProjects','projects');setText('btnClients','clients');setText('btnHours','hours');setText('btnMaterials','materials');setText('btnNewProject','newProject');setText('statProjects','projects');setText('statClients','clients');setText('statHours','hours');setText('lblProjectName','projectName');setText('lblProjectNumber','projectNumber');setText('lblClient','client');setText('lblPhone','phone');setText('lblAddress','address');setText('lblType','workType');setText('lblStatus','status');setText('lblPrice','offer');setText('lblNotes','notes');setText('saveProjectBtn','saveProject');setText('cancelProjectBtn','cancel');setText('deleteCurrentProjectBtn','deleteCurrentProject');setText('projectsTitle','projects');setText('clientsTitle','clients');setText('hoursTitle','hours');setText('materialsTitle','materials');setText('lblSearchProject','searchProject');setText('lblSearchClient','searchClient');$('projectSearch').placeholder=tr('searchProjectPh');$('clientSearch').placeholder=tr('searchClientPh');document.querySelectorAll('.backBtn').forEach(el=>el.textContent=tr('back'));document.querySelectorAll('.lblProject').forEach(el=>el.textContent=tr('project'));document.querySelectorAll('.lblDate').forEach(el=>el.textContent=tr('date'));setText('lblStart','start');setText('lblEnd','end');setText('lblBreak','break');setText('saveHoursBtn','saveHours');setText('lblMaterialName','material');setText('lblMaterialCost','cost');setText('lblMaterialNote','note');setText('saveMaterialBtn','saveMaterial');$('type').options[0].textContent=tr('chooseWork');$('status').options[0].textContent=tr('active');$('status').options[1].textContent=tr('waiting');$('status').options[2].textContent=tr('done');$('projectFormTitle').textContent=$('projectId').value?tr('editProject'):tr('newProjectTitle');setText('btnOffers','offers');setText('offersTitle','offers');setText('newOfferBtn','newOffer');setText('filterUnsent','offerUnsent');setText('filterSent','offerSent');setText('filterUnpaid','offerUnpaid');setText('filterPaid','offerPaid');setText('filterAll','all');setText('lblOfferNumber','offerNumber');setText('lblOfferDate','date');setText('lblOfferClient','client');setText('lblOfferPhone','phone');setText('lblOfferAddress','address');setText('lblOfferStatus','status');if($('offerStatus')){const so=$('offerStatus').options; if(so[0])so[0].textContent=tr('offerUnsent'); if(so[1])so[1].textContent=tr('offerSent'); if(so[2])so[2].textContent=tr('offerUnpaid'); if(so[3])so[3].textContent=tr('offerPaid');}setText('workLinesTitle','workLines');setText('materialLinesTitle','materials');setText('addWorkLineBtn','addWork');setText('addMaterialLineBtn','addMaterial');setText('lblVat','vat');setText('subtotalLabel','subtotal');setText('vatLabel','vat');setText('totalLabel','total');setText('lblOfferNotes','notes');setText('saveOfferBtn','saveOffer');setText('cancelOfferBtn','cancel');setText('deleteOfferBtn','deleteOffer');document.querySelectorAll('.backToOffersBtn').forEach(el=>el.textContent=tr('back'));$('offerFormTitle').textContent=$('offerId').value?tr('editOffer'):tr('newOfferTitle');renderHome();if(!$('projectsView').classList.contains('hidden'))renderProjects();if(!$('clientsView').classList.contains('hidden'))renderClients();if(!$('hoursView').classList.contains('hidden'))renderHours();if(!$('materialsView').classList.contains('hidden'))renderMaterials();if(!$('offersView').classList.contains('hidden'))renderOffers()}
+function applyLang(){document.documentElement.lang=currentLang;setText('langBtn','langBtn');setText('backupBtn','backup');setText('btnProjects','projects');setText('btnClients','clients');setText('btnHours','hours');setText('btnMaterials','materials');setText('btnNewProject','newProject');setText('statProjects','projects');setText('statClients','clients');setText('statHours','hours');setText('lblProjectName','projectName');setText('lblProjectNumber','projectNumber');setText('lblClient','client');setText('lblPhone','phone');setText('lblAddress','address');setText('lblType','workType');setText('lblStatus','status');setText('lblPrice','offer');setText('lblNotes','notes');setText('saveProjectBtn','saveProject');setText('cancelProjectBtn','cancel');setText('deleteCurrentProjectBtn','deleteCurrentProject');setText('projectsTitle','projects');setText('clientsTitle','clients');setText('hoursTitle','hours');setText('materialsTitle','materials');setText('lblSearchProject','searchProject');setText('lblSearchClient','searchClient');$('projectSearch').placeholder=tr('searchProjectPh');$('clientSearch').placeholder=tr('searchClientPh');document.querySelectorAll('.backBtn').forEach(el=>el.textContent=tr('back'));document.querySelectorAll('.lblProject').forEach(el=>el.textContent=tr('project'));document.querySelectorAll('.lblDate').forEach(el=>el.textContent=tr('date'));setText('lblStart','start');setText('lblEnd','end');setText('lblBreak','break');setText('saveHoursBtn','saveHours');setText('lblMaterialName','material');setText('lblMaterialCost','cost');setText('lblMaterialNote','note');setText('saveMaterialBtn','saveMaterial');document.getElementById('saveBackupVisibleBtn').textContent='💾 Ruaj backup';document.getElementById('restoreBackupVisibleBtn').textContent='↩️ Rikthe backup';$('type').options[0].textContent=tr('chooseWork');$('status').options[0].textContent=tr('active');$('status').options[1].textContent=tr('waiting');$('status').options[2].textContent=tr('done');$('projectFormTitle').textContent=$('projectId').value?tr('editProject'):tr('newProjectTitle');setText('btnOffers','offers');setText('offersTitle','offers');setText('newOfferBtn','newOffer');setText('filterUnsent','offerUnsent');setText('filterSent','offerSent');setText('filterUnpaid','offerUnpaid');setText('filterPaid','offerPaid');setText('filterAll','all');setText('lblOfferNumber','offerNumber');setText('lblOfferDate','date');setText('lblOfferClient','client');setText('lblOfferPhone','phone');setText('lblOfferAddress','address');setText('lblOfferStatus','status');if($('offerStatus')){const so=$('offerStatus').options; if(so[0])so[0].textContent=tr('offerUnsent'); if(so[1])so[1].textContent=tr('offerSent'); if(so[2])so[2].textContent=tr('offerUnpaid'); if(so[3])so[3].textContent=tr('offerPaid');}setText('workLinesTitle','workLines');setText('materialLinesTitle','materials');setText('addWorkLineBtn','addWork');setText('addMaterialLineBtn','addMaterial');setText('lblVat','vat');setText('subtotalLabel','subtotal');setText('vatLabel','vat');setText('totalLabel','total');setText('lblOfferNotes','notes');setText('saveOfferBtn','saveOffer');setText('cancelOfferBtn','cancel');setText('deleteOfferBtn','deleteOffer');document.querySelectorAll('.backToOffersBtn').forEach(el=>el.textContent=tr('back'));$('offerFormTitle').textContent=$('offerId').value?tr('editOffer'):tr('newOfferTitle');renderHome();if(!$('projectsView').classList.contains('hidden'))renderProjects();if(!$('clientsView').classList.contains('hidden'))renderClients();if(!$('hoursView').classList.contains('hidden'))renderHours();if(!$('materialsView').classList.contains('hidden'))renderMaterials();if(!$('offersView').classList.contains('hidden'))renderOffers()}
+
+function nextInvoiceNumber(){
+  const y=new Date().getFullYear();
+  const nums=invoices.map(x=>String(x.number||'')).filter(n=>n.startsWith(y+'-')).map(n=>parseInt(n.split('-')[1],10)||0);
+  return `${y}-${String((nums.length?Math.max(...nums):0)+1).padStart(3,'0')}`;
+}
+function addInvoiceLine(v={}){
+  const d=document.createElement('div'); d.className='offer-line';
+  d.innerHTML=`<input class="desc" placeholder="Përshkrimi" value="${esc(v.description||'')}"><input class="qty" type="number" step="0.01" placeholder="Sasia/orët" value="${v.qty??''}"><input class="price" type="number" step="0.01" placeholder="Çmimi" value="${v.unitPrice??''}"><button class="danger" type="button">×</button>`;
+  d.querySelectorAll('input').forEach(i=>i.addEventListener('input',calcInvoice));
+  d.querySelector('button').addEventListener('click',()=>{d.remove();calcInvoice()});
+  $('invoiceLines').appendChild(d);
+}
+function collectInvoiceLines(){
+  return [...$('invoiceLines').querySelectorAll('.offer-line')].map(r=>({description:r.querySelector('.desc').value.trim(),qty:Number(r.querySelector('.qty').value||0),unitPrice:Number(r.querySelector('.price').value||0)})).filter(x=>x.description||x.qty||x.unitPrice);
+}
+function calcInvoice(){
+  const lines=collectInvoiceLines(), subtotal=lines.reduce((s,x)=>s+x.qty*x.unitPrice,0), pct=Number($('invoiceVat').value||0), vat=subtotal*pct/100, total=subtotal+vat;
+  const f=n=>Number(n||0).toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';
+  $('invoiceSubtotal').textContent=f(subtotal);$('invoiceVatAmount').textContent=f(vat);$('invoiceTotal').textContent=f(total);
+  return {subtotal,vat,total};
+}
+function clearInvoiceForm(){
+  $('invoiceId').value='';$('invoiceNumber').value=nextInvoiceNumber();$('invoiceDate').value=today();
+  const due=new Date();due.setDate(due.getDate()+30);$('invoiceDueDate').value=due.toISOString().slice(0,10);
+  $('invoiceClient').value='';$('invoicePhone').value='';$('invoiceAddress').value='';$('invoiceStatus').value='unpaid';$('invoiceVat').value='25';$('invoiceNotes').value='';$('invoiceLines').innerHTML='';addInvoiceLine();$('deleteInvoiceBtn').classList.add('hidden');$('invoiceFormTitle').textContent='Faturë e re';calcInvoice();
+}
+function newInvoice(){clearInvoiceForm();showView('invoiceFormView')}
+function saveInvoice(){
+  const id=$('invoiceId').value, totals=calcInvoice();
+  const o={id:id||uid(),number:$('invoiceNumber').value.trim()||nextInvoiceNumber(),date:$('invoiceDate').value||today(),dueDate:$('invoiceDueDate').value,client:$('invoiceClient').value.trim(),phone:$('invoicePhone').value.trim(),address:$('invoiceAddress').value.trim(),status:$('invoiceStatus').value||'unpaid',vatPct:Number($('invoiceVat').value||0),notes:$('invoiceNotes').value.trim(),lines:collectInvoiceLines(),...totals,updatedAt:new Date().toISOString()};
+  if(!o.client){$('invoiceClient').focus();return}
+  const i=invoices.findIndex(x=>x.id===o.id); if(i>=0)invoices[i]=o; else invoices.unshift(o);
+  persistAll();showView('invoicesView');
+}
+function editInvoice(id){
+  const o=invoices.find(x=>x.id===id);if(!o)return;
+  $('invoiceId').value=o.id;$('invoiceNumber').value=o.number||'';$('invoiceDate').value=o.date||today();$('invoiceDueDate').value=o.dueDate||'';$('invoiceClient').value=o.client||'';$('invoicePhone').value=o.phone||'';$('invoiceAddress').value=o.address||'';$('invoiceStatus').value=o.status||'unpaid';$('invoiceVat').value=o.vatPct??25;$('invoiceNotes').value=o.notes||'';$('invoiceLines').innerHTML='';(o.lines||[]).forEach(addInvoiceLine);if(!(o.lines||[]).length)addInvoiceLine();$('deleteInvoiceBtn').classList.remove('hidden');$('invoiceFormTitle').textContent='Ndrysho faturën';calcInvoice();showView('invoiceFormView');
+}
+function deleteInvoice(id){
+  if(!confirm('Ta fshij këtë faturë?'))return;
+  invoices=invoices.filter(x=>x.id!==id);persistAll();showView('invoicesView');
+}
+function renderInvoices(){
+  const list=[...invoices].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  $('invoicesList').innerHTML=list.length?list.map((o,idx)=>`<div class="item"><div class="section-title"><h3>${idx+1}. ${esc(o.number||'')} — ${esc(o.client||'')}</h3><span class="badge">${o.status==='paid'?'E paguar':'E pa paguar'}</span></div><div class="meta">${esc(o.date||'')} ${o.dueDate?'• Afati: '+esc(o.dueDate):''}<br><b>TOTALI:</b> ${Number(o.total||0).toLocaleString('sv-SE',{maximumFractionDigits:2})} kr</div><div class="row" style="margin-top:10px;grid-template-columns:1fr 1fr 1fr"><button class="editInvoiceBtn" data-id="${esc(o.id)}" type="button">Ndrysho</button><button class="viewInvoiceBtn secondary" data-id="${esc(o.id)}" type="button">👁️ Shiko</button><button class="danger deleteInvoiceListBtn" data-id="${esc(o.id)}" type="button">Fshi</button></div></div>`).join(''):'<div class="empty">Nuk ka fatura.</div>';
+  document.querySelectorAll('.editInvoiceBtn').forEach(b=>b.addEventListener('click',()=>editInvoice(b.dataset.id)));
+  document.querySelectorAll('.viewInvoiceBtn').forEach(b=>b.addEventListener('click',()=>printInvoice(b.dataset.id)));
+  document.querySelectorAll('.deleteInvoiceListBtn').forEach(b=>b.addEventListener('click',()=>deleteInvoice(b.dataset.id)));
+}
+let currentInvoiceId=null;
+function printInvoice(id){
+  currentInvoiceId=id;const o=invoices.find(x=>x.id===id);if(!o)return;
+  let v=document.getElementById('invoicePreview');
+  if(!v){v=document.createElement('div');v.id='invoicePreview';v.style.cssText='position:fixed;inset:0;z-index:99999;background:#fff;color:#111;overflow:auto;padding:20px;font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;';document.body.appendChild(v)}
+  const money=n=>Number(n||0).toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';
+  v.innerHTML=`<div style="max-width:760px;margin:0 auto"><div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:18px"><button class="pdf-close-btn" onclick="document.getElementById('invoicePreview').remove()">Kthehu</button><button onclick="buildInvoicePdf('${esc(id)}')">PDF</button></div><h1>ILIRI Måleri</h1><h2>FATURË ${esc(o.number||'')}</h2><p><b>Data:</b> ${esc(o.date||'')}<br><b>Afati:</b> ${esc(o.dueDate||'')}<br><b>Klienti:</b> ${esc(o.client||'')}<br><b>Telefoni:</b> ${esc(o.phone||'')}<br><b>Adresa:</b> ${esc(o.address||'')}</p><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;border-bottom:1px solid #ccc;padding:8px 4px">Përshkrimi</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Sasia</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Çmimi</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Shuma</th></tr></thead><tbody>${(o.lines||[]).map(x=>`<tr><td style="padding:8px 4px;border-bottom:1px solid #eee">${esc(x.description||'')}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${x.qty||0}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${money(x.unitPrice)}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${money((x.qty||0)*(x.unitPrice||0))}</td></tr>`).join('')}</tbody></table><div style="margin-top:20px;line-height:1.8"><b>Pa moms:</b> ${money(o.subtotal)}<br><b>Moms (${o.vatPct||0}%):</b> ${money(o.vat)}<br><b style="font-size:20px">TOTALI: ${money(o.total)}</b></div>${o.notes?`<p><b>Shënime:</b><br>${esc(o.notes)}</p>`:''}</div>`;
+}
+function buildInvoicePdf(id){
+  const o=invoices.find(x=>x.id===id);if(!o)return;
+  if(!window.jspdf||!window.jspdf.jsPDF){alert('PDF library nuk u ngarkua.');return}
+  const {jsPDF}=window.jspdf, doc=new jsPDF({unit:'mm',format:'a4'}), money=n=>Number(n||0).toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';
+  let y=18;doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text('ILIRI Måleri',16,y);doc.setFontSize(14);doc.text('FATURË '+String(o.number||''),194,y,{align:'right'});y+=10;
+  doc.setFont('helvetica','normal');doc.setFontSize(10.5);['Data: '+(o.date||''),'Afati: '+(o.dueDate||''),'Klienti: '+(o.client||''),'Telefoni: '+(o.phone||''),'Adresa: '+(o.address||'')].forEach(t=>{doc.text(t,16,y);y+=5});
+  y+=4;doc.setFont('helvetica','bold');doc.text('Përshkrimi',16,y);doc.text('Sasia',125,y,{align:'right'});doc.text('Çmimi',158,y,{align:'right'});doc.text('Shuma',194,y,{align:'right'});y+=5;doc.line(16,y,194,y);y+=5;doc.setFont('helvetica','normal');
+  (o.lines||[]).forEach(x=>{if(y>270){doc.addPage();y=18}doc.text(String(x.description||'').slice(0,60),16,y);doc.text(String(x.qty||0),125,y,{align:'right'});doc.text(money(x.unitPrice),158,y,{align:'right'});doc.text(money((x.qty||0)*(x.unitPrice||0)),194,y,{align:'right'});y+=6});
+  y+=5;doc.setFont('helvetica','bold');doc.text('Pa moms: '+money(o.subtotal),194,y,{align:'right'});y+=6;doc.text('Moms: '+money(o.vat),194,y,{align:'right'});y+=7;doc.setFontSize(13);doc.text('TOTALI: '+money(o.total),194,y,{align:'right'});
+  doc.save(`Fatura_${String(o.number||'').replace(/[^0-9A-Za-z_-]/g,'_')}.pdf`);
+}
+
 function toggleLang(){currentLang=currentLang==='sq'?'sv':'sq';localStorage.setItem(LANG_KEY,currentLang);applyLang()}
 
 function bind(){
  $('langBtn').addEventListener('click',toggleLang);
- $('backupBtn').addEventListener('click',exportBackup);
- $('restoreBackupBtn').addEventListener('click',()=>$('importFile').click());
  $('btnOffers').addEventListener('click',()=>showView('offersView'));
+
+ $('btnInvoices').addEventListener('click',()=>showView('invoicesView'));
+ $('newInvoiceBtn').addEventListener('click',newInvoice);
+ $('addInvoiceLineBtn').addEventListener('click',()=>addInvoiceLine());
+ $('invoiceVat').addEventListener('input',calcInvoice);
+ $('saveInvoiceBtn').addEventListener('click',saveInvoice);
+ $('cancelInvoiceBtn').addEventListener('click',()=>showView('invoicesView'));
+ $('deleteInvoiceBtn').addEventListener('click',()=>{const id=$('invoiceId').value;if(id)deleteInvoice(id)});
+ document.querySelectorAll('.backToInvoicesBtn').forEach(b=>b.addEventListener('click',()=>showView('invoicesView')));
+
  $('newOfferBtn').addEventListener('click',newOffer);
  document.querySelectorAll('.offerFilter').forEach(b=>b.addEventListener('click',()=>{offerFilter=b.dataset.status;renderOffers()}));
  $('addWorkLineBtn').addEventListener('click',()=>addOfferLine('work'));
@@ -497,6 +878,27 @@ function bind(){
  $('btnClients').addEventListener('click',()=>showView('clientsView'));
  $('btnHours').addEventListener('click',()=>showView('hoursView'));
  $('btnMaterials').addEventListener('click',()=>showView('materialsView'));
+ $('btnPhotos').addEventListener('click',()=>showView('photosView'));
+ $('btnMeasure').addEventListener('click',()=>showView('measureView'));
+ if($('btnVoice')) $('btnVoice').addEventListener('click',()=>showView('voiceView'));
+ $('photoProject').addEventListener('change',renderPhotos);
+ $('takePhotoBtn').addEventListener('click',()=>$('photoInput').click());
+ $('galleryPhotoBtn').addEventListener('click',()=>$('galleryInput').click());
+ $('photoInput').addEventListener('change',e=>{if(e.target.files&&e.target.files.length)addPhotos(e.target.files);e.target.value=''});
+ $('galleryInput').addEventListener('change',e=>{if(e.target.files&&e.target.files.length)addPhotos(e.target.files);e.target.value=''});
+ $('measureProject').addEventListener('change',renderMeasureHistory);
+ $('calcMeasureBtn').addEventListener('click',calcMeasure);
+ $('saveMeasureBtn').addEventListener('click',saveMeasure);
+ $('measureToOfferBtn').addEventListener('click',measureToOffer);
+ if($('voiceStartSqBtn')) $('voiceStartSqBtn').addEventListener('click',()=>startVoiceLang('sq'));
+ if($('voiceStartSvBtn')) $('voiceStartSvBtn').addEventListener('click',()=>startVoiceLang('sv'));
+ if($('parseVoiceBtn')) $('parseVoiceBtn').addEventListener('click',()=>{
+   const t=$('voiceText').value||'';
+   if(/\b(jag|idag|målade|spacklade|arbetade|timmar|på|i)\b/i.test(t)) parseSwedishReport();
+   else parseAlbanianReport();
+ });
+ if($('translateVoiceBtn')) $('translateVoiceBtn').addEventListener('click',translateVoice);
+ if($('saveVoiceReportBtn')) $('saveVoiceReportBtn').addEventListener('click',saveVoiceReport);
  $('btnNewProject').addEventListener('click',newProject);
  $('statProjectsCard').addEventListener('click',()=>showView('projectsView'));
  $('statClientsCard').addEventListener('click',()=>showView('clientsView'));
@@ -509,11 +911,13 @@ function bind(){
  $('clientSearch').addEventListener('input',renderClients);
  $('saveHoursBtn').addEventListener('click',saveHours);
  $('saveMaterialBtn').addEventListener('click',saveMaterial);
- $('importFile').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)importBackup(f)});
+ $('saveBackupVisibleBtn').addEventListener('click',exportBackup);
+ $('restoreBackupVisibleBtn').addEventListener('click',()=>$('importFile').click());
+ $('importFile').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)importBackup(f);e.target.value=''});
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
- $('hoursDate').value=today();$('materialDate').value=today();refreshProjectSelectors();bind();applyLang();renderHome();
+ $('hoursDate').value=today();$('materialDate').value=today();if($('voiceDate')) $('voiceDate').value=today();refreshProjectSelectors();bind();applyLang();renderHome();checkWeeklyBackupReminder();
 });
 </script>
 <div id="printOfferArea"></div>

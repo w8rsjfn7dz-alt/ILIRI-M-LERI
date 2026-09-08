@@ -239,7 +239,7 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
   <section id="invoicesView" class="hidden card">
     <div class="section-title"><h2 id="invoicesTitle">FATURAT</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
     <button id="newInvoiceBtn" type="button" style="width:100%;margin-top:12px">+ Krijo faturë të re</button>
-    <div class="status-grid" id="invoiceStatusFilters" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0">
+    <div id="invoiceStatusFilters" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0">
       <button type="button" class="invoiceFilterBtn" data-status="unsent">E pa dërguar</button>
       <button type="button" class="invoiceFilterBtn" data-status="sent">E dërguar</button>
       <button type="button" class="invoiceFilterBtn" data-status="unpaid">E pa paguar</button>
@@ -879,7 +879,6 @@ function bind(){
 
  $('newInvoiceBtn').addEventListener('click',newInvoice);
  if($('btnInvoicesSmall')) $('btnInvoicesSmall').addEventListener('click',()=>{invoiceFilter='all';showView('invoicesView')});
- document.querySelectorAll('.invoiceFilterBtn').forEach(b=>b.addEventListener('click',()=>{invoiceFilter=b.dataset.status;renderInvoices()}));
  $('addInvoiceLineBtn').addEventListener('click',()=>addInvoiceLine());
  $('invoiceVat').addEventListener('input',calcInvoice);
  $('saveInvoiceBtn').addEventListener('click',saveInvoice);
@@ -945,6 +944,13 @@ document.addEventListener('DOMContentLoaded',()=>{
 if($('btnReportsHome')) $('btnReportsHome').addEventListener('click',()=>{
   if(document.getElementById('reportsView')) showView('reportsView');
   else if(document.getElementById('btnReports')) document.getElementById('btnReports').click();
+});
+
+document.addEventListener('click',function(e){
+  const b=e.target.closest && e.target.closest('.invoiceFilterBtn');
+  if(!b)return;
+  invoiceFilter=b.dataset.status||'all';
+  renderInvoices();
 });
 </script>
 <div id="printOfferArea"></div>

@@ -1023,5 +1023,99 @@ if($('saveReportBtn')) $('saveReportBtn').addEventListener('click',saveNewReport
 if($('cancelReportBtn')) $('cancelReportBtn').addEventListener('click',()=>{$('reportFormBox').classList.add('hidden')});
 </script>
 <div id="printOfferArea"></div>
-\n<!-- ILIRI SIGNATURE TEST: local demo only -->\n<style>\n#iliriSignDemo{position:fixed;inset:0;background:#fff;z-index:99999;overflow:auto;padding:18px;font-family:Arial,sans-serif}#iliriSignDemo.hidden{display:none}#iliriSignDemo .sigbox{max-width:600px;margin:auto}#iliriSigCanvas{width:100%;height:190px;border:2px solid #bbb;border-radius:12px;touch-action:none;background:white}.sigrow{display:flex;gap:8px;margin-top:10px}.sigrow button{flex:1;padding:12px;border:0;border-radius:10px;background:#16834b;color:white;font-weight:700}.sigrow .gray{background:#666}.signed-ok{padding:12px;background:#eaf7ef;border-radius:10px;margin-top:12px}\n</style>\n<div id="iliriSignDemo" class="hidden"><div class="sigbox"><button id="iliriSigBack" style="background:#16834b;color:white;border:0;border-radius:9px;padding:10px 16px">Kthehu</button><h2>Prano dhe firmos ofertën</h2><p>Version prove – firma ruhet vetëm në këtë pajisje.</p><label>Emri dhe mbiemri</label><input id="iliriSigner" style="width:100%;padding:12px;margin:7px 0 12px;box-sizing:border-box" placeholder="Emri i klientit"><canvas id="iliriSigCanvas" width="900" height="300"></canvas><div class="sigrow"><button class="gray" id="iliriClearSig">Pastro</button><button id="iliriAcceptSig">Pranoj & Firmos</button></div><div id="iliriSignedResult"></div></div></div>\n<script>\n(function(){\nconst demo=document.getElementById('iliriSignDemo'),c=document.getElementById('iliriSigCanvas'),ctx=c.getContext('2d');let drawing=false,hasInk=false;ctx.lineWidth=4;ctx.lineCap='round';\nfunction pos(e){const r=c.getBoundingClientRect(),t=e.touches?e.touches[0]:e;return {x:(t.clientX-r.left)*c.width/r.width,y:(t.clientY-r.top)*c.height/r.height}}\nfunction start(e){drawing=true;hasInk=true;let p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);e.preventDefault()}function move(e){if(!drawing)return;let p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();e.preventDefault()}function end(){drawing=false}\n['mousedown','touchstart'].forEach(x=>c.addEventListener(x,start,{passive:false}));['mousemove','touchmove'].forEach(x=>c.addEventListener(x,move,{passive:false}));['mouseup','mouseleave','touchend'].forEach(x=>c.addEventListener(x,end));\ndocument.getElementById('iliriClearSig').onclick=()=>{ctx.clearRect(0,0,c.width,c.height);hasInk=false};document.getElementById('iliriSigBack').onclick=()=>demo.classList.add('hidden');\ndocument.getElementById('iliriAcceptSig').onclick=()=>{let n=document.getElementById('iliriSigner').value.trim();if(!n||!hasInk){alert('Shkruaj emrin dhe firmos me gisht.');return}let rec={name:n,date:new Date().toLocaleString('sv-SE'),signature:c.toDataURL()};localStorage.setItem('iliri_signature_demo',JSON.stringify(rec));document.getElementById('iliriSignedResult').innerHTML='<div class="signed-ok"><b>✓ E firmosur</b><br>'+n+'<br>'+rec.date+'<br><img src="'+rec.signature+'" style="max-width:260px;margin-top:8px"></div>'};\nfunction addButton(){let host=document.getElementById('offersView')||document.body;if(document.getElementById('iliriTrySign'))return;let b=document.createElement('button');b.id='iliriTrySign';b.type='button';b.textContent='✍️ Provo firmosjen';b.style.cssText='margin:10px 0;padding:12px;background:#16834b;color:#fff;border:0;border-radius:10px;font-weight:700';b.onclick=()=>{demo.classList.remove('hidden');let r=localStorage.getItem('iliri_signature_demo');if(r){try{r=JSON.parse(r);document.getElementById('iliriSigner').value=r.name||'';document.getElementById('iliriSignedResult').innerHTML='<div class="signed-ok"><b>✓ E firmosur</b><br>'+r.name+'<br>'+r.date+'<br><img src="'+r.signature+'" style="max-width:260px;margin-top:8px"></div>'}catch(e){}}};let h=host.querySelector('.section-title');if(h)h.insertAdjacentElement('afterend',b);else host.prepend(b)}\nif(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addButton);else addButton();\n})();\n</script>\n</body>
+
+<!-- ILIRI SIGNATURE TEST: local demo only -->
+<style>
+#iliriSignDemo{position:fixed;inset:0;background:#fff;z-index:99999;overflow:auto;padding:18px;font-family:Arial,sans-serif}
+#iliriSignDemo.hidden{display:none}
+#iliriSignDemo .sigbox{max-width:600px;margin:auto}
+#iliriSigCanvas{width:100%;height:190px;border:2px solid #bbb;border-radius:12px;touch-action:none;background:white}
+.sigrow{display:flex;gap:8px;margin-top:10px}
+.sigrow button{flex:1;padding:12px;border:0;border-radius:10px;background:#16834b;color:white;font-weight:700}
+.sigrow .gray{background:#666}
+.signed-ok{padding:12px;background:#eaf7ef;border-radius:10px;margin-top:12px}
+#iliriTrySign{width:100%;margin-top:12px;padding:14px;background:#16834b;color:#fff;border:0;border-radius:12px;font-weight:700}
+</style>
+
+<div id="iliriSignDemo" class="hidden">
+  <div class="sigbox">
+    <button id="iliriSigBack" type="button" style="background:#16834b;color:white;border:0;border-radius:9px;padding:10px 16px">Kthehu</button>
+    <h2>Prano dhe firmos ofertën</h2>
+    <p>Version prove – firma ruhet vetëm në këtë pajisje.</p>
+    <label>Emri dhe mbiemri</label>
+    <input id="iliriSigner" style="width:100%;padding:12px;margin:7px 0 12px;box-sizing:border-box" placeholder="Emri i klientit">
+    <canvas id="iliriSigCanvas" width="900" height="300"></canvas>
+    <div class="sigrow">
+      <button class="gray" id="iliriClearSig" type="button">Pastro</button>
+      <button id="iliriAcceptSig" type="button">Pranoj & Firmos</button>
+    </div>
+    <div id="iliriSignedResult"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const demo=document.getElementById('iliriSignDemo');
+  const c=document.getElementById('iliriSigCanvas');
+  const ctx=c.getContext('2d');
+  let drawing=false,hasInk=false;
+  ctx.lineWidth=4; ctx.lineCap='round';
+
+  function pos(e){
+    const r=c.getBoundingClientRect();
+    const t=e.touches?e.touches[0]:e;
+    return {x:(t.clientX-r.left)*c.width/r.width,y:(t.clientY-r.top)*c.height/r.height};
+  }
+  function startDraw(e){drawing=true;hasInk=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);e.preventDefault();}
+  function moveDraw(e){if(!drawing)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();e.preventDefault();}
+  function endDraw(){drawing=false;}
+
+  ['mousedown','touchstart'].forEach(x=>c.addEventListener(x,startDraw,{passive:false}));
+  ['mousemove','touchmove'].forEach(x=>c.addEventListener(x,moveDraw,{passive:false}));
+  ['mouseup','mouseleave','touchend','touchcancel'].forEach(x=>c.addEventListener(x,endDraw));
+
+  document.getElementById('iliriClearSig').onclick=()=>{ctx.clearRect(0,0,c.width,c.height);hasInk=false;};
+  document.getElementById('iliriSigBack').onclick=()=>demo.classList.add('hidden');
+
+  document.getElementById('iliriAcceptSig').onclick=()=>{
+    const n=document.getElementById('iliriSigner').value.trim();
+    if(!n||!hasInk){alert('Shkruaj emrin dhe firmos me gisht.');return;}
+    const rec={name:n,date:new Date().toLocaleString('sv-SE'),signature:c.toDataURL()};
+    localStorage.setItem('iliri_signature_demo',JSON.stringify(rec));
+    document.getElementById('iliriSignedResult').innerHTML=
+      '<div class="signed-ok"><b>✓ E firmosur</b><br>'+n+'<br>'+rec.date+
+      '<br><img src="'+rec.signature+'" style="max-width:260px;margin-top:8px"></div>';
+  };
+
+  function openDemo(){
+    demo.classList.remove('hidden');
+    const raw=localStorage.getItem('iliri_signature_demo');
+    if(raw){
+      try{
+        const r=JSON.parse(raw);
+        document.getElementById('iliriSigner').value=r.name||'';
+        document.getElementById('iliriSignedResult').innerHTML=
+          '<div class="signed-ok"><b>✓ E firmosur</b><br>'+r.name+'<br>'+r.date+
+          '<br><img src="'+r.signature+'" style="max-width:260px;margin-top:8px"></div>';
+      }catch(e){}
+    }
+  }
+
+  function addButton(){
+    const host=document.getElementById('offersView');
+    if(!host || document.getElementById('iliriTrySign')) return;
+    const b=document.createElement('button');
+    b.id='iliriTrySign';
+    b.type='button';
+    b.textContent='✍️ Provo firmosjen';
+    b.onclick=openDemo;
+    const newOffer=document.getElementById('newOfferBtn');
+    if(newOffer) newOffer.insertAdjacentElement('afterend',b);
+    else host.prepend(b);
+  }
+
+  addButton();
+})();
+</script>
+</body>
 </html>

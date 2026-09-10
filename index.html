@@ -481,21 +481,17 @@ function openOfferPdfForSigning(pdfSource, lang, offer, pdfFile){
     </div>`;
   document.body.appendChild(v);
   document.getElementById('iliriPdfBack').onclick=()=>{revoke();v.remove();};
-  document.getElementById('iliriPdfSave').onclick=async()=>{
-    // iPhone/iPad: hape Share Sheet direkt nga klikimi, që të shfaqet “Save to Files”.
+  document.getElementById('iliriPdfSave').onclick=()=>{
+    // Hape PDF-në në viewer-in e iPhone/Safari.
+    // Aty përdoret shigjeta zyrtare Share → Save to Files → Documents.
     try{
-      if(pdfFile && navigator.share && navigator.canShare && navigator.canShare({files:[pdfFile]})){
-        await navigator.share({files:[pdfFile], title:pdfFile.name});
-        const x=offers.find(z=>z.id===currentPdfOfferId);
-        if(x){x.savedAt=new Date().toISOString();persistAll();renderOffers();}
-        return;
-      }
+      const x=offers.find(z=>z.id===currentPdfOfferId);
+      if(x){x.savedAt=new Date().toISOString();persistAll();renderOffers();}
+      window.location.href=url;
     }catch(e){
-      if(e && e.name==='AbortError') return;
-      console.error('Ruaj PDF / Share error:',e);
+      console.error('PDF viewer open error:',e);
+      buildOfferPdf(lang,'download');
     }
-    // Fallback: gjenero/hap PDF-në në mënyrën ekzistuese.
-    buildOfferPdf(lang,'download');
   };
   document.getElementById('iliriPdfSendSign').onclick=()=>window.iliriSendCurrentOfferForSignature(lang);
 }

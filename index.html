@@ -471,12 +471,14 @@ function openOfferPdfForSigning(pdfSource, lang, offer){
   const url=(typeof pdfSource==='string') ? pdfSource : URL.createObjectURL(pdfSource);
   const revoke=(typeof pdfSource==='string') ? function(){} : function(){try{URL.revokeObjectURL(url)}catch(e){}};
   v.innerHTML=`
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
       <button id="iliriPdfBack" type="button" style="padding:13px 8px;border:0;border-radius:12px;background:#6b7280;color:#fff;font-weight:900">← Kthehu</button>
-      <button id="iliriPdfSave" type="button" style="padding:13px 8px;border:0;border-radius:12px;background:#111827;color:#fff;font-weight:900">💾 Ruaj PDF</button>
       <button id="iliriPdfSendSign" type="button" style="padding:13px 8px;border:0;border-radius:12px;background:#159447;color:#fff;font-weight:900">✍️ Firmosje</button>
     </div>
-    <iframe title="PDF" src="${url}" style="width:100%;flex:1;border:0;border-radius:12px;background:white"></iframe>`;
+    <iframe title="PDF" src="${url}" style="width:100%;flex:1;border:0;border-radius:12px;background:white"></iframe>
+    <div style="margin-top:10px;padding-bottom:max(4px,env(safe-area-inset-bottom))">
+      <button id="iliriPdfSave" type="button" style="width:100%;padding:14px 10px;border:0;border-radius:12px;background:#111827;color:#fff;font-weight:900;font-size:16px">💾 Ruaj PDF</button>
+    </div>`;
   document.body.appendChild(v);
   document.getElementById('iliriPdfBack').onclick=()=>{revoke();v.remove();};
   document.getElementById('iliriPdfSave').onclick=()=>buildOfferPdf(lang,'download');

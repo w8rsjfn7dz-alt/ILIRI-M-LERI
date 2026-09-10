@@ -756,12 +756,45 @@ async function buildOfferPdf(lang,action='share'){
 
 function projectLabel(id){const p=projects.find(x=>x.id===id);return p?((p.projectNumber||'')+' — '+(p.projectName||'')):'-'}
 
-function compressPhoto(file,cb){
-  const r=new FileReader();r.onload=e=>{const im=new Image();im.onload=()=>{let w=im.width,h=im.height,max=1200;if(w>max||h>max){const k=Math.min(max/w,max/h);w*=k;h*=k}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);cb(c.toDataURL('image/jpeg',.72))};im.src=e.target.result};r.readAsDataURL(file)
+function compressPhoto(file,cb,onerr){
+  if(!file){if(onerr)onerr(new Error('Skedari mungon.'));return}
+  if(file.type && !file.type.startsWith('image/')){if(onerr)onerr(new Error('Zgjidh një foto.'));return}
+  const url=URL.createObjectURL(file), im=new Image();
+  im.onload=()=>{
+    try{
+      let w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;
+      if(!w||!h)throw new Error('Fotoja nuk u lexua.');
+      const max=900;
+      if(w>max||h>max){const k=Math.min(max/w,max/h);w=Math.max(1,Math.round(w*k));h=Math.max(1,Math.round(h*k))}
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      const ctx=c.getContext('2d',{alpha:false});if(!ctx)throw new Error('Canvas nuk u hap.');
+      ctx.drawImage(im,0,0,w,h);
+      const data=c.toDataURL('image/jpeg',0.62);
+      URL.revokeObjectURL(url);
+      if(!data||data==='data:,')throw new Error('Fotoja nuk u konvertua.');
+      cb(data);
+    }catch(err){URL.revokeObjectURL(url);if(onerr)onerr(err)}
+  };
+  im.onerror=()=>{URL.revokeObjectURL(url);if(onerr)onerr(new Error('Kjo foto nuk mund të lexohet nga Safari. Provo një foto tjetër ose bëj screenshot të saj.'))};
+  im.src=url;
 }
 function addPhotos(files){
-  const pid=$('photoProject').value, stage=$('photoStage').value;if(!pid){alert('Krijo ose zgjidh një projekt.');return}
-  [...files].forEach(f=>compressPhoto(f,data=>{photos.push({id:uid(),projectId:pid,stage,data,date:new Date().toISOString()});persistAll();renderPhotos()}))
+  const pid=$('photoProject').value, stage=$('photoStage').value;
+  if(!pid){alert('Krijo ose zgjidh një projekt.');return}
+  const list=[...files];
+  if(!list.length)return;
+  let i=0,failed=0;
+  const next=()=>{
+    if(i>=list.length){renderPhotos();if(failed)alert(failed+' foto nuk u shtuan.');return}
+    const f=list[i++];
+    compressPhoto(f,data=>{
+      const item={id:uid(),projectId:pid,stage,data,date:new Date().toISOString()};
+      photos.push(item);
+      try{persistAll()}catch(e){photos=photos.filter(x=>x.id!==item.id);failed++;alert('Memoria e app-it është plot. Ruaj backup dhe fshi disa foto të vjetra.');renderPhotos();return}
+      renderPhotos();next();
+    },err=>{failed++;console.error('Photo error',err);next()});
+  };
+  next();
 }
 function deletePhoto(id){photos=photos.filter(x=>x.id!==id);persistAll();renderPhotos()}
 function renderPhotos(){

@@ -438,7 +438,7 @@ function printOffer(id){
         <button type="button" onclick="buildOfferPdf('sq','previewSign')" style="padding:16px;border:0;border-radius:14px;background:#159447;color:#fff;font-size:17px;font-weight:900">📄 PDF Shqip</button>
         <button type="button" onclick="buildOfferPdf('sv','previewSign')" style="padding:16px;border:0;border-radius:14px;background:#159447;color:#fff;font-size:17px;font-weight:900">📄 PDF Suedisht</button>
       </div>
-      ${o.accepted?`<div style="margin-top:12px;padding:12px;border-radius:12px;background:#eaf7ef;color:#126b36;font-weight:900">✓ E firmosur / E pranuar${o.signedBy?' — '+esc(o.signedBy):''}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px"><button type="button" onclick="buildOfferPdf('sq','download')" style="padding:14px;border:0;border-radius:12px;background:#111827;color:white;font-weight:800">💾 Ruaj PDF Shqip</button><button type="button" onclick="buildOfferPdf('sv','download')" style="padding:14px;border:0;border-radius:12px;background:#111827;color:white;font-weight:800">💾 Ruaj PDF Suedisht</button></div>`:''}
+      ${o.accepted?`<div style="margin-top:12px;padding:12px;border-radius:12px;background:#eaf7ef;color:#126b36;font-weight:900">✓ E firmosur / E pranuar${o.signedBy?' — '+esc(o.signedBy):''}</div>`:''}
     </div>
   </div>`;
 }
@@ -462,7 +462,7 @@ async function translateSqToSv(text){
 }
 
 
-function openOfferPdfForSigning(pdfSource, lang, offer){
+function openOfferPdfForSigning(pdfSource, lang, offer, pdfFile){
   let v=document.getElementById('iliriPdfSignPreview');
   if(v) v.remove();
   v=document.createElement('div');
@@ -476,12 +476,27 @@ function openOfferPdfForSigning(pdfSource, lang, offer){
       <button id="iliriPdfSendSign" type="button" style="padding:13px 8px;border:0;border-radius:12px;background:#159447;color:#fff;font-weight:900">✍️ Firmosje</button>
     </div>
     <iframe title="PDF" src="${url}" style="width:100%;flex:1;border:0;border-radius:12px;background:white"></iframe>
-    <div style="margin-top:10px;padding-bottom:max(4px,env(safe-area-inset-bottom))">
-      <button id="iliriPdfSave" type="button" style="width:100%;padding:14px 10px;border:0;border-radius:12px;background:#111827;color:#fff;font-weight:900;font-size:16px">💾 Ruaj PDF</button>
+    <div style="margin-top:10px;padding-bottom:max(4px,env(safe-area-inset-bottom));text-align:center">
+      <button id="iliriPdfSave" type="button" style="width:auto;min-width:132px;padding:10px 16px;border:0;border-radius:10px;background:#111827;color:#fff;font-weight:800;font-size:14px">⬆️ Ruaj PDF</button>
     </div>`;
   document.body.appendChild(v);
   document.getElementById('iliriPdfBack').onclick=()=>{revoke();v.remove();};
-  document.getElementById('iliriPdfSave').onclick=()=>buildOfferPdf(lang,'download');
+  document.getElementById('iliriPdfSave').onclick=async()=>{
+    // iPhone/iPad: hape Share Sheet direkt nga klikimi, që të shfaqet “Save to Files”.
+    try{
+      if(pdfFile && navigator.share && navigator.canShare && navigator.canShare({files:[pdfFile]})){
+        await navigator.share({files:[pdfFile], title:pdfFile.name});
+        const x=offers.find(z=>z.id===currentPdfOfferId);
+        if(x){x.savedAt=new Date().toISOString();persistAll();renderOffers();}
+        return;
+      }
+    }catch(e){
+      if(e && e.name==='AbortError') return;
+      console.error('Ruaj PDF / Share error:',e);
+    }
+    // Fallback: gjenero/hap PDF-në në mënyrën ekzistuese.
+    buildOfferPdf(lang,'download');
+  };
   document.getElementById('iliriPdfSendSign').onclick=()=>window.iliriSendCurrentOfferForSignature(lang);
 }
 
@@ -689,7 +704,7 @@ async function _buildOfferPdfCore(lang,action='share'){
   if(action==='previewSign'){
     const isIOSPreview = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
     const previewSource = isIOSPreview ? doc.output('datauristring') : pdfBlob;
-    openOfferPdfForSigning(previewSource,lang,o);
+    openOfferPdfForSigning(previewSource,lang,o,file);
     return;
   }
 

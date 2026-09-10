@@ -55,12 +55,28 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
 .price-row{display:grid;grid-template-columns:1.4fr .7fr;gap:8px;margin-top:8px}
 @media(max-width:640px){.photo-grid{grid-template-columns:repeat(2,1fr)}.price-row{grid-template-columns:1fr}}
 
+
+/* ILIRI - offer buttons */
+#offersView .offerFilter,
+#offersView #newOfferBtn,
+#offersView .editOfferBtn,
+#offersView .pdfOfferBtn{
+  background:#159447!important;color:#fff!important;border-color:#159447!important;
+}
+#offersView .offerFilter.active{background:#0f7a37!important}
+
+
+html.client-sign-mode body > *:not(#iliriSignDemo){display:none!important}
+html.client-sign-mode #iliriSignDemo{display:block!important;position:relative!important;inset:auto!important;min-height:100vh!important;background:#fff!important;padding:18px!important;box-sizing:border-box!important}
+html.client-sign-mode #iliriSigBack{display:none!important}
+
 </style>
 
 
 
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <meta name="iliri-build" content="iliri-complete-offers-invoices-photos-backup-v12">
+<!-- ILIRI FIRMA TEST V6 -->
 </head>
 <body>
 <header>
@@ -79,6 +95,7 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
       <button id="btnPhotos" type="button">📷 Before / After</button>
       <button id="btnMeasure" type="button">📐 Matjet</button>
       <button id="btnReportsHome" class="" type="button">📋 Raportet</button>
+      <button id="btnAcceptedDocs" class="wide" type="button">✅ Dokumenta të pranuara</button>
       
       <button id="btnNewProject" class="wide" type="button">+ Projekt i ri</button>
     </div>
@@ -89,6 +106,13 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
     </div>
   </section>
 
+
+
+  <section id="acceptedDocsView" class="hidden card">
+    <div class="section-title"><h2>Dokumenta të pranuara</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
+    <div class="small-note" style="margin-bottom:12px">Këtu ruhen automatikisht ofertat e firmosura/pranuara. Mund t’i hapësh ose t’i ruash si PDF me firmën e klientit.</div>
+    <div id="acceptedDocsList"></div>
+  </section>
 
   <section id="photosView" class="hidden card">
     <div class="section-title"><h2 id="photosTitle">Before / After</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
@@ -210,7 +234,7 @@ button.backBtn, button.backToOffersBtn, .pdf-close-btn{
       <button class="secondary offerFilter" data-status="sent" id="filterSent" type="button">E dërguar</button>
       <button class="secondary offerFilter" data-status="unpaid" id="filterUnpaid" type="button">E pranuar</button>
       <button class="secondary offerFilter" data-status="paid" id="filterPaid" type="button">E pa pranuar</button>
-      <button class="secondary offerFilter" data-status="all" id="filterAll" type="button" style="grid-column:1/-1">Të gjitha</button>
+      <button class="secondary offerFilter" data-status="all" id="filterAll" type="button" style="grid-column:1/-1">Të gjitha ofertat</button>
     </div>
     <div id="offersList"></div>
   </section>
@@ -332,7 +356,7 @@ function statusText(s){return s==='done'?tr('done'):s==='waiting'?tr('waiting'):
 function projectHours(id){return hours.filter(h=>h.projectId===id).reduce((a,b)=>a+Number(b.total||0),0)}
 function projectMaterials(id){return materials.filter(m=>m.projectId===id).reduce((a,b)=>a+Number(m.cost||0),0)}
 
-function showView(id){['homeView','projectFormView','projectsView','clientsView','hoursView','materialsView','offersView','offerFormView','invoicesView','invoiceFormView','photosView','measureView','reportsView','voiceView'].forEach(v=>{const el=$(v);if(el)el.classList.toggle('hidden',v!==id)});if(id==='projectsView')renderProjects();if(id==='clientsView')renderClients();if(id==='hoursView')renderHours();if(id==='materialsView')renderMaterials();if(id==='offersView')renderOffers();if(id==='invoicesView')renderInvoices();if(id==='photosView')renderPhotos();if(id==='measureView')renderMeasureHistory();if(id==='reportsView')renderReportsView();window.scrollTo(0,0)}
+function showView(id){['homeView','projectFormView','projectsView','clientsView','hoursView','materialsView','offersView','offerFormView','invoicesView','invoiceFormView','photosView','measureView','reportsView','voiceView','acceptedDocsView'].forEach(v=>{const el=$(v);if(el)el.classList.toggle('hidden',v!==id)});if(id==='projectsView')renderProjects();if(id==='clientsView')renderClients();if(id==='hoursView')renderHours();if(id==='materialsView')renderMaterials();if(id==='offersView')renderOffers();if(id==='invoicesView')renderInvoices();if(id==='photosView')renderPhotos();if(id==='measureView')renderMeasureHistory();if(id==='reportsView')renderReportsView();if(id==='acceptedDocsView')renderAcceptedDocs();window.scrollTo(0,0)}
 function newProject(){clearProjectForm();showView('projectFormView')}
 function clearProjectForm(){$('deleteCurrentProjectBtn').classList.add('hidden');['projectId','projectName','projectNumber','clientName','phone','address','price','notes'].forEach(id=>$(id).value='');$('type').value='';$('status').value='active';$('projectFormTitle').textContent=tr('newProjectTitle')}
 function saveProject(){const id=$('projectId').value;const p={id:id||uid(),projectName:$('projectName').value.trim(),projectNumber:$('projectNumber').value.trim(),clientName:$('clientName').value.trim(),phone:$('phone').value.trim(),address:$('address').value.trim(),type:$('type').value,status:$('status').value,price:Number($('price').value||0),notes:$('notes').value.trim(),updatedAt:new Date().toISOString()};if(!p.projectName){$('projectName').focus();return}if(!p.projectNumber)p.projectNumber=String(projects.length+1).padStart(3,'0');const i=projects.findIndex(x=>x.id===p.id);if(i>=0)projects[i]=p;else projects.push(p);persistAll();refreshProjectSelectors();renderHome();showView('projectsView')}
@@ -356,7 +380,7 @@ function collectOfferLines(kind){return [...$(kind==='work'?'workLines':'materia
 function calcOffer(){const lines=[...collectOfferLines('work'),...collectOfferLines('material')];const subtotal=lines.reduce((a,x)=>a+x.qty*x.unitPrice,0);const vatPct=Number($('offerVat').value||0);const vat=subtotal*vatPct/100;const fmt=n=>Number(n).toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';$('offerSubtotal').textContent=fmt(subtotal);$('offerVatAmount').textContent=fmt(vat);$('offerTotal').textContent=fmt(subtotal+vat);return{subtotal,vat,total:subtotal+vat}}
 function clearOfferForm(){$('offerId').value='';$('offerNumber').value=nextOfferNumber();$('offerDate').value=today();$('offerClient').value='';$('offerPhone').value='';$('offerAddress').value='';$('offerStatus').value='unsent';$('offerVat').value='25';$('offerNotes').value='';$('workLines').innerHTML='';$('materialLines').innerHTML='';addOfferLine('work');addOfferLine('material');$('deleteOfferBtn').classList.add('hidden');$('offerFormTitle').textContent=tr('newOfferTitle');calcOffer()}
 function newOffer(){clearOfferForm();showView('offerFormView')}
-function saveOffer(){const id=$('offerId').value;const totals=calcOffer();const prev=id?offers.find(x=>x.id===id):null;const status=normalizeOfferStatus($('offerStatus').value);const o={id:id||uid(),number:$('offerNumber').value.trim()||nextOfferNumber(),date:$('offerDate').value||today(),client:$('offerClient').value.trim(),phone:$('offerPhone').value.trim(),address:$('offerAddress').value.trim(),status,work:collectOfferLines('work'),materials:collectOfferLines('material'),vatPct:Number($('offerVat').value||0),notes:$('offerNotes').value.trim(),...totals,savedAt:prev?.savedAt||null,sentAt:prev?.sentAt||null,updatedAt:new Date().toISOString()};if(status==='sent'&&!o.sentAt)o.sentAt=new Date().toISOString();if(!o.client){$('offerClient').focus();return}const i=offers.findIndex(x=>x.id===o.id);if(i>=0)offers[i]=o;else offers.unshift(o);persistAll();showView('offersView')}
+function saveOffer(){const id=$('offerId').value;const totals=calcOffer();const prev=id?offers.find(x=>x.id===id):null;const status=normalizeOfferStatus($('offerStatus').value);const o={id:id||uid(),number:$('offerNumber').value.trim()||nextOfferNumber(),date:$('offerDate').value||today(),client:$('offerClient').value.trim(),phone:$('offerPhone').value.trim(),address:$('offerAddress').value.trim(),status,work:collectOfferLines('work'),materials:collectOfferLines('material'),vatPct:Number($('offerVat').value||0),notes:$('offerNotes').value.trim(),...totals,savedAt:prev?.savedAt||null,sentAt:prev?.sentAt||null,updatedAt:new Date().toISOString()};if(status==='sent'&&!o.sentAt)o.sentAt=new Date().toISOString();if(!o.client){$('offerClient').focus();return}const i=offers.findIndex(x=>x.id===o.id);if(i>=0)offers[i]=o;else offers.unshift(o);persistAll();showView('offersView');setTimeout(()=>printOffer(o.id),50)}
 function editOffer(id){const o=offers.find(x=>x.id===id);if(!o)return;$('offerId').value=o.id;$('offerNumber').value=o.number||'';$('offerDate').value=o.date||today();$('offerClient').value=o.client||'';$('offerPhone').value=o.phone||'';$('offerAddress').value=o.address||'';$('offerStatus').value=normalizeOfferStatus(o.status);$('offerVat').value=o.vatPct??25;$('offerNotes').value=o.notes||'';$('workLines').innerHTML='';$('materialLines').innerHTML='';(o.work||[]).forEach(x=>addOfferLine('work',x));(o.materials||[]).forEach(x=>addOfferLine('material',x));if(!(o.work||[]).length)addOfferLine('work');if(!(o.materials||[]).length)addOfferLine('material');$('deleteOfferBtn').classList.remove('hidden');$('offerFormTitle').textContent=tr('editOffer');calcOffer();showView('offerFormView')}
 function deleteOffer(id){if(!confirm(tr('deleteOfferConfirm')))return;offers=offers.filter(o=>o.id!==id);persistAll();showView('offersView')}
 function renderOffers(){
@@ -365,7 +389,7 @@ function renderOffers(){
  sorted.forEach(o=>{const st=normalizeOfferStatus(o.status);if(counts[st]!==undefined)counts[st]++});
  const labels={unsent:tr('offerUnsent'),sent:tr('offerSent'),unpaid:tr('offerUnpaid'),paid:tr('offerPaid')};
  [['filterUnsent','unsent'],['filterSent','sent'],['filterUnpaid','unpaid'],['filterPaid','paid']].forEach(([id,st])=>{const b=$(id);if(b){b.textContent=`${labels[st]} (${counts[st]})`;b.classList.toggle('active',offerFilter===st)}});
- if($('filterAll')){$('filterAll').textContent=`${tr('all')} (${sorted.length})`;$('filterAll').classList.toggle('active',offerFilter==='all')}
+ if($('filterAll')){$('filterAll').textContent=`${currentLang==='sv'?'Alla offerter':'Të gjitha ofertat'} (${sorted.length})`;$('filterAll').classList.toggle('active',offerFilter==='all')}
  const list=sorted.filter(o=>offerFilter==='all'||normalizeOfferStatus(o.status)===offerFilter);
  $('offersList').innerHTML=list.length?list.map((o,idx)=>`<div class="item"><div class="section-title"><h3>${idx+1}. ${esc(o.number||'')} — ${esc(o.client||'')}</h3><div><span class="badge offer-status">${offerStatusText(o.status)}</span>${o.savedAt?`<span class="saved-badge">${tr('offerSaved')}</span>`:''}</div></div><div class="meta">${esc(o.date||'')} ${o.address?'• '+esc(o.address):''}<br><b>${tr('total')}:</b> ${Number(o.total||0).toLocaleString('sv-SE',{maximumFractionDigits:2})} kr${o.sentAt?`<br><small>${currentLang==='sv'?'Skickad':'Dërguar'}: ${new Date(o.sentAt).toLocaleString('sv-SE')}</small>`:''}${o.savedAt?`<br><small>${currentLang==='sv'?'Sparad':'Ruajtur'}: ${new Date(o.savedAt).toLocaleString('sv-SE')}</small>`:''}</div><div class="row" style="margin-top:10px;grid-template-columns:1fr 1fr 1fr"><button class="editOfferBtn" data-id="${esc(o.id)}" type="button">${tr('edit')}</button><button class="pdfOfferBtn secondary" data-id="${esc(o.id)}" type="button">👁️ ${currentLang==='sv'?'Visa':'Shiko'}</button><button class="danger deleteOfferListBtn" data-id="${esc(o.id)}" type="button">${tr('deleteProject')}</button></div></div>`).join(''):`<div class="empty">${tr('noOffers')}</div>`;
  document.querySelectorAll('.editOfferBtn').forEach(b=>b.addEventListener('click',()=>editOffer(b.dataset.id)));
@@ -373,9 +397,25 @@ function renderOffers(){
  document.querySelectorAll('.deleteOfferListBtn').forEach(b=>b.addEventListener('click',()=>deleteOffer(b.dataset.id)));
 }
 
+function renderAcceptedDocs(){
+  const el=$('acceptedDocsList'); if(!el)return;
+  const list=[...offers].filter(o=>o.accepted||o.signature).sort((a,b)=>String(b.signedAt||b.date||'').localeCompare(String(a.signedAt||a.date||'')));
+  el.innerHTML=list.length?list.map(o=>`<div class="item">
+    <div class="section-title"><h3>${esc(o.number||'Ofertë')} — ${esc(o.client||'')}</h3><span class="badge">✓ E pranuar</span></div>
+    <div class="meta">${esc(o.date||'')}${o.signedAt?`<br><b>Firmosur:</b> ${new Date(o.signedAt).toLocaleString('sv-SE')}`:''}${o.signedBy?`<br><b>Emri:</b> ${esc(o.signedBy)}`:''}</div>
+    <div class="row" style="margin-top:10px;grid-template-columns:1fr 1fr">
+      <button type="button" onclick="printOffer('${esc(o.id)}')">👁️ Shiko</button>
+      <button type="button" class="secondary" onclick="currentPdfOfferId='${esc(o.id)}';window.__iliriCurrentOfferId='${esc(o.id)}';buildOfferPdf('sq','download')">💾 PDF Shqip</button>
+      <button type="button" class="secondary" onclick="currentPdfOfferId='${esc(o.id)}';window.__iliriCurrentOfferId='${esc(o.id)}';buildOfferPdf('sv','download')">💾 PDF Suedisht</button>
+    </div>
+  </div>`).join(''):`<div class="empty">Nuk ka ende dokumenta të firmosura.</div>`;
+}
+
+
 let currentPdfOfferId=null;
 
 function printOffer(id){
+  window.__iliriCurrentOfferId=id;
   currentPdfOfferId=id;
   const o=offers.find(x=>x.id===id); if(!o)return;
   let view=document.getElementById('iphonePdfView');
@@ -393,26 +433,55 @@ function printOffer(id){
       <div style="margin-top:20px;border-top:1px solid #ddd;padding-top:12px"><div style="display:flex;justify-content:space-between"><span>Pa moms:</span><b>${money(o.subtotal)}</b></div><div style="display:flex;justify-content:space-between;margin-top:6px"><span>Moms:</span><b>${money(o.vat)}</b></div><div style="display:flex;justify-content:space-between;margin-top:8px;font-size:20px"><b>TOTALI:</b><b>${money(o.total)}</b></div></div>
       ${o.notes?`<div style="margin-top:18px"><b>Shënime:</b><div style="white-space:pre-wrap;margin-top:5px">${esc(o.notes)}</div></div>`:''}
     </div>
-    <div style="background:#fff;border-radius:16px;padding:18px;margin:14px 0 30px"><div style="font-size:19px;font-weight:900;margin-bottom:5px">Ruaj ose Dërgo</div><div style="color:#6b7280;margin-bottom:14px">Ruaj PDF e shënon ofertën “E ruajtur”. Dërgo e hap Share dhe, pasi Share përfundohet, statusi kalon automatikisht “E dërguar”.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px"><button type="button" onclick="buildOfferPdf('sq','save')" style="padding:15px;border:0;border-radius:14px;background:#e5e7eb;color:#111;font-size:16px;font-weight:800">💾 Ruaj PDF Shqip</button><button type="button" onclick="buildOfferPdf('sq','share')" style="padding:15px;border:0;border-radius:14px;background:#159447;color:white;font-size:16px;font-weight:800">📤 Dërgo Shqip</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button type="button" onclick="buildOfferPdf('sv','save')" style="padding:15px;border:0;border-radius:14px;background:#e5e7eb;color:#111;font-size:16px;font-weight:800">💾 Ruaj PDF Suedisht</button><button type="button" onclick="buildOfferPdf('sv','share')" style="padding:15px;border:0;border-radius:14px;background:#159447;color:white;font-size:16px;font-weight:800">📤 Dërgo Suedisht</button></div></div>
+    <div style="background:#fff;border-radius:16px;padding:18px;margin:14px 0 30px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <button type="button" onclick="buildOfferPdf('sq','previewSign')" style="padding:16px;border:0;border-radius:14px;background:#159447;color:#fff;font-size:17px;font-weight:900">📄 PDF Shqip</button>
+        <button type="button" onclick="buildOfferPdf('sv','previewSign')" style="padding:16px;border:0;border-radius:14px;background:#159447;color:#fff;font-size:17px;font-weight:900">📄 PDF Suedisht</button>
+      </div>
+      ${o.accepted?`<div style="margin-top:12px;padding:12px;border-radius:12px;background:#eaf7ef;color:#126b36;font-weight:900">✓ E firmosur / E pranuar${o.signedBy?' — '+esc(o.signedBy):''}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px"><button type="button" onclick="buildOfferPdf('sq','download')" style="padding:14px;border:0;border-radius:12px;background:#111827;color:white;font-weight:800">💾 Ruaj PDF Shqip</button><button type="button" onclick="buildOfferPdf('sv','download')" style="padding:14px;border:0;border-radius:12px;background:#111827;color:white;font-weight:800">💾 Ruaj PDF Suedisht</button></div>`:''}
+    </div>
   </div>`;
 }
 async function translateSqToSv(text){
   const raw=(text||'').trim();
   if(!raw)return '';
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),3000);
   try{
     const url='https://translate.googleapis.com/translate_a/single?client=gtx&sl=sq&tl=sv&dt=t&q='+encodeURIComponent(raw);
-    const r=await fetch(url);
+    const r=await fetch(url,{signal:ctrl.signal,cache:'no-store'});
     if(!r.ok)throw new Error('translate');
     const data=await r.json();
     const translated=(data&&data[0]?data[0].map(x=>x[0]||'').join(''):'').trim();
     return translated||raw;
   }catch(e){
     return raw;
+  }finally{
+    clearTimeout(timer);
   }
 }
 
 
-async function buildOfferPdf(lang,action='share'){
+function openOfferPdfForSigning(pdfSource, lang, offer){
+  let v=document.getElementById('iliriPdfSignPreview');
+  if(v) v.remove();
+  v=document.createElement('div');
+  v.id='iliriPdfSignPreview';
+  v.style.cssText='position:fixed;inset:0;z-index:100000;background:#f3f4f6;display:flex;flex-direction:column;padding:10px;box-sizing:border-box';
+  const url=(typeof pdfSource==='string') ? pdfSource : URL.createObjectURL(pdfSource);
+  const revoke=(typeof pdfSource==='string') ? function(){} : function(){try{URL.revokeObjectURL(url)}catch(e){}};
+  v.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <button id="iliriPdfBack" type="button" style="padding:13px;border:0;border-radius:12px;background:#6b7280;color:#fff;font-weight:900">← Kthehu</button>
+      <button id="iliriPdfSendSign" type="button" style="padding:13px;border:0;border-radius:12px;background:#159447;color:#fff;font-weight:900">✍️ Dërgo për firmosje</button>
+    </div>
+    <iframe title="PDF" src="${url}" style="width:100%;flex:1;border:0;border-radius:12px;background:white"></iframe>`;
+  document.body.appendChild(v);
+  document.getElementById('iliriPdfBack').onclick=()=>{revoke();v.remove();};
+  document.getElementById('iliriPdfSendSign').onclick=()=>window.iliriSendCurrentOfferForSignature(lang);
+}
+
+async function _buildOfferPdfCore(lang,action='share'){
   const o=offers.find(x=>x.id===currentPdfOfferId); if(!o)return;
   const sv=lang==='sv';
 
@@ -453,21 +522,26 @@ async function buildOfferPdf(lang,action='share'){
   };
 
   const view=document.getElementById('iphonePdfView');
-  if(view){
-    view.innerHTML=`<div style="max-width:760px;margin:0 auto;text-align:center;padding:50px 20px">
-      <div style="font-size:22px;font-weight:800;margin-bottom:10px">${sv?L.translating:'Po krijohet PDF...'}</div>
-      <div style="color:#6b7280">Prisni pak...</div>
-    </div>`;
-  }
 
   let work=(o.work||[]).map(x=>({...x}));
   let materials=(o.materials||[]).map(x=>({...x}));
   let notes=o.notes||'';
 
   if(sv){
-    work=await Promise.all(work.map(async x=>({...x,description:await translateSqToSv(x.description||'')})));
-    materials=await Promise.all(materials.map(async x=>({...x,description:await translateSqToSv(x.description||'')})));
-    notes=await translateSqToSv(notes);
+    // Never let iPhone/Safari stay forever on the translation screen.
+    const translateAll=async()=>{
+      work=await Promise.all(work.map(async x=>({...x,description:await translateSqToSv(x.description||'')})));
+      materials=await Promise.all(materials.map(async x=>({...x,description:await translateSqToSv(x.description||'')})));
+      notes=await translateSqToSv(notes);
+    };
+    try{
+      await Promise.race([
+        translateAll(),
+        new Promise(resolve=>setTimeout(resolve,5000))
+      ]);
+    }catch(e){
+      // Continue with the original text if online translation is unavailable.
+    }
   }
 
   if(!window.jspdf || !window.jspdf.jsPDF){
@@ -572,18 +646,55 @@ async function buildOfferPdf(lang,action='share'){
     doc.setFont('helvetica','normal'); doc.setFontSize(10);
     const noteLines = doc.splitTextToSize(safe(notes), right-margin);
     doc.text(noteLines, margin, y);
+    y += Math.max(8, noteLines.length * 5 + 4);
   }
 
+  // Firma e klientit shfaqet brenda ofertës/kontratës pasi klienti firmos.
+  if(o.signature){
+    if(y > 225){ doc.addPage(); y = 18; }
+    y += 8;
+    doc.setDrawColor(210); doc.line(margin,y,right,y); y += 8;
+    doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text(sv ? 'KUNDENS GODKÄNNANDE OCH SIGNATUR' : 'PRANIMI DHE FIRMA E KLIENTIT', margin, y);
+    y += 7;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10);
+    doc.text((sv ? 'Namn: ' : 'Emri: ') + safe(o.signedBy||''), margin, y);
+    y += 6;
+    if(o.signedAt){
+      let signedDate='';
+      try{ signedDate=new Date(o.signedAt).toLocaleString('sv-SE'); }catch(e){ signedDate=String(o.signedAt); }
+      doc.text((sv ? 'Signerad: ' : 'Firmosur: ') + signedDate, margin, y);
+      y += 6;
+    }
+    try{
+      const sigType=String(o.signature||'').startsWith('data:image/jpeg')?'JPEG':'PNG';
+      doc.addImage(o.signature,sigType,margin,y,58,20);
+      y += 24;
+      doc.setDrawColor(120); doc.line(margin,y,margin+70,y);
+      y += 5;
+      doc.setFontSize(8.5);
+      doc.text(sv ? 'Kundens signatur' : 'Firma e klientit', margin, y);
+    }catch(e){}
+  }
+
+  // On iPhone/Safari a data URI is more reliable for an in-app PDF preview than a blob URL.
   const pdfBlob = doc.output('blob');
   const filename = `${safe(o.number||'ofert')}-${sv?'sv':'sq'}.pdf`;
-  const file = new File([pdfBlob], filename, {type:'application/pdf'});
+  const file = (typeof File==='function') ? new File([pdfBlob], filename, {type:'application/pdf'}) : null;
+
+  if(action==='previewSign'){
+    const isIOSPreview = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+    const previewSource = isIOSPreview ? doc.output('datauristring') : pdfBlob;
+    openOfferPdfForSigning(previewSource,lang,o);
+    return;
+  }
 
   const markSaved=()=>{const x=offers.find(z=>z.id===currentPdfOfferId);if(x){x.savedAt=new Date().toISOString();persistAll();renderOffers();}};
   const markSent=()=>{const x=offers.find(z=>z.id===currentPdfOfferId);if(x){x.status='sent';x.sentAt=new Date().toISOString();persistAll();renderOffers();}};
 
   if(action==='share'){
     try{
-      if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+      if(file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
         await navigator.share({files:[file], title: filename});
         markSent();
         if(view) printOffer(currentPdfOfferId);
@@ -597,16 +708,49 @@ async function buildOfferPdf(lang,action='share'){
     }
   }
 
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+
+  if(action==='download' && isIOS){
+    // iOS/PWA: mos përdor download të Blob/File, sepse Safari shpesh jep
+    // "Shkarkimi i skedarit dështoi". Hap PDF-në si data URL në viewer-in e iPhone-it.
+    // Nga viewer-i përdor Share → Save to Files.
+    try{
+      const dataUri = doc.output('datauristring');
+      markSaved();
+      window.location.href = dataUri;
+      return;
+    }catch(e){
+      console.error('iOS PDF open error:', e);
+    }
+  }
+
+  // Pajisje të tjera: download normal me Blob URL.
   const url = URL.createObjectURL(pdfBlob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = filename;
+  if(!isIOS) a.download = filename;
+  a.target = '_blank';
+  a.rel = 'noopener';
   document.body.appendChild(a);
   a.click();
   a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 60000);
   markSaved();
   if(view) printOffer(currentPdfOfferId);
+}
+
+// Mbrojtje kundër ngecjes te "Po krijohet PDF...".
+// Çdo gabim rikthen ekranin e ofertës dhe i jep përdoruesit një mesazh, në vend që app-i të mbetet në pritje.
+async function buildOfferPdf(lang,action='share'){
+  try{
+    return await _buildOfferPdfCore(lang,action);
+  }catch(err){
+    console.error('ILIRI PDF error:',err);
+    const view=document.getElementById('iphonePdfView');
+    if(view && currentPdfOfferId) printOffer(currentPdfOfferId);
+    const msg=(err && err.message)?err.message:String(err||'Gabim i panjohur');
+    alert('PDF nuk u krijua. Provo përsëri.\n'+msg);
+  }
 }
 
 
@@ -869,7 +1013,7 @@ function printInvoice(id){
   let v=document.getElementById('invoicePreview');
   if(!v){v=document.createElement('div');v.id='invoicePreview';v.style.cssText='position:fixed;inset:0;z-index:99999;background:#fff;color:#111;overflow:auto;padding:20px;font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;';document.body.appendChild(v)}
   const money=n=>Number(n||0).toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';
-  v.innerHTML=`<div style="max-width:760px;margin:0 auto"><div style="display:flex;justify-content:flex-start;margin-bottom:18px"><button class="pdf-close-btn" onclick="document.getElementById('invoicePreview').remove()">Kthehu</button></div><h1>ILIRI Måleri</h1><h2>FATURË ${esc(o.number||'')}</h2><p><b>Data:</b> ${esc(o.date||'')}<br><b>Afati:</b> ${esc(o.dueDate||'')}<br><b>Klienti:</b> ${esc(o.client||'')}<br><b>Telefoni:</b> ${esc(o.phone||'')}<br><b>Adresa:</b> ${esc(o.address||'')}</p><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;border-bottom:1px solid #ccc;padding:8px 4px">Përshkrimi</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Sasia</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Çmimi</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Shuma</th></tr></thead><tbody>${(o.lines||[]).map(x=>`<tr><td style="padding:8px 4px;border-bottom:1px solid #eee">${esc(x.description||'')}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${x.qty||0}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${money(x.unitPrice)}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${money((x.qty||0)*(x.unitPrice||0))}</td></tr>`).join('')}</tbody></table><div style="margin-top:20px;line-height:1.8"><b>Pa moms:</b> ${money(o.subtotal)}<br><b>Moms (${o.vatPct||0}%):</b> ${money(o.vat)}<br><b style="font-size:20px">TOTALI: ${money(o.total)}</b></div>${o.notes?`<p><b>Shënime:</b><br>${esc(o.notes)}</p>`:''}<div style="display:flex;justify-content:space-between;gap:12px;margin-top:28px;padding-bottom:20px"><button onclick="buildInvoicePdf('${esc(id)}','sv')">🇸🇪 PDF Svenska</button><button onclick="buildInvoicePdf('${esc(id)}','sq')">🇦🇱 PDF Shqip</button></div></div>`;
+  v.innerHTML=`<div style="max-width:760px;margin:0 auto;min-height:calc(100vh - 40px);display:flex;flex-direction:column"><div style="margin-bottom:18px"><button class="pdf-close-btn" onclick="document.getElementById('invoicePreview').remove()">Kthehu</button></div><div style="flex:1"><h1>ILIRI Måleri</h1><h2>FATURË ${esc(o.number||'')}</h2><p><b>Data:</b> ${esc(o.date||'')}<br><b>Afati:</b> ${esc(o.dueDate||'')}<br><b>Klienti:</b> ${esc(o.client||'')}<br><b>Telefoni:</b> ${esc(o.phone||'')}<br><b>Adresa:</b> ${esc(o.address||'')}</p><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;border-bottom:1px solid #ccc;padding:8px 4px">Përshkrimi</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Sasia</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Çmimi</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Shuma</th></tr></thead><tbody>${(o.lines||[]).map(x=>`<tr><td style="padding:8px 4px;border-bottom:1px solid #eee">${esc(x.description||'')}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${x.qty||0}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${money(x.unitPrice)}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${money((x.qty||0)*(x.unitPrice||0))}</td></tr>`).join('')}</tbody></table><div style="margin-top:20px;line-height:1.8"><b>Pa moms:</b> ${money(o.subtotal)}<br><b>Moms (${o.vatPct||0}%):</b> ${money(o.vat)}<br><b style="font-size:20px">TOTALI: ${money(o.total)}</b></div>${o.notes?`<p><b>Shënime:</b><br>${esc(o.notes)}</p>`:''}</div><div style="display:flex;justify-content:space-between;gap:12px;margin-top:36px;padding-bottom:20px"><button onclick="buildInvoicePdf('${esc(id)}','sv')">🇸🇪 PDF Svenska</button><button onclick="buildInvoicePdf('${esc(id)}','sq')">🇦🇱 PDF Shqip</button></div></div>`;
 }
 function buildInvoicePdf(id,lang='sq'){
   const o=invoices.find(x=>x.id===id);if(!o)return;
@@ -923,6 +1067,7 @@ function toggleLang(){currentLang=currentLang==='sq'?'sv':'sq';localStorage.setI
 function bind(){
  $('langBtn').addEventListener('click',toggleLang);
  $('btnOffers').addEventListener('click',()=>showView('offersView'));
+ if($('btnAcceptedDocs'))$('btnAcceptedDocs').addEventListener('click',()=>showView('acceptedDocsView'));
 
  $('newInvoiceBtn').addEventListener('click',newInvoice);
  if($('btnInvoicesSmall')) $('btnInvoicesSmall').addEventListener('click',()=>{invoiceFilter='all';showView('invoicesView')});
@@ -1023,5 +1168,246 @@ if($('saveReportBtn')) $('saveReportBtn').addEventListener('click',saveNewReport
 if($('cancelReportBtn')) $('cancelReportBtn').addEventListener('click',()=>{$('reportFormBox').classList.add('hidden')});
 </script>
 <div id="printOfferArea"></div>
+
+<!-- ILIRI SIGNATURE TEST: local demo only -->
+<style>
+#iliriSignDemo{position:fixed;inset:0;background:#fff;z-index:99999;overflow:auto;padding:18px;font-family:Arial,sans-serif}
+#iliriSignDemo.hidden{display:none}
+#iliriSignDemo .sigbox{max-width:600px;margin:auto}
+#iliriSigCanvas{width:100%;height:190px;border:2px solid #bbb;border-radius:12px;touch-action:none;background:white}
+.sigrow{display:flex;gap:8px;margin-top:10px}
+.sigrow button{flex:1;padding:12px;border:0;border-radius:10px;background:#16834b;color:white;font-weight:700}
+.sigrow .gray{background:#666}
+.signed-ok{padding:12px;background:#eaf7ef;border-radius:10px;margin-top:12px}
+#iliriTrySign{width:100%;margin-top:12px;padding:14px;background:#16834b;color:#fff;border:0;border-radius:12px;font-weight:700}
+</style>
+
+<div id="iliriSignDemo" class="hidden">
+  <div class="sigbox">
+    <button id="iliriSigBack" type="button" style="background:#16834b;color:white;border:0;border-radius:9px;padding:10px 16px">Kthehu</button>
+    <h2>Prano dhe firmos ofertën</h2>
+    <div id="iliriClientOfferSummary" style="margin:12px 0 18px;padding:14px;border:1px solid #ddd;border-radius:12px;background:#fafafa"></div>
+    <p></p>
+    <label>Emri dhe mbiemri</label>
+    <input id="iliriSigner" style="width:100%;padding:12px;margin:7px 0 12px;box-sizing:border-box" placeholder="Emri i klientit">
+    <canvas id="iliriSigCanvas" width="900" height="300"></canvas>
+    <div class="sigrow">
+      <button class="gray" id="iliriClearSig" type="button">Pastro</button>
+      <button id="iliriAcceptSig" type="button">Pranoj & Firmos</button>
+    </div>
+    <div id="iliriSignedResult"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const demo=document.getElementById('iliriSignDemo');
+  const c=document.getElementById('iliriSigCanvas');
+  const ctx=c.getContext('2d');
+  let drawing=false,hasInk=false;
+  ctx.lineWidth=4; ctx.lineCap='round';
+
+  function pos(e){
+    const r=c.getBoundingClientRect();
+    const t=e.touches?e.touches[0]:e;
+    return {x:(t.clientX-r.left)*c.width/r.width,y:(t.clientY-r.top)*c.height/r.height};
+  }
+  function startDraw(e){drawing=true;hasInk=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);e.preventDefault();}
+  function moveDraw(e){if(!drawing)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();e.preventDefault();}
+  function endDraw(){drawing=false;}
+
+  ['mousedown','touchstart'].forEach(x=>c.addEventListener(x,startDraw,{passive:false}));
+  ['mousemove','touchmove'].forEach(x=>c.addEventListener(x,moveDraw,{passive:false}));
+  ['mouseup','mouseleave','touchend','touchcancel'].forEach(x=>c.addEventListener(x,endDraw));
+
+  document.getElementById('iliriClearSig').onclick=()=>{ctx.clearRect(0,0,c.width,c.height);hasInk=false;};
+  document.getElementById('iliriSigBack').onclick=()=>demo.classList.add('hidden');
+
+  document.getElementById('iliriAcceptSig').onclick=()=>{
+    const n=document.getElementById('iliriSigner').value.trim();
+    if(!n||!hasInk){alert('Shkruaj emrin dhe firmos me gisht.');return;}
+    const oid=(typeof currentPdfOfferId!=='undefined'&&currentPdfOfferId)?currentPdfOfferId:window.__iliriCurrentOfferId;
+    const oo=(typeof offers!=='undefined')?offers.find(x=>String(x.id)===String(oid)):null;
+    if(!oo){alert('Oferta nuk u gjet.');return;}
+    const rec={name:n,date:new Date().toISOString(),signature:c.toDataURL('image/png')};
+    oo.signature=rec.signature;oo.signedBy=rec.name;oo.signedAt=rec.date;oo.accepted=true;oo.status='unpaid';
+    try{localStorage.setItem('iliri_signature_demo_offer-id:'+oid,JSON.stringify(rec));}catch(e){}
+    try{if(typeof persistAll==='function')persistAll();}catch(e){}
+    document.getElementById('iliriSignedResult').innerHTML=
+      '<div class="signed-ok"><b>✓ E firmosur / E pranuar</b><br>'+esc(n)+'<br>'+new Date(rec.date).toLocaleString('sv-SE')+
+      '<br><img src="'+rec.signature+'" style="max-width:260px;max-height:100px;margin-top:8px;background:#fff;border:1px solid #ddd;border-radius:6px"></div>';
+
+    // Krijo një kopje shumë të vogël të firmës që të mund të kthehet me linkun.
+    // Kjo shmang linkun gjigant të versionit të vjetër.
+    let sigSmall='';
+    try{
+      const sc=document.createElement('canvas');
+      sc.width=240; sc.height=80;
+      const sx=sc.getContext('2d');
+      sx.fillStyle='#fff'; sx.fillRect(0,0,sc.width,sc.height);
+      sx.drawImage(c,0,0,sc.width,sc.height);
+      sigSmall=sc.toDataURL('image/jpeg',0.38).split(',')[1]
+        .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    }catch(e){}
+
+    const base=location.href.split('?')[0].split('#')[0];
+    const confirmUrl=base+
+      '?signed=1'+
+      '&id='+encodeURIComponent(oo.id||'')+
+      '&no='+encodeURIComponent(oo.number||'')+
+      '&by='+encodeURIComponent(n)+
+      '&at='+encodeURIComponent(rec.date)+
+      (sigSmall?'&sig='+encodeURIComponent(sigSmall):'');
+    const subject=encodeURIComponent('ILIRI Måleri – Ofertë e firmosur '+(oo.number||''));
+    const body=encodeURIComponent(
+      'Oferta është pranuar dhe firmosur nga '+n+'.\n\n'+
+      'Hap linkun më poshtë në telefonin e ILIRI Måleri:\n\n'+
+      confirmUrl
+    );
+    setTimeout(()=>{window.location.href='mailto:ilia.mitro@yahoo.gr?subject='+subject+'&body='+body;},500);
+  };
+
+  let activeOfferCard=null;
+
+  function offerKey(card){
+    if(!card) return 'oferta-test';
+    return (card.innerText||'oferta-test').replace(/\s+/g,' ').trim().slice(0,180);
+  }
+
+  function openDemo(card){
+    activeOfferCard=card||null;
+    demo.classList.remove('hidden');
+    const raw=localStorage.getItem('iliri_signature_demo_'+offerKey(activeOfferCard));
+    if(raw){
+      try{
+        const r=JSON.parse(raw);
+        document.getElementById('iliriSigner').value=r.name||'';
+        document.getElementById('iliriSignedResult').innerHTML=
+          '<div class="signed-ok"><b>✓ E firmosur</b><br>'+r.name+'<br>'+r.date+
+          '<br><img src="'+r.signature+'" style="max-width:260px;margin-top:8px"></div>';
+      }catch(e){}
+    }
+  }
+
+
+  window.iliriSendCurrentOfferForSignature=async function(lang='sq'){
+    let id=window.__iliriCurrentOfferId || (typeof currentPdfOfferId!=='undefined' ? currentPdfOfferId : null);
+    const o=(typeof offers!=='undefined' && id)?offers.find(x=>String(x.id)===String(id)):null;
+    if(!o){alert('Oferta nuk u identifikua. Hape përsëri me 👁️ Shiko.');return;}
+    window.__iliriCurrentOfferId=id;
+    const payload={...o,signLang:lang};
+    const json=JSON.stringify(payload);
+    const packed=btoa(unescape(encodeURIComponent(json))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    const base=location.href.split('?')[0].split('#')[0];
+    const url=base+'?signOffer='+encodeURIComponent(id)+'&offer='+packed;
+    try{
+      if(navigator.share){
+        await navigator.share({title:'ILIRI Måleri – Ofertë për firmosje',text:'Ju lutem hapni ofertën, kontrollojeni dhe firmoseni.',url:url});
+      }else if(navigator.clipboard){
+        await navigator.clipboard.writeText(url);
+        alert('Linku për firmosje u kopjua.');
+      }else{
+        prompt('Kopjo linkun për firmosje:',url);
+      }
+      o.status='sent';o.sentAt=new Date().toISOString();
+      if(typeof persistAll==='function')persistAll();
+      if(typeof renderOffers==='function')renderOffers();
+    }catch(e){if(!e||e.name!=='AbortError') alert('Dërgimi nuk u hap.');}
+  };
+
+  window.iliriOpenCurrentOfferForSignature=function(){
+    const id=window.currentPdfOfferId || (typeof currentPdfOfferId!=='undefined' ? currentPdfOfferId : null);
+    const o=(typeof offers!=='undefined' && id)?offers.find(x=>x.id===id):null;
+    if(!o){alert('Hap fillimisht ofertën që do të dërgosh për firmë.');return;}
+    activeOfferCard={innerText:'offer-id:'+id, querySelector:()=>null};
+    document.getElementById('iliriSigner').value=o.client||'';
+    document.getElementById('iliriSignedResult').innerHTML='';
+    demo.classList.remove('hidden');
+    const raw=localStorage.getItem('iliri_signature_demo_offer-id:'+id);
+    if(raw){
+      try{
+        const r=JSON.parse(raw);
+        document.getElementById('iliriSigner').value=r.name||o.client||'';
+        document.getElementById('iliriSignedResult').innerHTML=
+          '<div class="signed-ok"><b>✓ E firmosur / E pranuar</b><br>'+r.name+'<br>'+r.date+
+          '<br><img src="'+r.signature+'" style="max-width:260px;margin-top:8px"></div>';
+      }catch(e){}
+    }
+  };
+
+  // Firma hapet vetëm nga oferta e hapur.
+
+})();
+</script>
+<script>
+window.addEventListener('load',function(){
+  const q=new URLSearchParams(location.search);
+  if(q.get('signed')!=='1')return;
+  const rid=q.get('id')||'';
+  const rno=q.get('no')||'';
+  const rby=q.get('by')||'';
+  const rat=q.get('at')||new Date().toISOString();
+  const rsig=q.get('sig')||'';
+  const o=(typeof offers!=='undefined')?offers.find(x=>String(x.id)===String(rid)||(rno&&String(x.number)===String(rno))):null;
+  if(o){
+    o.accepted=true;
+    o.status='unpaid';
+    o.signedBy=rby;
+    o.signedAt=rat;
+    if(rsig){
+      let s=rsig.replace(/-/g,'+').replace(/_/g,'/');
+      while(s.length%4)s+='=';
+      o.signature='data:image/jpeg;base64,'+s;
+    }
+    if(typeof persistAll==='function')persistAll();
+    if(typeof renderOffers==='function')renderOffers();
+    setTimeout(()=>alert('✓ Oferta '+(o.number||'')+' u regjistrua si E firmosur / E pranuar.'),250);
+  }else{
+    setTimeout(()=>alert('Konfirmimi u hap, por oferta nuk u gjet në këtë pajisje.'),250);
+  }
+  history.replaceState({},'',location.pathname);
+});
+
+window.addEventListener('load',function(){
+  const q=new URLSearchParams(location.search);
+  const sid=q.get('signOffer');
+  const packed=q.get('offer');
+  if(!sid || !packed)return;
+  try{
+    let s=packed.replace(/-/g,'+').replace(/_/g,'/');
+    while(s.length%4)s+='=';
+    const o=JSON.parse(decodeURIComponent(escape(atob(s))));
+    if(!Array.isArray(offers)) offers=[];
+    const ix=offers.findIndex(x=>String(x.id)===String(o.id));
+    if(ix>=0) offers[ix]=o; else offers.unshift(o);
+
+    window.__iliriCurrentOfferId=o.id;
+    currentPdfOfferId=o.id;
+    document.documentElement.classList.add('client-sign-mode');
+
+    const money=n=>Number(n||0).toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';
+    const sum=document.getElementById('iliriClientOfferSummary');
+    if(sum){
+      const lineHtml=(arr,title)=>!arr||!arr.length?'':'<div style="margin-top:14px"><b>'+title+'</b>'+arr.map(x=>'<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span>'+esc(x.description||'')+'</span><b>'+money(Number(x.qty||0)*Number(x.unitPrice||0))+'</b></div>').join('')+'</div>';
+      sum.innerHTML=
+        '<div style="font-weight:900;font-size:20px;margin-bottom:8px">ILIRI Måleri – '+(o.signLang==='sv'?'OFFERT':'OFERTË')+'</div>'+ 
+        (o.number?'<div><b>Nr. ofertës:</b> '+esc(o.number)+'</div>':'')+
+        '<div><b>Data:</b> '+esc(o.date||'')+'</div>'+ 
+        '<div><b>Klienti:</b> '+esc(o.client||'')+'</div>'+ 
+        (o.address?'<div><b>Adresa:</b> '+esc(o.address)+'</div>':'')+
+        lineHtml(o.work,o.signLang==='sv'?'Arbete':'Punët')+
+        lineHtml(o.materials,o.signLang==='sv'?'Material':'Materialet')+
+        '<div style="margin-top:14px;font-size:18px"><b>TOTALI: '+money(o.total)+'</b></div>';
+    }
+
+    setTimeout(function(){
+      if(window.iliriOpenCurrentOfferForSignature) window.iliriOpenCurrentOfferForSignature();
+    },100);
+  }catch(e){
+    alert('Linku i ofertës nuk u lexua siç duhet.');
+  }
+});
+</script>
+
 </body>
 </html>

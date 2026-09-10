@@ -482,15 +482,30 @@ function openOfferPdfForSigning(pdfSource, lang, offer, pdfFile){
   document.body.appendChild(v);
   document.getElementById('iliriPdfBack').onclick=()=>{revoke();v.remove();};
   document.getElementById('iliriPdfSave').onclick=()=>{
-    // Hape PDF-në në viewer-in e iPhone/Safari.
-    // Aty përdoret shigjeta zyrtare Share → Save to Files → Documents.
+    // Ruajtje direkte e PDF-së. Në iPhone Safari/PWA nuk mund të hapim me detyrim
+    // një dosje specifike te Files; download-i shkon te vendndodhja Downloads e iOS.
     try{
       const x=offers.find(z=>z.id===currentPdfOfferId);
       if(x){x.savedAt=new Date().toISOString();persistAll();renderOffers();}
-      window.location.href=url;
+      const saveName = (pdfFile && pdfFile.name) ? pdfFile.name : ((offer && offer.number) ? String(offer.number) : 'ofert') + '-' + (lang==='sv'?'sv':'sq') + '.pdf';
+      let saveUrl = url;
+      let tempUrl = null;
+      if(pdfFile){
+        tempUrl = URL.createObjectURL(pdfFile);
+        saveUrl = tempUrl;
+      }
+      const a=document.createElement('a');
+      a.href=saveUrl;
+      a.download=saveName;
+      a.rel='noopener';
+      a.style.display='none';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      if(tempUrl) setTimeout(()=>{try{URL.revokeObjectURL(tempUrl)}catch(e){}},60000);
     }catch(e){
-      console.error('PDF viewer open error:',e);
-      buildOfferPdf(lang,'download');
+      console.error('PDF download error:',e);
+      try{ window.open(url,'_blank'); }catch(_e){}
     }
   };
   document.getElementById('iliriPdfSendSign').onclick=()=>window.iliriSendCurrentOfferForSignature(lang);

@@ -77,6 +77,21 @@ html.client-sign-mode #iliriSigBack{display:none!important}
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <meta name="iliri-build" content="iliri-complete-offers-invoices-photos-backup-v12">
 <!-- ILIRI FIRMA TEST V6 -->
+
+<style>
+.workTypeSelect{
+  width:100%;
+  min-height:56px;
+  border:1px solid #cfd4dc;
+  border-radius:16px;
+  background:#fff;
+  padding:0 16px;
+  font:inherit;
+  color:#111827;
+  box-sizing:border-box;
+}
+</style>
+
 </head>
 <body>
 <header>
@@ -375,7 +390,7 @@ function renderHome(){$('countProjects').textContent=projects.length;$('countCli
 function normalizeOfferStatus(s){return s==='accepted'?'unpaid':(s||'unsent')}
 function offerStatusText(s){s=normalizeOfferStatus(s);return s==='unsent'?tr('offerUnsent'):s==='sent'?tr('offerSent'):s==='unpaid'?tr('offerUnpaid'):tr('offerPaid')}
 function nextOfferNumber(){const y=new Date().getFullYear();const nums=offers.map(o=>String(o.number||'')).filter(n=>n.startsWith(y+'-')).map(n=>parseInt(n.split('-').pop(),10)).filter(Number.isFinite);const next=(nums.length?Math.max(...nums):0)+1;return `${y}-${String(next).padStart(3,'0')}`}
-function addOfferLine(kind,data={}){const box=$(kind==='work'?'workLines':'materialLines');const row=document.createElement('div');row.className='offer-line '+(kind==='material'?'material-line':'');row.dataset.kind=kind;if(kind==='work')row.innerHTML=`<input class="desc" placeholder="${esc(tr('description'))}" value="${esc(data.description||'')}"><input class="qty" type="number" min="0" step="0.5" placeholder="${esc(tr('hoursLower'))}" value="${esc(data.qty??'')}"><input class="unitPrice" type="number" min="0" step="1" placeholder="kr/${esc(tr('hoursLower'))}" value="${esc(data.unitPrice??'')}"><button class="danger removeLine" type="button">×</button>`;else row.innerHTML=`<input class="desc" placeholder="${esc(tr('material'))}" value="${esc(data.description||'')}"><input class="qty" type="number" min="0" step="1" placeholder="${esc(tr('quantity'))}" value="${esc(data.qty??'')}"><input class="unitPrice" type="number" min="0" step="1" placeholder="kr" value="${esc(data.unitPrice??'')}"><button class="danger removeLine" type="button">×</button>`;box.appendChild(row);row.querySelectorAll('input').forEach(x=>x.addEventListener('input',calcOffer));row.querySelector('.removeLine').addEventListener('click',()=>{row.remove();calcOffer()});calcOffer()}
+function addOfferLine(kind,data={}){const box=$(kind==='work'?'workLines':'materialLines');const row=document.createElement('div');row.className='offer-line '+(kind==='material'?'material-line':'');row.dataset.kind=kind;if(kind==='work'){const workTypes=currentLang==='sv'?['Målning av väggar','Målning av tak','Målning av snickerier','Målning av dörrar','Målning av karmar och foder','Målning av fönster','Målning av element','Målning av köksluckor','Fasadmålning','Målning av träpanel','Målning av betong','Målning av metall','Bredspackling','Skarvspackling','Lagning och spackling','Slipning','Grundmålning','Tapetsering','Tapetborttagning','Fogning','Sprutmålning','Lackering','Dekorationsmålning','Skrapning av färg','Målartvätt / rengöring','Maskering och täckning','Förarbete','Annat måleriarbete']:['Lyerje muresh','Lyerje tavani','Lyerje druri / snickeri','Lyerje dyersh','Lyerje kornizash dhe listelash','Lyerje dritaresh','Lyerje radiatorësh','Lyerje dyersh kuzhine','Lyerje fasade','Lyerje paneli druri','Lyerje betoni','Lyerje metali','Spatulim i plotë','Spatulim fugash','Riparim dhe spatulim','Lëmim / smerilim','Astar / grundim','Vendosje tapete','Heqje tapete','Fugim','Lyerje me sprucim','Llakim','Lyerje dekorative','Gërryerje boje','Larje / pastrim para lyerjes','Maskim dhe mbulim','Punë përgatitore','Punë tjetër molerie'];const selected=data.description||'';row.innerHTML=`<select class="desc workTypeSelect"><option value="" ${selected?'':'selected'} disabled>${esc(tr('chooseWork'))}</option>${workTypes.map(x=>`<option value="${esc(x)}" ${x===selected?'selected':''}>${esc(x)}</option>`).join('')}${selected&&!workTypes.includes(selected)?`<option value="${esc(selected)}" selected>${esc(selected)}</option>`:''}</select><input class="qty" type="number" min="0" step="0.5" placeholder="${esc(tr('hoursLower'))}" value="${esc(data.qty??'')}"><input class="unitPrice" type="number" min="0" step="1" placeholder="kr/${esc(tr('hoursLower'))}" value="${esc(data.unitPrice??'')}"><button class="danger removeLine" type="button">×</button>`;}else row.innerHTML=`<input class="desc" placeholder="${esc(tr('material'))}" value="${esc(data.description||'')}"><input class="qty" type="number" min="0" step="1" placeholder="${esc(tr('quantity'))}" value="${esc(data.qty??'')}"><input class="unitPrice" type="number" min="0" step="1" placeholder="kr" value="${esc(data.unitPrice??'')}"><button class="danger removeLine" type="button">×</button>`;box.appendChild(row);row.querySelectorAll('input').forEach(x=>x.addEventListener('input',calcOffer));const desc=row.querySelector('.desc');if(desc&&desc.tagName==='SELECT')desc.addEventListener('change',calcOffer);row.querySelector('.removeLine').addEventListener('click',()=>{row.remove();calcOffer()});calcOffer()}
 function collectOfferLines(kind){return [...$(kind==='work'?'workLines':'materialLines').querySelectorAll('.offer-line')].map(r=>({description:r.querySelector('.desc').value.trim(),qty:Number(r.querySelector('.qty').value||0),unitPrice:Number(r.querySelector('.unitPrice').value||0)})).filter(x=>x.description||x.qty||x.unitPrice)}
 function calcOffer(){const lines=[...collectOfferLines('work'),...collectOfferLines('material')];const subtotal=lines.reduce((a,x)=>a+x.qty*x.unitPrice,0);const vatPct=Number($('offerVat').value||0);const vat=subtotal*vatPct/100;const fmt=n=>Number(n).toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';$('offerSubtotal').textContent=fmt(subtotal);$('offerVatAmount').textContent=fmt(vat);$('offerTotal').textContent=fmt(subtotal+vat);return{subtotal,vat,total:subtotal+vat}}
 function clearOfferForm(){$('offerId').value='';$('offerNumber').value=nextOfferNumber();$('offerDate').value=today();$('offerClient').value='';$('offerPhone').value='';$('offerAddress').value='';$('offerStatus').value='unsent';$('offerVat').value='25';$('offerNotes').value='';$('workLines').innerHTML='';$('materialLines').innerHTML='';addOfferLine('work');addOfferLine('material');$('deleteOfferBtn').classList.add('hidden');$('offerFormTitle').textContent=tr('newOfferTitle');calcOffer()}
@@ -481,31 +496,31 @@ function openOfferPdfForSigning(pdfSource, lang, offer, pdfFile){
     </div>`;
   document.body.appendChild(v);
   document.getElementById('iliriPdfBack').onclick=()=>{revoke();v.remove();};
-  document.getElementById('iliriPdfSave').onclick=()=>{
-    // Ruajtje direkte e PDF-së. Në iPhone Safari/PWA nuk mund të hapim me detyrim
-    // një dosje specifike te Files; download-i shkon te vendndodhja Downloads e iOS.
+  document.getElementById('iliriPdfSave').onclick=async()=>{
+    const btn=document.getElementById('iliriPdfSave');
+    const saveName=(pdfFile&&pdfFile.name)?pdfFile.name:(((offer&&offer.number)?String(offer.number):'ofert')+'-'+(lang==='sv'?'sv':'sq')+'.pdf');
     try{
-      const x=offers.find(z=>z.id===currentPdfOfferId);
-      if(x){x.savedAt=new Date().toISOString();persistAll();renderOffers();}
-      const saveName = (pdfFile && pdfFile.name) ? pdfFile.name : ((offer && offer.number) ? String(offer.number) : 'ofert') + '-' + (lang==='sv'?'sv':'sq') + '.pdf';
-      let saveUrl = url;
-      let tempUrl = null;
-      if(pdfFile){
-        tempUrl = URL.createObjectURL(pdfFile);
-        saveUrl = tempUrl;
+      // Në iPhone kjo hap Share Sheet-in e sistemit. Prej aty zgjidhet “Save to Files”.
+      if(pdfFile && navigator.share && (!navigator.canShare || navigator.canShare({files:[pdfFile]}))){
+        await navigator.share({files:[pdfFile],title:saveName});
+        const x=offers.find(z=>z.id===currentPdfOfferId);
+        if(x){x.savedAt=new Date().toISOString();persistAll();renderOffers();}
+        if(btn){
+          const oldText=btn.textContent;
+          btn.textContent='✓ U ruajt';
+          setTimeout(()=>{if(document.body.contains(btn))btn.textContent=oldText;},2200);
+        }
+        return;
       }
-      const a=document.createElement('a');
-      a.href=saveUrl;
-      a.download=saveName;
-      a.rel='noopener';
-      a.style.display='none';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      if(tempUrl) setTimeout(()=>{try{URL.revokeObjectURL(tempUrl)}catch(e){}},60000);
+
+      // Fallback: hap PDF-në në viewer-in e iPhone/Safari që të përdoret Share → Save to Files.
+      const w=window.open(url,'_blank');
+      if(!w) window.location.href=url;
+      alert('PDF u hap. Shtyp Share dhe zgjidh Save to Files.');
     }catch(e){
-      console.error('PDF download error:',e);
-      try{ window.open(url,'_blank'); }catch(_e){}
+      if(e && e.name==='AbortError') return;
+      console.error('PDF save/share error:',e);
+      alert('Nuk u hap ruajtja. Provo përsëri dhe zgjidh Save to Files.');
     }
   };
   document.getElementById('iliriPdfSendSign').onclick=()=>window.iliriSendCurrentOfferForSignature(lang);
@@ -1470,6 +1485,100 @@ window.addEventListener('load',function(){
     alert('Linku i ofertës nuk u lexua siç duhet.');
   }
 });
+</script>
+
+<script>
+/* ILIRI Måleri – automatic local autosave of entered fields */
+(function(){
+  const AUTO_DRAFT_KEY='iliri_maleri_auto_draft_v1';
+  let saveTimer=null;
+
+  function saveAutoDraft(){
+    try{
+      const fields={};
+      document.querySelectorAll('input[id],select[id],textarea[id]').forEach(el=>{
+        if(!el.id || el.type==='file' || el.type==='button' || el.type==='submit') return;
+        if(el.type==='checkbox' || el.type==='radio') fields[el.id]={kind:'checked',value:!!el.checked};
+        else fields[el.id]={kind:'value',value:el.value};
+      });
+
+      let offerWork=[], offerMaterials=[];
+      try{
+        if(typeof collectOfferLines==='function'){
+          offerWork=collectOfferLines('work')||[];
+          offerMaterials=collectOfferLines('material')||[];
+        }
+      }catch(e){}
+
+      localStorage.setItem(AUTO_DRAFT_KEY,JSON.stringify({
+        savedAt:new Date().toISOString(),
+        fields,
+        offerWork,
+        offerMaterials
+      }));
+
+      /* Also keep all saved app data current in localStorage */
+      try{ if(typeof persistAll==='function') persistAll(); }catch(e){}
+    }catch(e){}
+  }
+
+  function scheduleSave(){
+    clearTimeout(saveTimer);
+    saveTimer=setTimeout(saveAutoDraft,150);
+  }
+
+  function restoreAutoDraft(){
+    try{
+      const raw=localStorage.getItem(AUTO_DRAFT_KEY);
+      if(!raw) return;
+      const d=JSON.parse(raw);
+      if(!d || !d.fields) return;
+
+      Object.keys(d.fields).forEach(id=>{
+        const el=document.getElementById(id);
+        if(!el || el.type==='file') return;
+        const item=d.fields[id];
+        if(item.kind==='checked') el.checked=!!item.value;
+        else if(item.value!==undefined && item.value!==null) el.value=item.value;
+      });
+
+      /* Restore unfinished offer/invoice work lines too */
+      const workBox=document.getElementById('workLines');
+      const materialBox=document.getElementById('materialLines');
+      if(typeof addOfferLine==='function'){
+        if(workBox && Array.isArray(d.offerWork) && d.offerWork.length){
+          workBox.innerHTML='';
+          d.offerWork.forEach(x=>addOfferLine('work',x));
+        }
+        if(materialBox && Array.isArray(d.offerMaterials) && d.offerMaterials.length){
+          materialBox.innerHTML='';
+          d.offerMaterials.forEach(x=>addOfferLine('material',x));
+        }
+        try{ if(typeof calcOffer==='function') calcOffer(); }catch(e){}
+      }
+    }catch(e){}
+  }
+
+  document.addEventListener('input',scheduleSave,true);
+  document.addEventListener('change',scheduleSave,true);
+  document.addEventListener('click',function(e){
+    if(e.target && (e.target.matches('button') || e.target.closest('button'))) {
+      setTimeout(saveAutoDraft,100);
+    }
+  },true);
+
+  window.addEventListener('beforeunload',saveAutoDraft);
+  window.addEventListener('pagehide',saveAutoDraft);
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='hidden') saveAutoDraft();
+  });
+
+  window.addEventListener('load',function(){
+    setTimeout(restoreAutoDraft,350);
+    /* Safety autosave every 5 seconds while the app is open */
+    setInterval(saveAutoDraft,5000);
+  });
+})();
 </script>
 
 </body>

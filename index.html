@@ -375,7 +375,8 @@ function renderHome(){$('countProjects').textContent=projects.length;$('countCli
 function normalizeOfferStatus(s){return s==='accepted'?'unpaid':(s||'unsent')}
 function offerStatusText(s){s=normalizeOfferStatus(s);return s==='unsent'?tr('offerUnsent'):s==='sent'?tr('offerSent'):s==='unpaid'?tr('offerUnpaid'):tr('offerPaid')}
 function nextOfferNumber(){const y=new Date().getFullYear();const nums=offers.map(o=>String(o.number||'')).filter(n=>n.startsWith(y+'-')).map(n=>parseInt(n.split('-').pop(),10)).filter(Number.isFinite);const next=(nums.length?Math.max(...nums):0)+1;return `${y}-${String(next).padStart(3,'0')}`}
-function addOfferLine(kind,data={}){const box=$(kind==='work'?'workLines':'materialLines');const row=document.createElement('div');row.className='offer-line '+(kind==='material'?'material-line':'');row.dataset.kind=kind;if(kind==='work')row.innerHTML=`<input class="desc" placeholder="${esc(tr('description'))}" value="${esc(data.description||'')}"><input class="qty" type="number" min="0" step="0.5" placeholder="${esc(tr('hoursLower'))}" value="${esc(data.qty??'')}"><input class="unitPrice" type="number" min="0" step="1" placeholder="kr/${esc(tr('hoursLower'))}" value="${esc(data.unitPrice??'')}"><button class="danger removeLine" type="button">×</button>`;else row.innerHTML=`<input class="desc" placeholder="${esc(tr('material'))}" value="${esc(data.description||'')}"><input class="qty" type="number" min="0" step="1" placeholder="${esc(tr('quantity'))}" value="${esc(data.qty??'')}"><input class="unitPrice" type="number" min="0" step="1" placeholder="kr" value="${esc(data.unitPrice??'')}"><button class="danger removeLine" type="button">×</button>`;box.appendChild(row);row.querySelectorAll('input').forEach(x=>x.addEventListener('input',calcOffer));row.querySelector('.removeLine').addEventListener('click',()=>{row.remove();calcOffer()});calcOffer()}
+const ILIRI_WORK_TYPES=['Måleriarbete','Målning','Väggmålning','Takmålning','Grundmålning','Spackling','Bredspackling','Slipning','Tapetsering','Tapetborttagning','Sprutmålning','Snickerimålning','Dörrmålning','Fönstermålning','Elementmålning','Köksluckor','Fasadmålning','Utvändig målning','Trämålning','Lackering','Dekorationsmålning','Renoveringsmålning','Fogning','Annat'];
+function addOfferLine(kind,data={}){const box=$(kind==='work'?'workLines':'materialLines');const row=document.createElement('div');row.className='offer-line '+(kind==='material'?'material-line':'');row.dataset.kind=kind;if(kind==='work'){const selected=String(data.description||'');const types=ILIRI_WORK_TYPES.includes(selected)||!selected?ILIRI_WORK_TYPES:[selected,...ILIRI_WORK_TYPES];const options='<option value="">Zgjidh llojin e punës</option>'+types.map(x=>`<option value="${esc(x)}"${x===selected?' selected':''}>${esc(x)}</option>`).join('');row.innerHTML=`<select class="desc" aria-label="Zgjidh llojin e punës">${options}</select><input class="qty" type="number" min="0" step="0.5" placeholder="${esc(tr('hoursLower'))}" value="${esc(data.qty??'')}"><input class="unitPrice" type="number" min="0" step="1" placeholder="kr/${esc(tr('hoursLower'))}" value="${esc(data.unitPrice??'')}"><button class="danger removeLine" type="button">×</button>`;}else row.innerHTML=`<input class="desc" placeholder="${esc(tr('material'))}" value="${esc(data.description||'')}"><input class="qty" type="number" min="0" step="1" placeholder="${esc(tr('quantity'))}" value="${esc(data.qty??'')}"><input class="unitPrice" type="number" min="0" step="1" placeholder="kr" value="${esc(data.unitPrice??'')}"><button class="danger removeLine" type="button">×</button>`;box.appendChild(row);row.querySelectorAll('input,select').forEach(x=>{x.addEventListener('input',calcOffer);x.addEventListener('change',calcOffer)});row.querySelector('.removeLine').addEventListener('click',()=>{row.remove();calcOffer()});calcOffer()}
 function collectOfferLines(kind){return [...$(kind==='work'?'workLines':'materialLines').querySelectorAll('.offer-line')].map(r=>({description:r.querySelector('.desc').value.trim(),qty:Number(r.querySelector('.qty').value||0),unitPrice:Number(r.querySelector('.unitPrice').value||0)})).filter(x=>x.description||x.qty||x.unitPrice)}
 function calcOffer(){const lines=[...collectOfferLines('work'),...collectOfferLines('material')];const subtotal=lines.reduce((a,x)=>a+x.qty*x.unitPrice,0);const vatPct=Number($('offerVat').value||0);const vat=subtotal*vatPct/100;const fmt=n=>Number(n).toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';$('offerSubtotal').textContent=fmt(subtotal);$('offerVatAmount').textContent=fmt(vat);$('offerTotal').textContent=fmt(subtotal+vat);return{subtotal,vat,total:subtotal+vat}}
 function clearOfferForm(){$('offerId').value='';$('offerNumber').value=nextOfferNumber();$('offerDate').value=today();$('offerClient').value='';$('offerPhone').value='';$('offerAddress').value='';$('offerStatus').value='unsent';$('offerVat').value='25';$('offerNotes').value='';$('workLines').innerHTML='';$('materialLines').innerHTML='';addOfferLine('work');addOfferLine('material');$('deleteOfferBtn').classList.add('hidden');$('offerFormTitle').textContent=tr('newOfferTitle');calcOffer()}
@@ -416,9 +417,18 @@ let currentPdfOfferId=null;
 
 /* Vula dhe firma e ILIA MITRO – ruhen në telefon dhe për çdo ofertë */
 const OWNER_SIG_KEY='iliri_owner_signature_v1';
+const OWNER_SIG_VERSION_KEY='iliri_owner_signature_embedded_version';
+const OWNER_SIG_DEFAULT='data:image/png;base64,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';
+// Vendos firmën e dërguar nga ILIA MITRO vetëm një herë në këtë version.
+if(localStorage.getItem(OWNER_SIG_VERSION_KEY)!=='firma-ilia-mitro-20260912'){
+  localStorage.setItem(OWNER_SIG_KEY,OWNER_SIG_DEFAULT);
+  localStorage.setItem(OWNER_SIG_VERSION_KEY,'firma-ilia-mitro-20260912');
+}
 function currentOwnerOffer(){return offers.find(x=>String(x.id)===String(currentPdfOfferId))}
 function ownerDecor(o){
-  if(!o.ownerDecor)o.ownerDecor={stamp:false,signature:false,stampX:147,stampY:244,signatureX:128,signatureY:263};
+  if(!o.ownerDecor)o.ownerDecor={stamp:false,signature:false,stampX:147,stampY:239,signatureX:128,signatureY:263,stampSize:38,signatureSize:48};
+  if(!Number(o.ownerDecor.stampSize))o.ownerDecor.stampSize=38;
+  if(!Number(o.ownerDecor.signatureSize))o.ownerDecor.signatureSize=48;
   return o.ownerDecor;
 }
 function saveOwnerDecor(o){persistAll();printOffer(o.id)}
@@ -455,21 +465,77 @@ function clearOwnerSignature(){
   localStorage.removeItem(OWNER_SIG_KEY);offers.forEach(o=>{if(o.ownerDecor)o.ownerDecor.signature=false});persistAll();
   const o=currentOwnerOffer();if(o)printOffer(o.id);
 }
+function makeOwnerStampDataUrl(){
+  const cv=document.createElement('canvas');cv.width=700;cv.height=700;
+  const c=cv.getContext('2d'),gold='#b58b20',dark='#111827';
+  c.clearRect(0,0,700,700);c.fillStyle='rgba(255,255,255,.96)';c.beginPath();c.arc(350,350,326,0,Math.PI*2);c.fill();
+  c.strokeStyle=gold;c.lineWidth=18;c.beginPath();c.arc(350,350,320,0,Math.PI*2);c.stroke();
+  c.lineWidth=7;c.beginPath();c.arc(350,350,290,0,Math.PI*2);c.stroke();
+  c.textAlign='center';c.textBaseline='middle';c.fillStyle=gold;c.font='bold 92px Georgia,serif';c.fillText('ILIRI',350,146);
+  c.strokeStyle=dark;c.lineWidth=14;c.lineCap='round';c.lineJoin='round';
+  c.beginPath();c.moveTo(205,300);c.lineTo(350,205);c.lineTo(495,300);c.moveTo(245,280);c.lineTo(245,370);c.moveTo(455,280);c.lineTo(455,370);c.stroke();
+  c.fillStyle=gold;c.fillRect(323,265,54,54);c.strokeStyle=dark;c.lineWidth=7;c.strokeRect(323,265,54,54);
+  c.beginPath();c.moveTo(180,360);c.bezierCurveTo(270,325,390,390,515,328);c.strokeStyle=gold;c.lineWidth=24;c.stroke();
+  c.save();c.translate(500,322);c.rotate(-0.55);c.fillStyle=dark;c.fillRect(-8,-10,88,20);c.fillStyle=gold;c.fillRect(70,-17,42,34);c.restore();
+  c.fillStyle=dark;c.font='bold 47px Arial,sans-serif';c.fillText('MÅLERI & DEKOR',350,421);
+  c.strokeStyle=gold;c.lineWidth=5;c.beginPath();c.moveTo(120,460);c.lineTo(580,460);c.stroke();
+  c.font='bold 38px Arial,sans-serif';c.fillText('ILIA MITRO',350,495);
+  c.font='27px Arial,sans-serif';c.fillText('076 922 53 61',350,532);c.fillText('ilia.mitro@yahoo.gr',350,568);
+  c.fillStyle=gold;c.font='bold 30px Arial,sans-serif';c.fillText('GÖTEBORG',350,604);
+  return cv.toDataURL('image/png');
+}
+function darkenOwnerSignatureDataUrl(src){
+  return new Promise(resolve=>{
+    if(!src){resolve(src);return}
+    const im=new Image();
+    im.onload=()=>{
+      try{
+        const cv=document.createElement('canvas');cv.width=im.naturalWidth||im.width;cv.height=im.naturalHeight||im.height;
+        const c=cv.getContext('2d');c.drawImage(im,0,0);
+        const data=c.getImageData(0,0,cv.width,cv.height),p=data.data;
+        for(let i=0;i<p.length;i+=4){if(p[i+3]){p[i]=0;p[i+1]=0;p[i+2]=0;p[i+3]=Math.min(255,p[i+3]*8)}}
+        c.putImageData(data,0,0);resolve(cv.toDataURL('image/png'));
+      }catch(e){resolve(src)}
+    };
+    im.onerror=()=>resolve(src);im.src=src;
+  });
+}
+// Shared A4 geometry: editor and PDF use identical millimetre coordinates.
+function ownerBox(d,kind){
+  const stamp=kind==='stamp', fallback=stamp?38:48;
+  const number=(value,otherwise)=>Number.isFinite(Number(value))?Number(value):otherwise;
+  const width=Math.max(25,Math.min(stamp?65:90,number(d[kind+'Size'],fallback)));
+  const height=stamp?width:width/3;
+  return {width,height,x:Math.max(0,Math.min(210-width,number(d[kind+'X'],stamp?147:128))),y:Math.max(0,Math.min(297-height,number(d[kind+'Y'],stamp?239:263)))};
+}
+function containOwnerImage(width,height,box){
+  const scale=Math.min(box.width/width,box.height/height);
+  const w=width*scale,h=height*scale;
+  return {x:box.x+(box.width-w)/2,y:box.y+(box.height-h)/2,width:w,height:h};
+}
 function openOwnerPositionEditor(){
   const o=currentOwnerOffer();if(!o)return;const d=ownerDecor(o),sig=localStorage.getItem(OWNER_SIG_KEY)||'';
   if(!d.stamp&&!d.signature){alert('Aktivizo fillimisht Vulën ose Firmën time.');return}
   const old=document.getElementById('ownerPosModal');if(old)old.remove();
   const m=document.createElement('div');m.id='ownerPosModal';m.style.cssText='position:fixed;inset:0;z-index:100003;background:#e5e7eb;padding:12px;overflow:auto';
-  m.innerHTML='<div style="max-width:430px;margin:auto"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><button id="posBack" type="button" style="padding:12px;border:0;border-radius:10px">← Kthehu</button><button id="posSave" type="button" style="padding:12px;border:0;border-radius:10px;background:#159447;color:white;font-weight:900">Ruaj pozicionet</button></div><div id="a4pos" style="position:relative;width:315px;height:445px;margin:auto;background:white;box-shadow:0 2px 12px #999;overflow:hidden"><div style="padding:24px;color:#bbb"><b>ILIRI Måleri</b><br><br>OFERTË / FAKTURË<br><br><hr><br>Përmbajtja e dokumentit…</div></div><p style="text-align:center">Mbaje me gisht dhe lëvize vulën ose firmën.</p></div>';
+  m.innerHTML='<div style="max-width:430px;margin:auto"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><button id="posBack" type="button" style="padding:12px;border:0;border-radius:10px">← Kthehu</button><button id="posSave" type="button" style="padding:12px;border:0;border-radius:10px;background:#159447;color:white;font-weight:900">Ruaj pozicionet</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><button id="stampMinus" type="button" style="padding:10px;border:0;border-radius:9px">Vula −</button><button id="stampPlus" type="button" style="padding:10px;border:0;border-radius:9px">Vula +</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><button id="sigMinus" type="button" style="padding:10px;border:0;border-radius:9px">Firma −</button><button id="sigPlus" type="button" style="padding:10px;border:0;border-radius:9px">Firma +</button></div></div><div id="a4pos" style="position:relative;width:315px;height:445.5px;margin:auto;background:white;box-shadow:0 2px 12px #999;overflow:hidden"><div style="padding:24px;color:#bbb"><b>ILIRI Måleri</b><br><br>OFERTË / FAKTURË<br><br><hr><br>Përmbajtja e dokumentit…</div></div><p style="text-align:center">Lëvizi me gisht. Përdor − dhe + për madhësinë.</p></div>';
   document.body.appendChild(m);const a=document.getElementById('a4pos'),scale=1.5;
+  function syncBox(kind,el){const b=ownerBox(d,kind);d[kind+'X']=b.x;d[kind+'Y']=b.y;d[kind+'Size']=b.width;if(el){el.style.left=b.x*scale+'px';el.style.top=b.y*scale+'px';el.style.width=b.width*scale+'px';el.style.height=b.height*scale+'px'}}
+  syncBox('stamp');syncBox('signature');
   function drag(el,keyX,keyY){
     let active=false,dx=0,dy=0;
     const st=e=>{active=true;const t=e.touches?e.touches[0]:e,r=el.getBoundingClientRect();dx=t.clientX-r.left;dy=t.clientY-r.top;e.preventDefault()};
-    const mv=e=>{if(!active)return;const t=e.touches?e.touches[0]:e,r=a.getBoundingClientRect();let l=Math.max(0,Math.min(315-el.offsetWidth,t.clientX-r.left-dx));let top=Math.max(0,Math.min(445-el.offsetHeight,t.clientY-r.top-dy));el.style.left=l+'px';el.style.top=top+'px';d[keyX]=l/scale;d[keyY]=top/scale;e.preventDefault()};
+    const mv=e=>{if(!active)return;const t=e.touches?e.touches[0]:e,r=a.getBoundingClientRect();let l=Math.max(0,Math.min(315-el.getBoundingClientRect().width,t.clientX-r.left-dx));let top=Math.max(0,Math.min(445.5-el.getBoundingClientRect().height,t.clientY-r.top-dy));el.style.left=l+'px';el.style.top=top+'px';d[keyX]=l/scale;d[keyY]=top/scale;e.preventDefault()};
     ['pointerdown','touchstart'].forEach(n=>el.addEventListener(n,st,{passive:false}));['pointermove','touchmove'].forEach(n=>m.addEventListener(n,mv,{passive:false}));['pointerup','pointercancel','touchend','touchcancel'].forEach(n=>m.addEventListener(n,()=>active=false));
   }
-  if(d.stamp){const e=document.createElement('div');e.textContent='ILIA MITRO • MÅLERI & DEKOR';e.style.cssText='position:absolute;width:105px;height:42px;border:3px double #b58b20;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:10px;font-weight:900;color:#116b3a;background:#fffbe8;touch-action:none;left:'+(d.stampX*scale)+'px;top:'+(d.stampY*scale)+'px';a.appendChild(e);drag(e,'stampX','stampY')}
-  if(d.signature&&sig){const e=document.createElement('img');e.src=sig;e.style.cssText='position:absolute;width:100px;height:38px;object-fit:contain;touch-action:none;left:'+(d.signatureX*scale)+'px;top:'+(d.signatureY*scale)+'px';a.appendChild(e);drag(e,'signatureX','signatureY')}
+  let stampEl=null,sigEl=null;
+  if(d.stamp){stampEl=document.createElement('img');stampEl.src=makeOwnerStampDataUrl();stampEl.alt='Vula ILIRI Måleri & Dekor';stampEl.style.cssText='position:absolute;width:'+(d.stampSize*scale)+'px;height:'+(d.stampSize*scale)+'px;object-fit:contain;touch-action:none;left:'+(d.stampX*scale)+'px;top:'+(d.stampY*scale)+'px';a.appendChild(stampEl);drag(stampEl,'stampX','stampY')}
+  if(d.signature&&sig){sigEl=document.createElement('img');sigEl.src=sig;sigEl.style.cssText='position:absolute;width:'+(d.signatureSize*scale)+'px;height:'+(d.signatureSize*scale/3)+'px;object-fit:contain;touch-action:none;filter:contrast(350%) brightness(35%);left:'+(d.signatureX*scale)+'px;top:'+(d.signatureY*scale)+'px';a.appendChild(sigEl);drag(sigEl,'signatureX','signatureY')}
+  if(sigEl)darkenOwnerSignatureDataUrl(sig).then(src=>{sigEl.src=src;sigEl.style.filter='none'});
+  const resizeStamp=delta=>{d.stampSize=Math.max(25,Math.min(65,d.stampSize+delta));if(stampEl){stampEl.style.width=(d.stampSize*scale)+'px';stampEl.style.height=(d.stampSize*scale)+'px'}syncBox('stamp',stampEl)};
+  const resizeSig=delta=>{d.signatureSize=Math.max(25,Math.min(90,d.signatureSize+delta));if(sigEl){sigEl.style.width=(d.signatureSize*scale)+'px';sigEl.style.height=(d.signatureSize*scale/3)+'px'}syncBox('signature',sigEl)};
+  document.getElementById('stampMinus').onclick=()=>resizeStamp(-3);document.getElementById('stampPlus').onclick=()=>resizeStamp(3);
+  document.getElementById('sigMinus').onclick=()=>resizeSig(-4);document.getElementById('sigPlus').onclick=()=>resizeSig(4);
   document.getElementById('posBack').onclick=()=>m.remove();document.getElementById('posSave').onclick=()=>{persistAll();m.remove();printOffer(o.id)};
 }
 
@@ -477,6 +543,9 @@ function printOffer(id){
   window.__iliriCurrentOfferId=id;
   currentPdfOfferId=id;
   const o=offers.find(x=>x.id===id); if(!o)return;
+  const previewSubtotal=[...(o.work||[]),...(o.materials||[])].reduce((sum,x)=>sum+Number(x.qty||0)*Number(x.unitPrice||0),0);
+  const previewVat=previewSubtotal*Number(o.vatPct||0)/100;
+  const previewTotal=previewSubtotal+previewVat;
   let view=document.getElementById('iphonePdfView');
   if(!view){view=document.createElement('div');view.id='iphonePdfView';document.body.appendChild(view);}
   view.style.cssText='position:fixed;inset:0;z-index:99999;background:#f3f4f6;color:#111;overflow:auto;padding:14px;font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;';
@@ -489,7 +558,7 @@ function printOffer(id){
       <hr style="border:0;border-top:1px solid #ddd;margin:18px 0">
       ${o.number?`<div><b>Nr. ofertës:</b> ${esc(o.number)}</div>`:''}<div><b>Data:</b> ${esc(o.date||'')}</div><div><b>Klienti:</b> ${esc(o.client||'')}</div>${o.phone?`<div><b>Telefoni:</b> ${esc(o.phone)}</div>`:''}${o.address?`<div><b>Adresa:</b> ${esc(o.address)}</div>`:''}
       ${section('Punët',o.work)}${section('Materialet',o.materials)}
-      <div style="margin-top:20px;border-top:1px solid #ddd;padding-top:12px"><div style="display:flex;justify-content:space-between"><span>Pa moms:</span><b>${money(o.subtotal)}</b></div><div style="display:flex;justify-content:space-between;margin-top:6px"><span>Moms:</span><b>${money(o.vat)}</b></div><div style="display:flex;justify-content:space-between;margin-top:8px;font-size:20px"><b>TOTALI:</b><b>${money(o.total)}</b></div></div>
+      <div style="margin-top:20px;border-top:1px solid #ddd;padding-top:12px"><div style="display:flex;justify-content:space-between"><span>Pa moms:</span><b>${money(previewSubtotal)}</b></div><div style="display:flex;justify-content:space-between;margin-top:6px"><span>Moms:</span><b>${money(previewVat)}</b></div><div style="display:flex;justify-content:space-between;margin-top:8px;font-size:20px"><b>TOTALI:</b><b>${money(previewTotal)}</b></div></div>
       ${o.notes?`<div style="margin-top:18px"><b>Shënime:</b><div style="white-space:pre-wrap;margin-top:5px">${esc(o.notes)}</div></div>`:''}
     </div>
     <div style="background:#fff;border-radius:16px;padding:18px;margin:14px 0 30px">
@@ -622,6 +691,11 @@ async function _buildOfferPdfCore(lang,action='share'){
   let materials=(o.materials||[]).map(x=>({...x}));
   let notes=o.notes||'';
 
+  // Rillogarit gjithmonë nga rreshtat, edhe për ofertat e ruajtura me versione të vjetra.
+  const pdfSubtotal=[...work,...materials].reduce((sum,x)=>sum+Number(x.qty||0)*Number(x.unitPrice||0),0);
+  const pdfVat=pdfSubtotal*Number(o.vatPct||0)/100;
+  const pdfTotal=pdfSubtotal+pdfVat;
+
   if(sv){
     // Never let iPhone/Safari stay forever on the translation screen.
     const translateAll=async()=>{
@@ -727,13 +801,13 @@ async function _buildOfferPdfCore(lang,action='share'){
   doc.setFontSize(10.5);
   doc.setFont('helvetica','normal');
   doc.text(L.subtotal+':', 125, y, {align:'right'});
-  doc.text(money(o.subtotal), right, y, {align:'right'}); y += 6;
+  doc.text(money(pdfSubtotal), right, y, {align:'right'}); y += 6;
   doc.text(L.vat+':', 125, y, {align:'right'});
-  doc.text(money(o.vat), right, y, {align:'right'}); y += 7;
+  doc.text(money(pdfVat), right, y, {align:'right'}); y += 7;
   doc.setFont('helvetica','bold');
   doc.setFontSize(12);
   doc.text(L.total+':', 125, y, {align:'right'});
-  doc.text(money(o.total), right, y, {align:'right'}); y += 10;
+  doc.text(money(pdfTotal), right, y, {align:'right'}); y += 10;
 
   if(notes){
     if(y > 250){ doc.addPage(); y = 18; }
@@ -777,20 +851,17 @@ async function _buildOfferPdfCore(lang,action='share'){
   try{
     doc.setPage(1);
     if(od.stamp){
-      const sx=Math.max(16,Math.min(172,Number(od.stampX)||147));
-      const sy=Math.max(30,Math.min(275,Number(od.stampY)||244));
-      doc.setDrawColor(181,139,32);doc.setLineWidth(0.8);doc.ellipse(sx,sy,21,9);
-      doc.setTextColor(17,107,58);doc.setFont('helvetica','bold');doc.setFontSize(7.5);
-      doc.text('ILIA MITRO',sx,sy-1,{align:'center'});doc.setFontSize(6.2);doc.text('MALERI & DEKOR',sx,sy+3,{align:'center'});
-      doc.setTextColor(0,0,0);
+      const b=ownerBox(od,'stamp');
+      doc.addImage(makeOwnerStampDataUrl(),'PNG',b.x,b.y,b.width,b.height);
     }
     if(od.signature){
       const os=localStorage.getItem(OWNER_SIG_KEY)||'';
       if(os){
-        const fx=Math.max(16,Math.min(150,Number(od.signatureX)||128));
-        const fy=Math.max(30,Math.min(275,Number(od.signatureY)||263));
-        doc.addImage(os,'PNG',fx,fy,48,16);
-        doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.text(sv?'Företagets signatur':'Firma e kompanisë',fx,fy+19);
+        const box=ownerBox(od,'signature');
+        const strongSignature=await darkenOwnerSignatureDataUrl(os);
+        const props=doc.getImageProperties(strongSignature);
+        const fitted=containOwnerImage(props.width,props.height,box);
+        doc.addImage(strongSignature,'PNG',fitted.x,fitted.y,fitted.width,fitted.height);
       }
     }
   }catch(e){console.error('Vula/firma:',e)}
@@ -1562,4 +1633,3 @@ window.addEventListener('load',function(){
 
 </body>
 </html>
-

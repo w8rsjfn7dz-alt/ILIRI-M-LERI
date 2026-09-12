@@ -178,7 +178,7 @@ html.client-sign-mode #iliriSigBack{display:none!important}
       <div><label id="lblAddress">Adresa</label><input id="address"></div>
       <div><label id="lblType">Lloji i punës</label><select id="type">
         <option value="">Zgjidh llojin e punës</option>
-        <option>Målning</option><option>Spackling</option><option>Bredspackling</option><option>Tapetsering</option><option>Sprutmålning</option><option>Fasadmålning</option><option>Fönstermålning</option><option>Snickerimålning</option><option>Takmålning</option><option>Renoveringsmålning</option><option>Annat</option>
+        <option>Invändig målning</option><option>Utvändig målning</option><option>Väggmålning</option><option>Takmålning</option><option>Fasadmålning</option><option>Snickerimålning</option><option>Dörr- och karmmålning</option><option>Fönstermålning</option><option>Elementmålning</option><option>Trappmålning</option><option>Golvmålning</option><option>Kökslucksmålning</option><option>Sprutmålning</option><option>Grundmålning</option><option>Spackling</option><option>Bredspackling</option><option>Skarvspackling</option><option>Slipning</option><option>Tapetsering</option><option>Tapetborttagning</option><option>Vävsättning</option><option>Fogning</option><option>Tvättning / målartvätt</option><option>Fasadtvätt</option><option>Rostskyddsmålning</option><option>Dekorationsmålning</option><option>Effektmålning</option><option>Lasering</option><option>Marmorering</option><option>Renoveringsmålning</option><option>Nyproduktionsmålning</option><option>Annat</option>
       </select></div>
       <div><label id="lblStatus">Statusi</label><select id="status"><option value="active">Aktiv</option><option value="waiting">Në pritje</option><option value="done">Mbaruar</option></select></div>
       <div><label id="lblPrice">Çmimi / oferta (kr)</label><input id="price" type="number" min="0" step="1"></div>
@@ -414,6 +414,65 @@ function renderAcceptedDocs(){
 
 let currentPdfOfferId=null;
 
+/* Vula dhe firma e ILIA MITRO – ruhen në telefon dhe për çdo ofertë */
+const OWNER_SIG_KEY='iliri_owner_signature_v1';
+function currentOwnerOffer(){return offers.find(x=>String(x.id)===String(currentPdfOfferId))}
+function ownerDecor(o){
+  if(!o.ownerDecor)o.ownerDecor={stamp:false,signature:false,stampX:147,stampY:244,signatureX:128,signatureY:263};
+  return o.ownerDecor;
+}
+function saveOwnerDecor(o){persistAll();printOffer(o.id)}
+function toggleOwnerStamp(){
+  const o=currentOwnerOffer();if(!o)return;
+  const d=ownerDecor(o);d.stamp=!d.stamp;saveOwnerDecor(o);
+}
+function ownerSignatureControl(){
+  const o=currentOwnerOffer();if(!o)return;
+  const saved=localStorage.getItem(OWNER_SIG_KEY)||'';
+  if(saved){const d=ownerDecor(o);d.signature=!d.signature;saveOwnerDecor(o);return}
+  openOwnerSignaturePad();
+}
+function openOwnerSignaturePad(){
+  const o=currentOwnerOffer();if(!o)return;
+  const old=document.getElementById('ownerSigModal');if(old)old.remove();
+  const m=document.createElement('div');m.id='ownerSigModal';
+  m.style.cssText='position:fixed;inset:0;z-index:100002;background:#f3f4f6;padding:18px;overflow:auto';
+  m.innerHTML='<div style="max-width:600px;margin:auto;background:#fff;padding:18px;border-radius:16px"><button id="ownerSigClose" type="button" style="padding:10px 15px;border:0;border-radius:10px">← Kthehu</button><h2>Firma ime — ILIA MITRO</h2><p>Firmos me gisht brenda kutisë.</p><canvas id="ownerSigCanvas" width="900" height="300" style="width:100%;height:190px;border:2px solid #bbb;border-radius:12px;touch-action:none;background:#fff"></canvas><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px"><button id="ownerSigClear" type="button" style="padding:13px;border:0;border-radius:10px;background:#6b7280;color:#fff;font-weight:800">Pastro</button><button id="ownerSigSave" type="button" style="padding:13px;border:0;border-radius:10px;background:#159447;color:#fff;font-weight:800">Ruaj firmën</button></div></div>';
+  document.body.appendChild(m);
+  const cv=document.getElementById('ownerSigCanvas'),x=cv.getContext('2d');x.lineWidth=4;x.lineCap='round';let down=false,ink=false;
+  const p=e=>{const r=cv.getBoundingClientRect(),t=e.touches?e.touches[0]:e;return{x:(t.clientX-r.left)*cv.width/r.width,y:(t.clientY-r.top)*cv.height/r.height}};
+  const start=e=>{down=true;ink=true;const q=p(e);x.beginPath();x.moveTo(q.x,q.y);e.preventDefault()};
+  const move=e=>{if(!down)return;const q=p(e);x.lineTo(q.x,q.y);x.stroke();e.preventDefault()};
+  ['mousedown','touchstart'].forEach(n=>cv.addEventListener(n,start,{passive:false}));
+  ['mousemove','touchmove'].forEach(n=>cv.addEventListener(n,move,{passive:false}));
+  ['mouseup','mouseleave','touchend','touchcancel'].forEach(n=>cv.addEventListener(n,()=>down=false));
+  document.getElementById('ownerSigClose').onclick=()=>m.remove();
+  document.getElementById('ownerSigClear').onclick=()=>{x.clearRect(0,0,cv.width,cv.height);ink=false};
+  document.getElementById('ownerSigSave').onclick=()=>{if(!ink){alert('Firmos me gisht para se ta ruash.');return}localStorage.setItem(OWNER_SIG_KEY,cv.toDataURL('image/png'));ownerDecor(o).signature=true;persistAll();m.remove();printOffer(o.id)};
+}
+function clearOwnerSignature(){
+  if(!confirm('Ta fshij firmën time të ruajtur?'))return;
+  localStorage.removeItem(OWNER_SIG_KEY);offers.forEach(o=>{if(o.ownerDecor)o.ownerDecor.signature=false});persistAll();
+  const o=currentOwnerOffer();if(o)printOffer(o.id);
+}
+function openOwnerPositionEditor(){
+  const o=currentOwnerOffer();if(!o)return;const d=ownerDecor(o),sig=localStorage.getItem(OWNER_SIG_KEY)||'';
+  if(!d.stamp&&!d.signature){alert('Aktivizo fillimisht Vulën ose Firmën time.');return}
+  const old=document.getElementById('ownerPosModal');if(old)old.remove();
+  const m=document.createElement('div');m.id='ownerPosModal';m.style.cssText='position:fixed;inset:0;z-index:100003;background:#e5e7eb;padding:12px;overflow:auto';
+  m.innerHTML='<div style="max-width:430px;margin:auto"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><button id="posBack" type="button" style="padding:12px;border:0;border-radius:10px">← Kthehu</button><button id="posSave" type="button" style="padding:12px;border:0;border-radius:10px;background:#159447;color:white;font-weight:900">Ruaj pozicionet</button></div><div id="a4pos" style="position:relative;width:315px;height:445px;margin:auto;background:white;box-shadow:0 2px 12px #999;overflow:hidden"><div style="padding:24px;color:#bbb"><b>ILIRI Måleri</b><br><br>OFERTË / FAKTURË<br><br><hr><br>Përmbajtja e dokumentit…</div></div><p style="text-align:center">Mbaje me gisht dhe lëvize vulën ose firmën.</p></div>';
+  document.body.appendChild(m);const a=document.getElementById('a4pos'),scale=1.5;
+  function drag(el,keyX,keyY){
+    let active=false,dx=0,dy=0;
+    const st=e=>{active=true;const t=e.touches?e.touches[0]:e,r=el.getBoundingClientRect();dx=t.clientX-r.left;dy=t.clientY-r.top;e.preventDefault()};
+    const mv=e=>{if(!active)return;const t=e.touches?e.touches[0]:e,r=a.getBoundingClientRect();let l=Math.max(0,Math.min(315-el.offsetWidth,t.clientX-r.left-dx));let top=Math.max(0,Math.min(445-el.offsetHeight,t.clientY-r.top-dy));el.style.left=l+'px';el.style.top=top+'px';d[keyX]=l/scale;d[keyY]=top/scale;e.preventDefault()};
+    ['pointerdown','touchstart'].forEach(n=>el.addEventListener(n,st,{passive:false}));['pointermove','touchmove'].forEach(n=>m.addEventListener(n,mv,{passive:false}));['pointerup','pointercancel','touchend','touchcancel'].forEach(n=>m.addEventListener(n,()=>active=false));
+  }
+  if(d.stamp){const e=document.createElement('div');e.textContent='ILIA MITRO • MÅLERI & DEKOR';e.style.cssText='position:absolute;width:105px;height:42px;border:3px double #b58b20;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:10px;font-weight:900;color:#116b3a;background:#fffbe8;touch-action:none;left:'+(d.stampX*scale)+'px;top:'+(d.stampY*scale)+'px';a.appendChild(e);drag(e,'stampX','stampY')}
+  if(d.signature&&sig){const e=document.createElement('img');e.src=sig;e.style.cssText='position:absolute;width:100px;height:38px;object-fit:contain;touch-action:none;left:'+(d.signatureX*scale)+'px;top:'+(d.signatureY*scale)+'px';a.appendChild(e);drag(e,'signatureX','signatureY')}
+  document.getElementById('posBack').onclick=()=>m.remove();document.getElementById('posSave').onclick=()=>{persistAll();m.remove();printOffer(o.id)};
+}
+
 function printOffer(id){
   window.__iliriCurrentOfferId=id;
   currentPdfOfferId=id;
@@ -434,6 +493,12 @@ function printOffer(id){
       ${o.notes?`<div style="margin-top:18px"><b>Shënime:</b><div style="white-space:pre-wrap;margin-top:5px">${esc(o.notes)}</div></div>`:''}
     </div>
     <div style="background:#fff;border-radius:16px;padding:18px;margin:14px 0 30px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <button type="button" onclick="toggleOwnerStamp()" style="padding:14px;border:0;border-radius:14px;background:${ownerDecor(o).stamp?'#b58b20':'#6b7280'};color:#fff;font-size:16px;font-weight:900">🟡 ${ownerDecor(o).stamp?'Vula aktive':'Vulos'}</button>
+        <button type="button" onclick="ownerSignatureControl()" style="padding:14px;border:0;border-radius:14px;background:${ownerDecor(o).signature?'#159447':'#6b7280'};color:#fff;font-size:16px;font-weight:900">✍️ ${ownerDecor(o).signature?'Firma aktive':'Firma ime'}</button>
+        <button type="button" onclick="openOwnerPositionEditor()" style="padding:12px;border:0;border-radius:12px;background:#111827;color:#fff;font-weight:800">↔️ Pozicionet</button>
+        <button type="button" onclick="openOwnerSignaturePad()" style="padding:12px;border:0;border-radius:12px;background:#374151;color:#fff;font-weight:800">Ndrysho firmën</button>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <button type="button" onclick="buildOfferPdf('sq','previewSign')" style="padding:16px;border:0;border-radius:14px;background:#159447;color:#fff;font-size:17px;font-weight:900">📄 PDF Shqip</button>
         <button type="button" onclick="buildOfferPdf('sv','previewSign')" style="padding:16px;border:0;border-radius:14px;background:#159447;color:#fff;font-size:17px;font-weight:900">📄 PDF Suedisht</button>
@@ -706,6 +771,29 @@ async function _buildOfferPdfCore(lang,action='share'){
       doc.text(sv ? 'Kundens signatur' : 'Firma e klientit', margin, y);
     }catch(e){}
   }
+
+  // Vula dhe firma e pronarit shtohen në faqen e parë, në pozicionet e ruajtura.
+  const od=ownerDecor(o);
+  try{
+    doc.setPage(1);
+    if(od.stamp){
+      const sx=Math.max(16,Math.min(172,Number(od.stampX)||147));
+      const sy=Math.max(30,Math.min(275,Number(od.stampY)||244));
+      doc.setDrawColor(181,139,32);doc.setLineWidth(0.8);doc.ellipse(sx,sy,21,9);
+      doc.setTextColor(17,107,58);doc.setFont('helvetica','bold');doc.setFontSize(7.5);
+      doc.text('ILIA MITRO',sx,sy-1,{align:'center'});doc.setFontSize(6.2);doc.text('MALERI & DEKOR',sx,sy+3,{align:'center'});
+      doc.setTextColor(0,0,0);
+    }
+    if(od.signature){
+      const os=localStorage.getItem(OWNER_SIG_KEY)||'';
+      if(os){
+        const fx=Math.max(16,Math.min(150,Number(od.signatureX)||128));
+        const fy=Math.max(30,Math.min(275,Number(od.signatureY)||263));
+        doc.addImage(os,'PNG',fx,fy,48,16);
+        doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.text(sv?'Företagets signatur':'Firma e kompanisë',fx,fy+19);
+      }
+    }
+  }catch(e){console.error('Vula/firma:',e)}
 
   // On iPhone/Safari a data URI is more reliable for an in-app PDF preview than a blob URL.
   const pdfBlob = doc.output('blob');
@@ -1474,3 +1562,4 @@ window.addEventListener('load',function(){
 
 </body>
 </html>
+

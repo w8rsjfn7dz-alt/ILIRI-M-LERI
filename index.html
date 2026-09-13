@@ -333,6 +333,7 @@ const INVOICES_KEY='iliri_maleri_invoices_v1';
 const LAST_BACKUP_KEY='iliri_maleri_last_backup_v1';
 const AUTO_BACKUP_KEY='iliri_auto_backup_v1';
 const HOURS_DRAFT_KEY='iliri_hours_draft_v1';
+let editingHourEntry=null;
 const BACKUP_INTERVAL_MS=7*24*60*60*1000;
 
 const PHOTOS_KEY='iliri_photos_v1', MEASURES_KEY='iliri_measures_v1', REPORTS_KEY='iliri_reports_v1';
@@ -374,14 +375,15 @@ function setupHoursDraft(){
   const fields=['hoursProject','hoursDate','startTime','endTime','breakMinutes'];
   const hint=document.createElement('p');hint.className='small-note';hint.setAttribute('role','status');$('saveHoursBtn').parentNode.after(hint);
   const restore=()=>{
+    if(editingHourEntry)return;
     try{const draft=JSON.parse(localStorage.getItem(HOURS_DRAFT_KEY));if(!draft)return;
       fields.forEach(id=>{if(typeof draft[id]!=='string')return;if(id==='hoursProject'&&![...$(id).options].some(o=>o.value===draft[id]))return;$(id).value=draft[id]});
       hint.textContent='Fushat e paruajtura u rikthyen. Shtyp Ruaj orët për t’i regjistruar.';
     }catch(e){}
   };
-  const save=()=>{try{localStorage.setItem(HOURS_DRAFT_KEY,JSON.stringify(Object.fromEntries(fields.map(id=>[id,$(id).value]))));hint.textContent='Fushat ruhen automatikisht. Shtyp Ruaj orët për t’i regjistruar.'}catch(e){hint.textContent='Fushat nuk u ruajtën: memoria e pajisjes është plot.'}};
+  const save=()=>{if(editingHourEntry)return;try{localStorage.setItem(HOURS_DRAFT_KEY,JSON.stringify(Object.fromEntries(fields.map(id=>[id,$(id).value]))));hint.textContent='Fushat ruhen automatikisht. Shtyp Ruaj orët për t’i regjistruar.'}catch(e){hint.textContent='Fushat nuk u ruajtën: memoria e pajisjes është plot.'}};
   fields.forEach(id=>{for(const event of ['input','change'])$(id).addEventListener(event,save)});
-  $('saveHoursBtn').addEventListener('click',()=>{if($('hoursProject').value){localStorage.removeItem(HOURS_DRAFT_KEY);hint.textContent=''}});
+  $('saveHoursBtn').addEventListener('hours-saved',()=>{localStorage.removeItem(HOURS_DRAFT_KEY);hint.textContent=''});
   $('btnHours').addEventListener('click',restore);
   $('statHoursCard').addEventListener('click',restore);
   restore();
@@ -406,19 +408,50 @@ function toggleDetail(id){const el=$('detail-'+id);if(el)el.classList.toggle('hi
 function renderProjects(){const q=$('projectSearch').value.toLowerCase();const list=[...projects].sort((a,b)=>(a.projectNumber||'').localeCompare(b.projectNumber||'',undefined,{numeric:true})).filter(p=>[p.projectName,p.projectNumber,p.clientName].join(' ').toLowerCase().includes(q));$('projectsList').innerHTML=list.length?list.map(p=>`<div class="item clickable" data-detail="${esc(p.id)}"><h3>${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</h3><div class="meta">${tr('client')}: ${esc(p.clientName||'')} ${p.phone?'• '+esc(p.phone):''}</div><span class="badge">${statusText(p.status)}</span><div id="detail-${esc(p.id)}" class="detail hidden"><div class="meta"><b>${tr('address')}:</b> ${esc(p.address||'-')}<br><b>${tr('workType')}:</b> ${esc(p.type||'-')}<br><b>${tr('hours')}:</b> ${projectHours(p.id).toFixed(1)}<br><b>${tr('materials')}:</b> ${projectMaterials(p.id).toLocaleString('sv-SE')} kr<br><b>${tr('offer')}:</b> ${Number(p.price||0).toLocaleString('sv-SE')} kr<br><b>${tr('notes')}:</b> ${esc(p.notes||'-')}</div><div class="row" style="margin-top:10px"><button class="editProjectBtn" data-id="${esc(p.id)}" type="button">${tr('edit')}</button><button class="danger deleteProjectBtn" data-id="${esc(p.id)}" type="button">${tr('deleteProject')}</button></div></div></div>`).join(''):`<div class="empty">${tr('noProjects')}</div>`;document.querySelectorAll('[data-detail]').forEach(el=>el.addEventListener('click',e=>{if(e.target.closest('.editProjectBtn')||e.target.closest('.deleteProjectBtn'))return;toggleDetail(el.dataset.detail)}));document.querySelectorAll('.editProjectBtn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();editProject(b.dataset.id)}));document.querySelectorAll('.deleteProjectBtn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();deleteProject(b.dataset.id)}))}
 function renderClients(){const q=$('clientSearch').value.toLowerCase();const map={};projects.forEach(p=>{const n=(p.clientName||'').trim();if(n){if(!map[n])map[n]=[];map[n].push(p)}});const names=Object.keys(map).sort((a,b)=>a.localeCompare(b,currentLang==='sv'?'sv-SE':'sq-AL')).filter(n=>n.toLowerCase().includes(q));$('clientsList').innerHTML=names.length?names.map(n=>`<div class="item"><h3>${esc(n)}</h3>${map[n].sort((a,b)=>(a.projectNumber||'').localeCompare(b.projectNumber||'',undefined,{numeric:true})).map(p=>`<div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')} ${p.phone?'• '+esc(p.phone):''}</div>`).join('')}</div>`).join(''):`<div class="empty">${tr('noClients')}</div>`}
 function calcHours(start,end,br){if(!start||!end)return 0;const [sh,sm]=start.split(':').map(Number),[eh,em]=end.split(':').map(Number);let mins=(eh*60+em)-(sh*60+sm)-Number(br||0);if(mins<0)mins+=1440;return Math.max(0,mins/60)}
-function saveHours(){const projectId=$('hoursProject').value;if(!projectId)return;const start=$('startTime').value,end=$('endTime').value,br=Number($('breakMinutes').value||0);hours.unshift({id:uid(),projectId,date:$('hoursDate').value||today(),start,end,breakMinutes:br,total:calcHours(start,end,br)});persistAll();renderHours();renderHome();alert(currentLang==='sv'?'Timmarna har sparats ✅':'Orët u ruajtën me sukses ✅')}
-function renderHours(){refreshProjectSelectors();const list=[...hours].sort((a,b)=>(b.date||'').localeCompare(a.date||''));$('hoursList').innerHTML=list.length?list.map((h,index)=>{const p=projects.find(x=>x.id===h.projectId)||{};return `<div class="item"><h3>${esc(h.date)} — ${Number(h.total||0).toFixed(1)} ${tr('hoursLower')}</h3><div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}<br>${esc(h.start)}–${esc(h.end)} • ${tr('breakLower')} ${Number(h.breakMinutes||0)} min</div><button class="danger deleteHourBtn" data-hour-index="${index}" type="button" style="margin-top:10px;min-height:44px">${tr('deleteProject')}</button></div>`}).join(''):`<div class="empty">${tr('noHours')}</div>`;$('hoursList').querySelectorAll('.deleteHourBtn').forEach(button=>{const entry=list[Number(button.dataset.hourIndex)];button.onclick=()=>deleteHourEntry(entry)})}
+function saveHours(){
+  const projectId=$('hoursProject').value,start=$('startTime').value,end=$('endTime').value;
+  const date=$('hoursDate').value||today(),br=Number($('breakMinutes').value||0);
+  if(!projectId||!start||!end||!Number.isFinite(br)||br<0){alert(currentLang==='sv'?'Fyll i projekt och giltiga tider.':'Plotëso projektin dhe oraret e sakta.');return}
+  const entry={id:editingHourEntry?editingHourEntry.id:uid(),projectId,date,start,end,breakMinutes:br,total:calcHours(start,end,br)};
+  const duplicate=hours.find(h=>h!==editingHourEntry&&h.projectId===projectId&&h.date===date&&h.start===start&&h.end===end&&Number(h.breakMinutes||0)===br);
+  if(duplicate){alert(currentLang==='sv'?'Denna tid är redan sparad. Använd Redigera för att ändra den.':'Këto orë janë ruajtur një herë. Përdor Ndrysho për t’i ndryshuar.');return}
+  const before=[...hours];
+  if(editingHourEntry){const index=hours.indexOf(editingHourEntry);if(index<0){cancelHourEdit();return}hours[index]={...editingHourEntry,...entry}}else hours.unshift(entry);
+  try{persistAll()}catch(error){hours=before;alert(currentLang==='sv'?'Det gick inte att spara. Exportera en backup.':'Ruajtja dështoi. Ruaj një backup.');return}
+  cancelHourEdit();
+  $('saveHoursBtn').dispatchEvent(new Event('hours-saved'));
+  renderHours();renderHome();
+  alert(currentLang==='sv'?'Timmarna har sparats ✅':'Orët u ruajtën me sukses ✅');
+}
+function editHourEntry(entry){
+  if(!hours.includes(entry))return;
+  editingHourEntry=entry;
+  localStorage.removeItem(HOURS_DRAFT_KEY);
+  refreshProjectSelectors();
+  $('hoursProject').value=entry.projectId;$('hoursDate').value=entry.date||today();
+  $('startTime').value=entry.start||'';$('endTime').value=entry.end||'';$('breakMinutes').value=Number(entry.breakMinutes||0);
+  $('saveHoursBtn').textContent=currentLang==='sv'?'Spara ändringar':'Ruaj ndryshimet';
+  let cancel=$('cancelHourEditBtn');
+  if(!cancel){cancel=document.createElement('button');cancel.id='cancelHourEditBtn';cancel.type='button';cancel.className='secondary';cancel.onclick=cancelHourEdit;$('saveHoursBtn').after(cancel)}
+  cancel.hidden=false;cancel.textContent=currentLang==='sv'?'Avbryt':'Anulo';
+  $('hoursView').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function cancelHourEdit(){editingHourEntry=null;$('saveHoursBtn').textContent=tr('saveHours');const cancel=$('cancelHourEditBtn');if(cancel)cancel.hidden=true}
+
+function renderHours(){refreshProjectSelectors();const list=[...hours].sort((a,b)=>(b.date||'').localeCompare(a.date||''));$('hoursList').innerHTML=list.length?list.map((h,index)=>{const p=projects.find(x=>x.id===h.projectId)||{};return `<div class="item"><h3>${esc(h.date)} — ${Number(h.total||0).toFixed(1)} ${tr('hoursLower')}</h3><div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}<br>${esc(h.start)}–${esc(h.end)} • ${tr('breakLower')} ${Number(h.breakMinutes||0)} min</div><button class="secondary editHourBtn" data-hour-index="${index}" type="button" style="margin-top:10px;min-height:44px;margin-right:8px">${tr('edit')}</button><button class="danger deleteHourBtn" data-hour-index="${index}" type="button" style="margin-top:10px;min-height:44px">${tr('deleteProject')}</button></div>`}).join(''):`<div class="empty">${tr('noHours')}</div>`;$('hoursList').querySelectorAll('.deleteHourBtn').forEach(button=>{const entry=list[Number(button.dataset.hourIndex)];button.onclick=()=>deleteHourEntry(entry)});$('hoursList').querySelectorAll('.editHourBtn').forEach(button=>{const entry=list[Number(button.dataset.hourIndex)];button.onclick=()=>editHourEntry(entry)})}
 function deleteHourEntry(entry){
   const index=hours.indexOf(entry);
   if(index<0)return;
   const message=currentLang==='sv'?'Vill du ta bort denna tidsregistrering?':'Dëshiron ta fshish këtë regjistrim të orëve?';
   if(!confirm(message))return;
   hours.splice(index,1);
-  persistAll();renderHours();renderHome();
+  try{persistAll()}catch(error){hours.splice(index,0,entry);alert('Fshirja nuk u ruajt. Ruaj backup.');return}
+  if(editingHourEntry===entry)cancelHourEdit();
+  renderHours();renderHome();
 }
 function saveMaterial(){const projectId=$('materialProject').value;if(!projectId)return;materials.unshift({id:uid(),projectId,date:$('materialDate').value||today(),name:$('materialName').value.trim(),cost:Number($('materialCost').value||0),note:$('materialNote').value.trim()});persistAll();$('materialName').value='';$('materialCost').value='';$('materialNote').value='';renderMaterials();renderHome()}
 function renderMaterials(){refreshProjectSelectors();$('materialsList').innerHTML=materials.length?materials.map(m=>{const p=projects.find(x=>x.id===m.projectId)||{};return `<div class="item"><h3>${esc(m.name||tr('material'))} — ${Number(m.cost||0).toLocaleString('sv-SE')} kr</h3><div class="meta">${esc(m.date)} • ${esc(p.projectNumber||'')} — ${esc(p.projectName||'')} ${m.note?'<br>'+esc(m.note):''}</div></div>`}).join(''):`<div class="empty">${tr('noMaterials')}</div>`}
-function refreshProjectSelectors(){const opts=projects.map(p=>`<option value="${esc(p.id)}">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</option>`).join('');['hoursProject','materialProject','photoProject','measureProject','voiceProject'].forEach(id=>{if($(id))$(id).innerHTML=opts})}
+function refreshProjectSelectors(){const opts=projects.map(p=>`<option value="${esc(p.id)}">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</option>`).join('');['hoursProject','materialProject','photoProject','measureProject','voiceProject'].forEach(id=>{if($(id)){const selected=$(id).value;$(id).innerHTML=opts;if([...$(id).options].some(o=>o.value===selected))$(id).value=selected}})}
 function renderHome(){$('countProjects').textContent=projects.length;$('countClients').textContent=new Set(projects.map(p=>(p.clientName||'').trim()).filter(Boolean)).size;$('countHours').textContent=hours.reduce((a,b)=>a+Number(b.total||0),0).toFixed(1)}
 function normalizeOfferStatus(s){return s==='accepted'?'unpaid':(s||'unsent')}
 function offerStatusText(s){s=normalizeOfferStatus(s);return s==='unsent'?tr('offerUnsent'):s==='sent'?tr('offerSent'):s==='unpaid'?tr('offerUnpaid'):tr('offerPaid')}

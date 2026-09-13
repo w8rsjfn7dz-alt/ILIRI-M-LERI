@@ -331,6 +331,8 @@ const LANG_KEY='iliri_maleri_lang_v4';
 const OFFERS_KEY='iliri_maleri_offers_v1';
 const INVOICES_KEY='iliri_maleri_invoices_v1';
 const LAST_BACKUP_KEY='iliri_maleri_last_backup_v1';
+const AUTO_BACKUP_KEY='iliri_auto_backup_v1';
+const HOURS_DRAFT_KEY='iliri_hours_draft_v1';
 const BACKUP_INTERVAL_MS=7*24*60*60*1000;
 
 const PHOTOS_KEY='iliri_photos_v1', MEASURES_KEY='iliri_measures_v1', REPORTS_KEY='iliri_reports_v1';
@@ -346,8 +348,46 @@ let photos=load(PHOTOS_KEY,[]), measures=load(MEASURES_KEY,[]), reports=load(REP
 offers=offers.map(o=>({...o,status:o.status==='accepted'?'unpaid':(o.status||'unsent')}));persistAll();
 let offerFilter='all';
 function $(id){return document.getElementById(id)}
-function load(k,d){try{const x=JSON.parse(localStorage.getItem(k));return Array.isArray(x)?x:d}catch(e){return d}}
-function persistAll(){localStorage.setItem(PROJECTS_KEY,JSON.stringify(projects));localStorage.setItem(HOURS_KEY,JSON.stringify(hours));localStorage.setItem(MATERIALS_KEY,JSON.stringify(materials));localStorage.setItem(OFFERS_KEY,JSON.stringify(offers));localStorage.setItem(INVOICES_KEY,JSON.stringify(invoices));localStorage.setItem(PHOTOS_KEY,JSON.stringify(photos));localStorage.setItem(MEASURES_KEY,JSON.stringify(measures));localStorage.setItem(REPORTS_KEY,JSON.stringify(reports))}
+function load(k,d){
+  try{const x=JSON.parse(localStorage.getItem(k));if(Array.isArray(x))return x}catch(e){}
+  try{const backup=JSON.parse(localStorage.getItem(AUTO_BACKUP_KEY));if(backup&&backup.data&&Array.isArray(backup.data[k]))return backup.data[k]}catch(e){}
+  return d;
+}
+function storageMessage(text){
+  let el=document.getElementById('autoSaveStatus');
+  if(!el){el=document.createElement('p');el.id='autoSaveStatus';el.setAttribute('role','status');el.style.cssText='padding:8px;text-align:center;font-size:13px';document.getElementById('saveBackupVisibleBtn').before(el)}
+  el.textContent=text;
+}
+function persistAll(){
+  const data={[PROJECTS_KEY]:projects,[HOURS_KEY]:hours,[MATERIALS_KEY]:materials,[OFFERS_KEY]:offers,[INVOICES_KEY]:invoices,[PHOTOS_KEY]:photos,[MEASURES_KEY]:measures,[REPORTS_KEY]:reports};
+  const write=()=>{for(const [key,value] of Object.entries(data))localStorage.setItem(key,JSON.stringify(value))};
+  try{write()}catch(error){
+    // Free the redundant copy before retrying when browser storage is full.
+    try{localStorage.removeItem(AUTO_BACKUP_KEY);write()}catch(retryError){storageMessage('⚠️ Ruajtja dështoi. Ruaj backup tani për të mos humbur të dhënat.');throw retryError}
+  }
+  try{
+    localStorage.setItem(AUTO_BACKUP_KEY,JSON.stringify({savedAt:new Date().toISOString(),data}));
+    storageMessage('✓ Të dhënat dhe kopja rezervë u ruajtën në këtë pajisje.');
+  }catch(error){storageMessage('Të dhënat u ruajtën. Nuk ka hapësirë për kopjen automatike; përdor Ruaj backup.')}
+}
+function setupHoursDraft(){
+  const fields=['hoursProject','hoursDate','startTime','endTime','breakMinutes'];
+  const hint=document.createElement('p');hint.className='small-note';hint.setAttribute('role','status');$('saveHoursBtn').parentNode.after(hint);
+  const restore=()=>{
+    try{const draft=JSON.parse(localStorage.getItem(HOURS_DRAFT_KEY));if(!draft)return;
+      fields.forEach(id=>{if(typeof draft[id]!=='string')return;if(id==='hoursProject'&&![...$(id).options].some(o=>o.value===draft[id]))return;$(id).value=draft[id]});
+      hint.textContent='Fushat e paruajtura u rikthyen. Shtyp Ruaj orët për t’i regjistruar.';
+    }catch(e){}
+  };
+  const save=()=>{try{localStorage.setItem(HOURS_DRAFT_KEY,JSON.stringify(Object.fromEntries(fields.map(id=>[id,$(id).value]))));hint.textContent='Fushat ruhen automatikisht. Shtyp Ruaj orët për t’i regjistruar.'}catch(e){hint.textContent='Fushat nuk u ruajtën: memoria e pajisjes është plot.'}};
+  fields.forEach(id=>{for(const event of ['input','change'])$(id).addEventListener(event,save)});
+  $('saveHoursBtn').addEventListener('click',()=>{if($('hoursProject').value){localStorage.removeItem(HOURS_DRAFT_KEY);hint.textContent=''}});
+  $('btnHours').addEventListener('click',restore);
+  $('statHoursCard').addEventListener('click',restore);
+  restore();
+  if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+}
+
 function tr(k){return (I18N[currentLang]&&I18N[currentLang][k])||I18N.sq[k]||k}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function uid(){return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)}
@@ -367,7 +407,15 @@ function renderProjects(){const q=$('projectSearch').value.toLowerCase();const l
 function renderClients(){const q=$('clientSearch').value.toLowerCase();const map={};projects.forEach(p=>{const n=(p.clientName||'').trim();if(n){if(!map[n])map[n]=[];map[n].push(p)}});const names=Object.keys(map).sort((a,b)=>a.localeCompare(b,currentLang==='sv'?'sv-SE':'sq-AL')).filter(n=>n.toLowerCase().includes(q));$('clientsList').innerHTML=names.length?names.map(n=>`<div class="item"><h3>${esc(n)}</h3>${map[n].sort((a,b)=>(a.projectNumber||'').localeCompare(b.projectNumber||'',undefined,{numeric:true})).map(p=>`<div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')} ${p.phone?'• '+esc(p.phone):''}</div>`).join('')}</div>`).join(''):`<div class="empty">${tr('noClients')}</div>`}
 function calcHours(start,end,br){if(!start||!end)return 0;const [sh,sm]=start.split(':').map(Number),[eh,em]=end.split(':').map(Number);let mins=(eh*60+em)-(sh*60+sm)-Number(br||0);if(mins<0)mins+=1440;return Math.max(0,mins/60)}
 function saveHours(){const projectId=$('hoursProject').value;if(!projectId)return;const start=$('startTime').value,end=$('endTime').value,br=Number($('breakMinutes').value||0);hours.unshift({id:uid(),projectId,date:$('hoursDate').value||today(),start,end,breakMinutes:br,total:calcHours(start,end,br)});persistAll();renderHours();renderHome()}
-function renderHours(){refreshProjectSelectors();const list=[...hours].sort((a,b)=>(b.date||'').localeCompare(a.date||''));$('hoursList').innerHTML=list.length?list.map(h=>{const p=projects.find(x=>x.id===h.projectId)||{};return `<div class="item"><h3>${esc(h.date)} — ${Number(h.total||0).toFixed(1)} ${tr('hoursLower')}</h3><div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}<br>${esc(h.start)}–${esc(h.end)} • ${tr('breakLower')} ${Number(h.breakMinutes||0)} min</div></div>`}).join(''):`<div class="empty">${tr('noHours')}</div>`}
+function renderHours(){refreshProjectSelectors();const list=[...hours].sort((a,b)=>(b.date||'').localeCompare(a.date||''));$('hoursList').innerHTML=list.length?list.map((h,index)=>{const p=projects.find(x=>x.id===h.projectId)||{};return `<div class="item"><h3>${esc(h.date)} — ${Number(h.total||0).toFixed(1)} ${tr('hoursLower')}</h3><div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}<br>${esc(h.start)}–${esc(h.end)} • ${tr('breakLower')} ${Number(h.breakMinutes||0)} min</div><button class="danger deleteHourBtn" data-hour-index="${index}" type="button" style="margin-top:10px;min-height:44px">${tr('deleteProject')}</button></div>`}).join(''):`<div class="empty">${tr('noHours')}</div>`;$('hoursList').querySelectorAll('.deleteHourBtn').forEach(button=>{const entry=list[Number(button.dataset.hourIndex)];button.onclick=()=>deleteHourEntry(entry)})}
+function deleteHourEntry(entry){
+  const index=hours.indexOf(entry);
+  if(index<0)return;
+  const message=currentLang==='sv'?'Vill du ta bort denna tidsregistrering?':'Dëshiron ta fshish këtë regjistrim të orëve?';
+  if(!confirm(message))return;
+  hours.splice(index,1);
+  persistAll();renderHours();renderHome();
+}
 function saveMaterial(){const projectId=$('materialProject').value;if(!projectId)return;materials.unshift({id:uid(),projectId,date:$('materialDate').value||today(),name:$('materialName').value.trim(),cost:Number($('materialCost').value||0),note:$('materialNote').value.trim()});persistAll();$('materialName').value='';$('materialCost').value='';$('materialNote').value='';renderMaterials();renderHome()}
 function renderMaterials(){refreshProjectSelectors();$('materialsList').innerHTML=materials.length?materials.map(m=>{const p=projects.find(x=>x.id===m.projectId)||{};return `<div class="item"><h3>${esc(m.name||tr('material'))} — ${Number(m.cost||0).toLocaleString('sv-SE')} kr</h3><div class="meta">${esc(m.date)} • ${esc(p.projectNumber||'')} — ${esc(p.projectName||'')} ${m.note?'<br>'+esc(m.note):''}</div></div>`}).join(''):`<div class="empty">${tr('noMaterials')}</div>`}
 function refreshProjectSelectors(){const opts=projects.map(p=>`<option value="${esc(p.id)}">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</option>`).join('');['hoursProject','materialProject','photoProject','measureProject','voiceProject'].forEach(id=>{if($(id))$(id).innerHTML=opts})}
@@ -513,12 +561,32 @@ function containOwnerImage(width,height,box){
   const w=width*scale,h=height*scale;
   return {x:box.x+(box.width-w)/2,y:box.y+(box.height-h)/2,width:w,height:h};
 }
-function openOwnerPositionEditor(){
+let ownerPdfRendererPromise=null;
+function loadOwnerPdfRenderer(){
+  if(window.pdfjsLib)return Promise.resolve(window.pdfjsLib);
+  if(!ownerPdfRendererPromise){
+    ownerPdfRendererPromise=new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      script.src='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';
+      const timer=setTimeout(()=>{script.remove();reject(new Error('PDF renderer timeout'))},15000);
+      script.onload=()=>{
+        clearTimeout(timer);
+        if(!window.pdfjsLib){reject(new Error('PDF renderer unavailable'));return}
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+        resolve(window.pdfjsLib);
+      };
+      script.onerror=()=>{clearTimeout(timer);script.remove();reject(new Error('PDF renderer unavailable'))};
+      document.head.appendChild(script);
+    }).catch(error=>{ownerPdfRendererPromise=null;throw error});
+  }
+  return ownerPdfRendererPromise;
+}
+async function openOwnerPositionEditor(){
   const o=currentOwnerOffer();if(!o)return;const d=ownerDecor(o),sig=localStorage.getItem(OWNER_SIG_KEY)||'';
   if(!d.stamp&&!d.signature){alert('Aktivizo fillimisht Vulën ose Firmën time.');return}
   const old=document.getElementById('ownerPosModal');if(old)old.remove();
   const m=document.createElement('div');m.id='ownerPosModal';m.style.cssText='position:fixed;inset:0;z-index:100003;background:#e5e7eb;padding:12px;overflow:auto';
-  m.innerHTML='<div style="max-width:430px;margin:auto"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><button id="posBack" type="button" style="padding:12px;border:0;border-radius:10px">← Kthehu</button><button id="posSave" type="button" style="padding:12px;border:0;border-radius:10px;background:#159447;color:white;font-weight:900">Ruaj pozicionet</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><button id="stampMinus" type="button" style="padding:10px;border:0;border-radius:9px">Vula −</button><button id="stampPlus" type="button" style="padding:10px;border:0;border-radius:9px">Vula +</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><button id="sigMinus" type="button" style="padding:10px;border:0;border-radius:9px">Firma −</button><button id="sigPlus" type="button" style="padding:10px;border:0;border-radius:9px">Firma +</button></div></div><div id="a4pos" style="position:relative;width:315px;height:445.5px;margin:auto;background:white;box-shadow:0 2px 12px #999;overflow:hidden"><div style="padding:24px;color:#bbb"><b>ILIRI Måleri</b><br><br>OFERTË / FAKTURË<br><br><hr><br>Përmbajtja e dokumentit…</div></div><p style="text-align:center">Lëvizi me gisht. Përdor − dhe + për madhësinë.</p></div>';
+  m.innerHTML='<div style="max-width:430px;margin:auto"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><button id="posBack" type="button" style="padding:12px;border:0;border-radius:10px">← Kthehu</button><button id="posSave" type="button" style="padding:12px;border:0;border-radius:10px;background:#159447;color:white;font-weight:900">Ruaj pozicionet</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><button id="stampMinus" type="button" style="padding:10px;border:0;border-radius:9px">Vula −</button><button id="stampPlus" type="button" style="padding:10px;border:0;border-radius:9px">Vula +</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><button id="sigMinus" type="button" style="padding:10px;border:0;border-radius:9px">Firma −</button><button id="sigPlus" type="button" style="padding:10px;border:0;border-radius:9px">Firma +</button></div></div><div id="a4pos" style="position:relative;width:315px;height:445.5px;margin:auto;background:white;box-shadow:0 2px 12px #999;overflow:hidden"><canvas id="ownerDocumentCanvas" style="display:block;width:315px;height:445.5px;pointer-events:none"></canvas></div><p style="text-align:center">Lëvizi me gisht. Përdor − dhe + për madhësinë.</p></div>';
   document.body.appendChild(m);const a=document.getElementById('a4pos'),scale=1.5;
   function syncBox(kind,el){const b=ownerBox(d,kind);d[kind+'X']=b.x;d[kind+'Y']=b.y;d[kind+'Size']=b.width;if(el){el.style.left=b.x*scale+'px';el.style.top=b.y*scale+'px';el.style.width=b.width*scale+'px';el.style.height=b.height*scale+'px'}}
   syncBox('stamp');syncBox('signature');
@@ -537,6 +605,44 @@ function openOwnerPositionEditor(){
   document.getElementById('stampMinus').onclick=()=>resizeStamp(-3);document.getElementById('stampPlus').onclick=()=>resizeStamp(3);
   document.getElementById('sigMinus').onclick=()=>resizeSig(-4);document.getElementById('sigPlus').onclick=()=>resizeSig(4);
   document.getElementById('posBack').onclick=()=>m.remove();document.getElementById('posSave').onclick=()=>{persistAll();m.remove();printOffer(o.id)};
+  const saveButton=m.querySelector('#posSave');
+  const status=document.createElement('p');status.setAttribute('role','status');status.style.textAlign='center';
+  a.parentNode.insertBefore(status,a);
+  const languageRow=document.createElement('div');languageRow.style.cssText='display:flex;gap:8px;margin-bottom:10px';
+  a.parentNode.insertBefore(languageRow,a);
+  let renderVersion=0;
+  async function renderDocument(lang){
+    const version=++renderVersion;
+    saveButton.disabled=true;status.textContent='Po ngarkohet dokumenti…';
+    a.style.visibility='hidden';
+    languageRow.querySelectorAll('button').forEach(b=>b.disabled=true);
+    let pdf=null;
+    try{
+      const library=await loadOwnerPdfRenderer();
+      const data=await _buildOfferPdfCore(lang,'positionBackground');
+      if(!data)throw new Error('Dokumenti nuk u krijua');
+      pdf=await library.getDocument({data:new Uint8Array(data)}).promise;
+      const page=await pdf.getPage(1),canvas=m.querySelector('#ownerDocumentCanvas');
+      const viewport=page.getViewport({scale:945/page.getViewport({scale:1}).width});
+      canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
+      await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+      if(version!==renderVersion||!m.isConnected)return;
+      a.style.visibility='visible';saveButton.disabled=false;
+      status.textContent=pdf.numPages>1?'Faqja 1 nga '+pdf.numPages+' — vula dhe firma vendosen në faqen e parë.':'';
+    }catch(error){
+      if(m.isConnected)status.textContent='Dokumenti nuk u ngarkua. Kontrollo internetin dhe shtyp Shqip ose Suedisht për ta provuar përsëri.';
+      console.error('Pamja e dokumentit:',error);
+    }finally{
+      if(pdf)await pdf.destroy();
+      languageRow.querySelectorAll('button').forEach(b=>b.disabled=false);
+    }
+  }
+  for(const [lang,label] of [['sq','Shqip'],['sv','Suedisht']]){
+    const button=document.createElement('button');button.type='button';button.textContent=label;
+    button.style.cssText='flex:1;padding:10px;border:0;border-radius:9px';
+    button.onclick=()=>renderDocument(lang);languageRow.appendChild(button);
+  }
+  await renderDocument('sq');
 }
 
 function printOffer(id){
@@ -845,6 +951,9 @@ async function _buildOfferPdfCore(lang,action='share'){
       doc.text(sv ? 'Kundens signatur' : 'Firma e klientit', margin, y);
     }catch(e){}
   }
+
+  // Use the exact PDF page as the positioning background, without movable decorations.
+  if(action==='positionBackground')return doc.output('arraybuffer');
 
   // Vula dhe firma e pronarit shtohen në faqen e parë, në pozicionet e ruajtura.
   const od=ownerDecor(o);
@@ -1352,7 +1461,7 @@ function bind(){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
- $('hoursDate').value=today();$('materialDate').value=today();if($('voiceDate')) $('voiceDate').value=today();refreshProjectSelectors();bind();applyLang();renderHome();checkWeeklyBackupReminder();
+ $('hoursDate').value=today();$('materialDate').value=today();if($('voiceDate')) $('voiceDate').value=today();refreshProjectSelectors();bind();applyLang();renderHome();checkWeeklyBackupReminder();setupHoursDraft();
 });
 
 

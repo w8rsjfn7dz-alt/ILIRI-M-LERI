@@ -70,6 +70,18 @@ html.client-sign-mode body > *:not(#iliriSignDemo){display:none!important}
 html.client-sign-mode #iliriSignDemo{display:block!important;position:relative!important;inset:auto!important;min-height:100vh!important;background:#fff!important;padding:18px!important;box-sizing:border-box!important}
 html.client-sign-mode #iliriSigBack{display:none!important}
 
+
+.hours-period-nav{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:8px;align-items:center;text-align:center;margin:14px 0}
+.hours-period-nav button{padding:8px;min-height:44px;font-size:24px}
+.hours-calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:18px 0}
+.hours-weekday{text-align:center;font-size:11px;color:#65716a;font-weight:700}
+.hours-calendar .hours-day{padding:8px 1px;min-width:0;min-height:58px;border-radius:8px;border:1px solid #dce8df;background:#f3f8f4;color:#183e27;display:flex;flex-direction:column;gap:5px;align-items:center;justify-content:center}
+.hours-day b{font-size:17px}.hours-day small{font-size:10px;white-space:nowrap}
+.hours-calendar .hours-day.selected{background:#159447;color:white;border-color:#159447}
+.hours-calendar .hours-day.is-today{box-shadow:inset 0 0 0 2px #159447}
+.hours-total{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding:16px;border-radius:12px;background:#e8f5ec;margin-bottom:12px}
+.hours-total b{font-size:25px;color:#126b35}
+#hoursList{scroll-margin-top:110px}#hoursSummary input,#hoursSummary select{min-width:0;max-width:100%;box-sizing:border-box}
 </style>
 
 
@@ -202,6 +214,7 @@ html.client-sign-mode #iliriSigBack{display:none!important}
 
   <section id="hoursView" class="hidden card">
     <div class="section-title"><h2 id="hoursTitle">Orët</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
+    <div id="hoursSummary" style="margin-bottom:24px"></div>
     <div class="grid">
       <div><label class="lblProject">Projekti</label><select id="hoursProject"></select></div>
       <div><label class="lblDate">Data</label><input id="hoursDate" type="date"></div>
@@ -212,7 +225,7 @@ html.client-sign-mode #iliriSigBack{display:none!important}
     <label id="lblHoursWork" for="hoursWorkDescription">Çfarë bëra sot / Lloji i punës</label>
     <textarea id="hoursWorkDescription" rows="3" placeholder="P.sh. Sot spatullova muret dhe lyeva tavanin." style="width:100%;box-sizing:border-box;resize:vertical"></textarea>
     <div class="row" style="margin-top:12px"><button id="saveHoursBtn" type="button">Ruaj orët</button></div>
-    <div id="hoursList"></div>
+    <h3 id="hoursListHeading" style="margin-top:22px"></h3><div id="hoursList"></div>
   </section>
 
   <section id="materialsView" class="hidden card">
@@ -336,6 +349,7 @@ const LAST_BACKUP_KEY='iliri_maleri_last_backup_v1';
 const AUTO_BACKUP_KEY='iliri_auto_backup_v1';
 const HOURS_DRAFT_KEY='iliri_hours_draft_v1';
 let editingHourEntry=null;
+let hoursSummaryMode='week',hoursSummaryDate=today(),hoursSummaryProject='',hoursSummaryDay='';
 const BACKUP_INTERVAL_MS=7*24*60*60*1000;
 
 const PHOTOS_KEY='iliri_photos_v1', MEASURES_KEY='iliri_measures_v1', REPORTS_KEY='iliri_reports_v1';
@@ -420,6 +434,7 @@ function saveHours(){
   const before=[...hours];
   if(editingHourEntry){const index=hours.indexOf(editingHourEntry);if(index<0){cancelHourEdit();return}hours[index]={...editingHourEntry,...entry}}else hours.unshift(entry);
   try{persistAll()}catch(error){hours=before;alert(currentLang==='sv'?'Det gick inte att spara. Exportera en backup.':'Ruajtja dështoi. Ruaj një backup.');return}
+  hoursSummaryDate=date;hoursSummaryDay='';if(hoursSummaryProject&&hoursSummaryProject!==projectId)hoursSummaryProject=projectId;
   cancelHourEdit();
   $('saveHoursBtn').dispatchEvent(new Event('hours-saved'));
   renderHours();renderHome();
@@ -441,7 +456,63 @@ function editHourEntry(entry){
 }
 function cancelHourEdit(){editingHourEntry=null;$('saveHoursBtn').textContent=tr('saveHours');const cancel=$('cancelHourEditBtn');if(cancel)cancel.hidden=true}
 
-function renderHours(){refreshProjectSelectors();const list=[...hours].sort((a,b)=>(b.date||'').localeCompare(a.date||''));$('hoursList').innerHTML=list.length?list.map((h,index)=>{const p=projects.find(x=>x.id===h.projectId)||{};return `<div class="item"><h3>${esc(h.date)} — ${Number(h.total||0).toFixed(1)} ${tr('hoursLower')}</h3><div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}<br>${esc(h.start)}–${esc(h.end)} • ${tr('breakLower')} ${Number(h.breakMinutes||0)} min</div>${h.workDescription?`<div class="meta" style="margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere">${esc(h.workDescription)}</div>`:''}<button class="secondary editHourBtn" data-hour-index="${index}" type="button" style="margin-top:10px;min-height:44px;margin-right:8px">${tr('edit')}</button><button class="danger deleteHourBtn" data-hour-index="${index}" type="button" style="margin-top:10px;min-height:44px">${tr('deleteProject')}</button></div>`}).join(''):`<div class="empty">${tr('noHours')}</div>`;$('hoursList').querySelectorAll('.deleteHourBtn').forEach(button=>{const entry=list[Number(button.dataset.hourIndex)];button.onclick=()=>deleteHourEntry(entry)});$('hoursList').querySelectorAll('.editHourBtn').forEach(button=>{const entry=list[Number(button.dataset.hourIndex)];button.onclick=()=>editHourEntry(entry)})}
+function hoursPeriod(date,mode){
+  const d=new Date(date+'T12:00:00Z');
+  if(!Number.isFinite(d.getTime()))return hoursPeriod(today(),mode);
+  if(mode==='month'){
+    const start=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),1,12));
+    const end=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1,12));
+    return {start:hoursDateKey(start),end:hoursDateKey(end)};
+  }
+  d.setUTCDate(d.getUTCDate()-(d.getUTCDay()+6)%7);
+  const end=new Date(d);end.setUTCDate(end.getUTCDate()+7);
+  return {start:hoursDateKey(d),end:hoursDateKey(end)};
+}
+function hoursDateKey(date){return date.toISOString().slice(0,10)}
+function hoursSummaryRows(){
+  const range=hoursPeriod(hoursSummaryDate,hoursSummaryMode);
+  return hours.filter(h=>(!hoursSummaryProject||h.projectId===hoursSummaryProject)&&h.date>=range.start&&h.date<range.end);
+}
+function hoursVisibleRows(){return hoursSummaryRows().filter(h=>!hoursSummaryDay||h.date===hoursSummaryDay)}
+function hoursSum(rows){return rows.reduce((sum,h)=>sum+(Number.isFinite(Number(h.total))?Number(h.total):0),0)}
+function moveHoursPeriod(step){
+  const range=hoursPeriod(hoursSummaryDate,hoursSummaryMode),d=new Date(range.start+'T12:00:00Z');
+  if(hoursSummaryMode==='month')d.setUTCMonth(d.getUTCMonth()+step);else d.setUTCDate(d.getUTCDate()+step*7);
+  hoursSummaryDate=hoursDateKey(d);hoursSummaryDay='';renderHours();
+}
+function renderHoursSummary(){
+  const sv=currentLang==='sv',locale=sv?'sv-SE':'sq-AL';
+  const range=hoursPeriod(hoursSummaryDate,hoursSummaryMode),rows=hoursSummaryRows();
+  const fmt=n=>Number(n).toLocaleString(locale,{maximumFractionDigits:2});
+  const fullDate=date=>new Date(date+'T12:00:00Z').toLocaleDateString(locale,{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+  const last=new Date(range.end+'T12:00:00Z');last.setUTCDate(last.getUTCDate()-1);
+  const title=hoursSummaryMode==='month'?new Date(range.start+'T12:00:00Z').toLocaleDateString(locale,{month:'long',year:'numeric',timeZone:'UTC'}):fullDate(range.start)+' – '+fullDate(hoursDateKey(last));
+  const start=new Date(range.start+'T12:00:00Z'),days=[];
+  if(hoursSummaryMode==='month')for(let i=0;i<(start.getUTCDay()+6)%7;i++)days.push('<span></span>');
+  const dayTotals=new Map();rows.forEach(h=>dayTotals.set(h.date,(dayTotals.get(h.date)||0)+hoursSum([h])));
+  for(let d=new Date(start);hoursDateKey(d)<range.end;d.setUTCDate(d.getUTCDate()+1)){
+    const key=hoursDateKey(d),total=dayTotals.get(key)||0;
+    days.push(`<button type="button" class="hours-day${key===hoursSummaryDay?' selected':''}${key===today()?' is-today':''}" data-summary-day="${key}" aria-pressed="${key===hoursSummaryDay}" aria-label="${esc(fullDate(key)+' — '+fmt(total)+' '+tr('hoursLower'))}"><b>${d.getUTCDate()}</b><small>${fmt(total)} h</small></button>`);
+  }
+  const weekdays=sv?['Mån','Tis','Ons','Tor','Fre','Lör','Sön']:['Hën','Mar','Mër','Enj','Pre','Sht','Die'];
+  $('hoursSummary').innerHTML=`<div class="row"><button type="button" id="hoursWeekTab" class="${hoursSummaryMode==='week'?'':'secondary'}" aria-pressed="${hoursSummaryMode==='week'}">${sv?'Vecka':'Javore'}</button><button type="button" id="hoursMonthTab" class="${hoursSummaryMode==='month'?'':'secondary'}" aria-pressed="${hoursSummaryMode==='month'}">${sv?'Månad':'Mujore'}</button></div>
+    <div class="hours-period-nav"><button type="button" id="hoursPeriodPrev" class="secondary" aria-label="${sv?'Föregående period':'Periudha e mëparshme'}">‹</button><strong>${esc(title)}</strong><button type="button" id="hoursPeriodNext" class="secondary" aria-label="${sv?'Nästa period':'Periudha pasuese'}">›</button></div>
+    <div class="grid"><div><label for="hoursPeriodPick">${sv?'Välj period':'Zgjidh periudhën'}</label><input id="hoursPeriodPick" type="${hoursSummaryMode==='month'?'month':'date'}" value="${hoursSummaryMode==='month'?hoursSummaryDate.slice(0,7):hoursSummaryDate}"></div><div><label for="hoursSummaryProject">${sv?'Projekt':'Projekti'}</label><select id="hoursSummaryProject"><option value="">${sv?'Alla projekt':'Të gjitha projektet'}</option>${projects.map(p=>`<option value="${esc(p.id)}" ${p.id===hoursSummaryProject?'selected':''}>${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</option>`).join('')}</select></div></div>
+    <div class="hours-calendar">${weekdays.map(w=>`<span class="hours-weekday">${w}</span>`).join('')}${days.join('')}</div>
+    <div class="hours-total"><span>${hoursSummaryMode==='month'?(sv?'Totalt denna månad':'Totali i muajit'):(sv?'Totalt denna vecka':'Totali i javës')}</span><b>${fmt(hoursSum(rows))} ${tr('hoursLower')}</b></div>
+    <div class="row"><button id="hoursSummaryToday" class="secondary" type="button">${sv?'Idag':'Sot'}</button><button id="hoursSummaryAllDays" class="secondary" type="button">${sv?'Visa perioden':'Shfaq periudhën'}</button></div>`;
+  $('hoursWeekTab').onclick=()=>{hoursSummaryMode='week';hoursSummaryDay='';renderHours()};
+  $('hoursMonthTab').onclick=()=>{hoursSummaryMode='month';hoursSummaryDay='';renderHours()};
+  $('hoursPeriodPrev').onclick=()=>moveHoursPeriod(-1);$('hoursPeriodNext').onclick=()=>moveHoursPeriod(1);
+  $('hoursPeriodPick').onchange=e=>{if(!e.target.value)return;hoursSummaryDate=e.target.value+(hoursSummaryMode==='month'?'-01':'');hoursSummaryDay='';renderHours()};
+  $('hoursSummaryProject').onchange=e=>{hoursSummaryProject=e.target.value;hoursSummaryDay='';renderHours()};
+  $('hoursSummaryToday').onclick=()=>{hoursSummaryDate=today();hoursSummaryDay='';renderHours()};
+  $('hoursSummaryAllDays').onclick=()=>{hoursSummaryDay='';renderHours();$('hoursList').scrollIntoView({behavior:'smooth',block:'start'})};
+  $('hoursSummary').querySelectorAll('[data-summary-day]').forEach(b=>b.onclick=()=>{hoursSummaryDay=b.dataset.summaryDay;renderHours();$('hoursList').scrollIntoView({behavior:'smooth',block:'start'})});
+  $('hoursListHeading').textContent=(hoursSummaryDay?fullDate(hoursSummaryDay):title)+' — '+fmt(hoursSum(hoursVisibleRows()))+' '+tr('hoursLower');
+}
+
+function renderHours(){refreshProjectSelectors();renderHoursSummary();const list=hoursVisibleRows().sort((a,b)=>(b.date||'').localeCompare(a.date||''));$('hoursList').innerHTML=list.length?list.map((h,index)=>{const p=projects.find(x=>x.id===h.projectId)||{};return `<div class="item"><h3>${esc(h.date)} — ${Number(h.total||0).toFixed(1)} ${tr('hoursLower')}</h3><div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}<br>${esc(h.start)}–${esc(h.end)} • ${tr('breakLower')} ${Number(h.breakMinutes||0)} min</div>${h.workDescription?`<div class="meta" style="margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere">${esc(h.workDescription)}</div>`:''}<button class="secondary editHourBtn" data-hour-index="${index}" type="button" style="margin-top:10px;min-height:44px;margin-right:8px">${tr('edit')}</button><button class="danger deleteHourBtn" data-hour-index="${index}" type="button" style="margin-top:10px;min-height:44px">${tr('deleteProject')}</button></div>`}).join(''):`<div class="empty">${tr('noHours')}</div>`;$('hoursList').querySelectorAll('.deleteHourBtn').forEach(button=>{const entry=list[Number(button.dataset.hourIndex)];button.onclick=()=>deleteHourEntry(entry)});$('hoursList').querySelectorAll('.editHourBtn').forEach(button=>{const entry=list[Number(button.dataset.hourIndex)];button.onclick=()=>editHourEntry(entry)})}
 function deleteHourEntry(entry){
   const index=hours.indexOf(entry);
   if(index<0)return;

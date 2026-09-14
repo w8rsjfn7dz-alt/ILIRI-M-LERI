@@ -70,24 +70,12 @@ html.client-sign-mode body > *:not(#iliriSignDemo){display:none!important}
 html.client-sign-mode #iliriSignDemo{display:block!important;position:relative!important;inset:auto!important;min-height:100vh!important;background:#fff!important;padding:18px!important;box-sizing:border-box!important}
 html.client-sign-mode #iliriSigBack{display:none!important}
 
-
-.hours-period-nav{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:8px;align-items:center;text-align:center;margin:14px 0}
-.hours-period-nav button{padding:8px;min-height:44px;font-size:24px}
-.hours-calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:18px 0}
-.hours-weekday{text-align:center;font-size:11px;color:#65716a;font-weight:700}
-.hours-calendar .hours-day{padding:8px 1px;min-width:0;min-height:58px;border-radius:8px;border:1px solid #dce8df;background:#f3f8f4;color:#183e27;display:flex;flex-direction:column;gap:5px;align-items:center;justify-content:center}
-.hours-day b{font-size:17px}.hours-day small{font-size:10px;white-space:nowrap}
-.hours-calendar .hours-day.selected{background:#159447;color:white;border-color:#159447}
-.hours-calendar .hours-day.is-today{box-shadow:inset 0 0 0 2px #159447}
-.hours-total{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding:16px;border-radius:12px;background:#e8f5ec;margin-bottom:12px}
-.hours-total b{font-size:25px;color:#126b35}
-#hoursList{scroll-margin-top:110px}#hoursSummary input,#hoursSummary select{min-width:0;max-width:100%;box-sizing:border-box}
 </style>
 
 
 
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-<meta name="iliri-build" content="iliri-complete-offers-invoices-photos-backup-v12">
+<meta name="iliri-build" content="iliri-company-details-offers-invoices-v13">
 <!-- ILIRI FIRMA TEST V6 -->
 </head>
 <body>
@@ -190,7 +178,7 @@ html.client-sign-mode #iliriSigBack{display:none!important}
       <div><label id="lblAddress">Adresa</label><input id="address"></div>
       <div><label id="lblType">Lloji i punës</label><select id="type">
         <option value="">Zgjidh llojin e punës</option>
-        <option>Invändig målning</option><option>Utvändig målning</option><option>Väggmålning</option><option>Takmålning</option><option>Fasadmålning</option><option>Snickerimålning</option><option>Dörr- och karmmålning</option><option>Fönstermålning</option><option>Elementmålning</option><option>Trappmålning</option><option>Golvmålning</option><option>Kökslucksmålning</option><option>Sprutmålning</option><option>Grundmålning</option><option>Spackling</option><option>Bredspackling</option><option>Skarvspackling</option><option>Slipning</option><option>Tapetsering</option><option>Tapetborttagning</option><option>Vävsättning</option><option>Fogning</option><option>Tvättning / målartvätt</option><option>Fasadtvätt</option><option>Rostskyddsmålning</option><option>Dekorationsmålning</option><option>Effektmålning</option><option>Lasering</option><option>Marmorering</option><option>Renoveringsmålning</option><option>Nyproduktionsmålning</option><option>Annat</option>
+        <option>Målning</option><option>Spackling</option><option>Bredspackling</option><option>Tapetsering</option><option>Sprutmålning</option><option>Fasadmålning</option><option>Fönstermålning</option><option>Snickerimålning</option><option>Takmålning</option><option>Renoveringsmålning</option><option>Annat</option>
       </select></div>
       <div><label id="lblStatus">Statusi</label><select id="status"><option value="active">Aktiv</option><option value="waiting">Në pritje</option><option value="done">Mbaruar</option></select></div>
       <div><label id="lblPrice">Çmimi / oferta (kr)</label><input id="price" type="number" min="0" step="1"></div>
@@ -214,7 +202,6 @@ html.client-sign-mode #iliriSigBack{display:none!important}
 
   <section id="hoursView" class="hidden card">
     <div class="section-title"><h2 id="hoursTitle">Orët</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
-    <div id="hoursSummary" style="margin-bottom:24px"></div>
     <div class="grid">
       <div><label class="lblProject">Projekti</label><select id="hoursProject"></select></div>
       <div><label class="lblDate">Data</label><input id="hoursDate" type="date"></div>
@@ -222,10 +209,8 @@ html.client-sign-mode #iliriSigBack{display:none!important}
       <div><label id="lblEnd">Mbarimi</label><input id="endTime" type="time" value="15:30"></div>
     </div>
     <label id="lblBreak">Pushim (minuta)</label><input id="breakMinutes" type="number" min="0" step="5" value="30">
-    <label id="lblHoursWork" for="hoursWorkDescription">Çfarë bëra sot / Lloji i punës</label>
-    <textarea id="hoursWorkDescription" rows="3" placeholder="P.sh. Sot spatullova muret dhe lyeva tavanin." style="width:100%;box-sizing:border-box;resize:vertical"></textarea>
     <div class="row" style="margin-top:12px"><button id="saveHoursBtn" type="button">Ruaj orët</button></div>
-    <h3 id="hoursListHeading" style="margin-top:22px"></h3><div id="hoursList"></div>
+    <div id="hoursList"></div>
   </section>
 
   <section id="materialsView" class="hidden card">
@@ -265,7 +250,7 @@ html.client-sign-mode #iliriSigBack{display:none!important}
       <div><label id="lblOfferAddress">Adresa</label><input id="offerAddress"></div>
       <div><label id="lblOfferStatus">Statusi</label><select id="offerStatus"><option value="unsent">E pa dërguar</option><option value="sent">E dërguar</option><option value="accepted">E pranuar</option><option value="rejected">E pa pranuar</option></select></div>
     </div>
-    <h3 id="workLinesTitle">Punët</h3><div class="small-note" style="margin-bottom:6px"><b>Puna llogaritet me orë:</b> Orë pune × Çmimi/orë</div><div id="workLines"></div><button id="addWorkLineBtn" class="secondary" type="button" style="width:100%;margin-top:8px">+ Shto punë</button>
+    <h3 id="workLinesTitle">Punët</h3><div id="workLines"></div><button id="addWorkLineBtn" class="secondary" type="button" style="width:100%;margin-top:8px">+ Shto punë</button>
     <h3 id="materialLinesTitle" style="margin-top:18px">Materialet</h3><div id="materialLines"></div><button id="addMaterialLineBtn" class="secondary" type="button" style="width:100%;margin-top:8px">+ Shto material</button>
     <div class="grid" style="margin-top:12px"><div><label id="lblVat">Moms (%)</label><input id="offerVat" type="number" value="25" min="0" step="1"></div></div>
     <div class="totalbox"><div><span id="subtotalLabel">Pa moms</span>: <b id="offerSubtotal">0 kr</b></div><div><span id="vatLabel">Moms</span>: <b id="offerVatAmount">0 kr</b></div><div><span id="totalLabel">TOTALI</span>: <b id="offerTotal">0 kr</b></div></div>
@@ -345,11 +330,20 @@ const MATERIALS_KEY='iliri_maleri_materials_v1';
 const LANG_KEY='iliri_maleri_lang_v4';
 const OFFERS_KEY='iliri_maleri_offers_v1';
 const INVOICES_KEY='iliri_maleri_invoices_v1';
+const COMPANY={
+  brand:'ILIRI Måleri',
+  legalName:'ILIA MITRO',
+  activity:'Måleri & Dekor',
+  address1:'Keplers Gata 36, lgh 1302',
+  address2:'415 55 Göteborg',
+  phone:'076 922 53 61',
+  email:'ilia.mitro@yahoo.gr',
+  orgNr:'710109-1432',
+  vatNr:'SE710109143201',
+  taxStatus:'Godkänd för F-skatt med villkor (FA-skatt)',
+  sni:'43.341 Måleriarbeten'
+};
 const LAST_BACKUP_KEY='iliri_maleri_last_backup_v1';
-const AUTO_BACKUP_KEY='iliri_auto_backup_v1';
-const HOURS_DRAFT_KEY='iliri_hours_draft_v1';
-let editingHourEntry=null;
-let hoursSummaryMode='week',hoursSummaryDate=today(),hoursSummaryProject='',hoursSummaryDay='';
 const BACKUP_INTERVAL_MS=7*24*60*60*1000;
 
 const PHOTOS_KEY='iliri_photos_v1', MEASURES_KEY='iliri_measures_v1', REPORTS_KEY='iliri_reports_v1';
@@ -365,47 +359,8 @@ let photos=load(PHOTOS_KEY,[]), measures=load(MEASURES_KEY,[]), reports=load(REP
 offers=offers.map(o=>({...o,status:o.status==='accepted'?'unpaid':(o.status||'unsent')}));persistAll();
 let offerFilter='all';
 function $(id){return document.getElementById(id)}
-function load(k,d){
-  try{const x=JSON.parse(localStorage.getItem(k));if(Array.isArray(x))return x}catch(e){}
-  try{const backup=JSON.parse(localStorage.getItem(AUTO_BACKUP_KEY));if(backup&&backup.data&&Array.isArray(backup.data[k]))return backup.data[k]}catch(e){}
-  return d;
-}
-function storageMessage(text){
-  let el=document.getElementById('autoSaveStatus');
-  if(!el){el=document.createElement('p');el.id='autoSaveStatus';el.setAttribute('role','status');el.style.cssText='padding:8px;text-align:center;font-size:13px';document.getElementById('saveBackupVisibleBtn').before(el)}
-  el.textContent=text;
-}
-function persistAll(){
-  const data={[PROJECTS_KEY]:projects,[HOURS_KEY]:hours,[MATERIALS_KEY]:materials,[OFFERS_KEY]:offers,[INVOICES_KEY]:invoices,[PHOTOS_KEY]:photos,[MEASURES_KEY]:measures,[REPORTS_KEY]:reports};
-  const write=()=>{for(const [key,value] of Object.entries(data))localStorage.setItem(key,JSON.stringify(value))};
-  try{write()}catch(error){
-    // Free the redundant copy before retrying when browser storage is full.
-    try{localStorage.removeItem(AUTO_BACKUP_KEY);write()}catch(retryError){storageMessage('⚠️ Ruajtja dështoi. Ruaj backup tani për të mos humbur të dhënat.');throw retryError}
-  }
-  try{
-    localStorage.setItem(AUTO_BACKUP_KEY,JSON.stringify({savedAt:new Date().toISOString(),data}));
-    storageMessage('✓ Të dhënat dhe kopja rezervë u ruajtën në këtë pajisje.');
-  }catch(error){storageMessage('Të dhënat u ruajtën. Nuk ka hapësirë për kopjen automatike; përdor Ruaj backup.')}
-}
-function setupHoursDraft(){
-  const fields=['hoursProject','hoursDate','startTime','endTime','breakMinutes','hoursWorkDescription'];
-  const hint=document.createElement('p');hint.className='small-note';hint.setAttribute('role','status');$('saveHoursBtn').parentNode.after(hint);
-  const restore=()=>{
-    if(editingHourEntry)return;
-    try{const draft=JSON.parse(localStorage.getItem(HOURS_DRAFT_KEY));if(!draft)return;
-      fields.forEach(id=>{if(typeof draft[id]!=='string')return;if(id==='hoursProject'&&![...$(id).options].some(o=>o.value===draft[id]))return;$(id).value=draft[id]});
-      hint.textContent='Fushat e paruajtura u rikthyen. Shtyp Ruaj orët për t’i regjistruar.';
-    }catch(e){}
-  };
-  const save=()=>{if(editingHourEntry)return;try{localStorage.setItem(HOURS_DRAFT_KEY,JSON.stringify(Object.fromEntries(fields.map(id=>[id,$(id).value]))));hint.textContent='Fushat ruhen automatikisht. Shtyp Ruaj orët për t’i regjistruar.'}catch(e){hint.textContent='Fushat nuk u ruajtën: memoria e pajisjes është plot.'}};
-  fields.forEach(id=>{for(const event of ['input','change'])$(id).addEventListener(event,save)});
-  $('saveHoursBtn').addEventListener('hours-saved',()=>{localStorage.removeItem(HOURS_DRAFT_KEY);hint.textContent=''});
-  $('btnHours').addEventListener('click',restore);
-  $('statHoursCard').addEventListener('click',restore);
-  restore();
-  if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
-}
-
+function load(k,d){try{const x=JSON.parse(localStorage.getItem(k));return Array.isArray(x)?x:d}catch(e){return d}}
+function persistAll(){localStorage.setItem(PROJECTS_KEY,JSON.stringify(projects));localStorage.setItem(HOURS_KEY,JSON.stringify(hours));localStorage.setItem(MATERIALS_KEY,JSON.stringify(materials));localStorage.setItem(OFFERS_KEY,JSON.stringify(offers));localStorage.setItem(INVOICES_KEY,JSON.stringify(invoices));localStorage.setItem(PHOTOS_KEY,JSON.stringify(photos));localStorage.setItem(MEASURES_KEY,JSON.stringify(measures));localStorage.setItem(REPORTS_KEY,JSON.stringify(reports))}
 function tr(k){return (I18N[currentLang]&&I18N[currentLang][k])||I18N.sq[k]||k}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function uid(){return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)}
@@ -424,114 +379,16 @@ function toggleDetail(id){const el=$('detail-'+id);if(el)el.classList.toggle('hi
 function renderProjects(){const q=$('projectSearch').value.toLowerCase();const list=[...projects].sort((a,b)=>(a.projectNumber||'').localeCompare(b.projectNumber||'',undefined,{numeric:true})).filter(p=>[p.projectName,p.projectNumber,p.clientName].join(' ').toLowerCase().includes(q));$('projectsList').innerHTML=list.length?list.map(p=>`<div class="item clickable" data-detail="${esc(p.id)}"><h3>${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</h3><div class="meta">${tr('client')}: ${esc(p.clientName||'')} ${p.phone?'• '+esc(p.phone):''}</div><span class="badge">${statusText(p.status)}</span><div id="detail-${esc(p.id)}" class="detail hidden"><div class="meta"><b>${tr('address')}:</b> ${esc(p.address||'-')}<br><b>${tr('workType')}:</b> ${esc(p.type||'-')}<br><b>${tr('hours')}:</b> ${projectHours(p.id).toFixed(1)}<br><b>${tr('materials')}:</b> ${projectMaterials(p.id).toLocaleString('sv-SE')} kr<br><b>${tr('offer')}:</b> ${Number(p.price||0).toLocaleString('sv-SE')} kr<br><b>${tr('notes')}:</b> ${esc(p.notes||'-')}</div><div class="row" style="margin-top:10px"><button class="editProjectBtn" data-id="${esc(p.id)}" type="button">${tr('edit')}</button><button class="danger deleteProjectBtn" data-id="${esc(p.id)}" type="button">${tr('deleteProject')}</button></div></div></div>`).join(''):`<div class="empty">${tr('noProjects')}</div>`;document.querySelectorAll('[data-detail]').forEach(el=>el.addEventListener('click',e=>{if(e.target.closest('.editProjectBtn')||e.target.closest('.deleteProjectBtn'))return;toggleDetail(el.dataset.detail)}));document.querySelectorAll('.editProjectBtn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();editProject(b.dataset.id)}));document.querySelectorAll('.deleteProjectBtn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();deleteProject(b.dataset.id)}))}
 function renderClients(){const q=$('clientSearch').value.toLowerCase();const map={};projects.forEach(p=>{const n=(p.clientName||'').trim();if(n){if(!map[n])map[n]=[];map[n].push(p)}});const names=Object.keys(map).sort((a,b)=>a.localeCompare(b,currentLang==='sv'?'sv-SE':'sq-AL')).filter(n=>n.toLowerCase().includes(q));$('clientsList').innerHTML=names.length?names.map(n=>`<div class="item"><h3>${esc(n)}</h3>${map[n].sort((a,b)=>(a.projectNumber||'').localeCompare(b.projectNumber||'',undefined,{numeric:true})).map(p=>`<div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')} ${p.phone?'• '+esc(p.phone):''}</div>`).join('')}</div>`).join(''):`<div class="empty">${tr('noClients')}</div>`}
 function calcHours(start,end,br){if(!start||!end)return 0;const [sh,sm]=start.split(':').map(Number),[eh,em]=end.split(':').map(Number);let mins=(eh*60+em)-(sh*60+sm)-Number(br||0);if(mins<0)mins+=1440;return Math.max(0,mins/60)}
-function saveHours(){
-  const projectId=$('hoursProject').value,start=$('startTime').value,end=$('endTime').value;
-  const date=$('hoursDate').value||today(),br=Number($('breakMinutes').value||0);
-  if(!projectId||!start||!end||!Number.isFinite(br)||br<0){alert(currentLang==='sv'?'Fyll i projekt och giltiga tider.':'Plotëso projektin dhe oraret e sakta.');return}
-  const entry={id:editingHourEntry?editingHourEntry.id:uid(),projectId,date,start,end,breakMinutes:br,total:calcHours(start,end,br),workDescription:$('hoursWorkDescription').value.trim()};
-  const duplicate=hours.find(h=>h!==editingHourEntry&&h.projectId===projectId&&h.date===date&&h.start===start&&h.end===end&&Number(h.breakMinutes||0)===br);
-  if(duplicate){alert(currentLang==='sv'?'Denna tid är redan sparad. Använd Redigera för att ändra den.':'Këto orë janë ruajtur një herë. Përdor Ndrysho për t’i ndryshuar.');return}
-  const before=[...hours];
-  if(editingHourEntry){const index=hours.indexOf(editingHourEntry);if(index<0){cancelHourEdit();return}hours[index]={...editingHourEntry,...entry}}else hours.unshift(entry);
-  try{persistAll()}catch(error){hours=before;alert(currentLang==='sv'?'Det gick inte att spara. Exportera en backup.':'Ruajtja dështoi. Ruaj një backup.');return}
-  hoursSummaryDate=date;hoursSummaryDay='';if(hoursSummaryProject&&hoursSummaryProject!==projectId)hoursSummaryProject=projectId;
-  cancelHourEdit();
-  $('saveHoursBtn').dispatchEvent(new Event('hours-saved'));
-  renderHours();renderHome();
-  alert(currentLang==='sv'?'Timmarna har sparats ✅':'Orët u ruajtën me sukses ✅');
-}
-function editHourEntry(entry){
-  if(!hours.includes(entry))return;
-  editingHourEntry=entry;
-  localStorage.removeItem(HOURS_DRAFT_KEY);
-  refreshProjectSelectors();
-  $('hoursProject').value=entry.projectId;$('hoursDate').value=entry.date||today();
-  $('hoursWorkDescription').value=entry.workDescription||'';
-  $('startTime').value=entry.start||'';$('endTime').value=entry.end||'';$('breakMinutes').value=Number(entry.breakMinutes||0);
-  $('saveHoursBtn').textContent=currentLang==='sv'?'Spara ändringar':'Ruaj ndryshimet';
-  let cancel=$('cancelHourEditBtn');
-  if(!cancel){cancel=document.createElement('button');cancel.id='cancelHourEditBtn';cancel.type='button';cancel.className='secondary';cancel.onclick=cancelHourEdit;$('saveHoursBtn').after(cancel)}
-  cancel.hidden=false;cancel.textContent=currentLang==='sv'?'Avbryt':'Anulo';
-  $('hoursView').scrollIntoView({behavior:'smooth',block:'start'});
-}
-function cancelHourEdit(){editingHourEntry=null;$('saveHoursBtn').textContent=tr('saveHours');const cancel=$('cancelHourEditBtn');if(cancel)cancel.hidden=true}
-
-function hoursPeriod(date,mode){
-  const d=new Date(date+'T12:00:00Z');
-  if(!Number.isFinite(d.getTime()))return hoursPeriod(today(),mode);
-  if(mode==='month'){
-    const start=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),1,12));
-    const end=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1,12));
-    return {start:hoursDateKey(start),end:hoursDateKey(end)};
-  }
-  d.setUTCDate(d.getUTCDate()-(d.getUTCDay()+6)%7);
-  const end=new Date(d);end.setUTCDate(end.getUTCDate()+7);
-  return {start:hoursDateKey(d),end:hoursDateKey(end)};
-}
-function hoursDateKey(date){return date.toISOString().slice(0,10)}
-function hoursSummaryRows(){
-  const range=hoursPeriod(hoursSummaryDate,hoursSummaryMode);
-  return hours.filter(h=>(!hoursSummaryProject||h.projectId===hoursSummaryProject)&&h.date>=range.start&&h.date<range.end);
-}
-function hoursVisibleRows(){return hoursSummaryRows().filter(h=>!hoursSummaryDay||h.date===hoursSummaryDay)}
-function hoursSum(rows){return rows.reduce((sum,h)=>sum+(Number.isFinite(Number(h.total))?Number(h.total):0),0)}
-function moveHoursPeriod(step){
-  const range=hoursPeriod(hoursSummaryDate,hoursSummaryMode),d=new Date(range.start+'T12:00:00Z');
-  if(hoursSummaryMode==='month')d.setUTCMonth(d.getUTCMonth()+step);else d.setUTCDate(d.getUTCDate()+step*7);
-  hoursSummaryDate=hoursDateKey(d);hoursSummaryDay='';renderHours();
-}
-function renderHoursSummary(){
-  const sv=currentLang==='sv',locale=sv?'sv-SE':'sq-AL';
-  const range=hoursPeriod(hoursSummaryDate,hoursSummaryMode),rows=hoursSummaryRows();
-  const fmt=n=>Number(n).toLocaleString(locale,{maximumFractionDigits:2});
-  const fullDate=date=>new Date(date+'T12:00:00Z').toLocaleDateString(locale,{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
-  const last=new Date(range.end+'T12:00:00Z');last.setUTCDate(last.getUTCDate()-1);
-  const title=hoursSummaryMode==='month'?new Date(range.start+'T12:00:00Z').toLocaleDateString(locale,{month:'long',year:'numeric',timeZone:'UTC'}):fullDate(range.start)+' – '+fullDate(hoursDateKey(last));
-  const start=new Date(range.start+'T12:00:00Z'),days=[];
-  if(hoursSummaryMode==='month')for(let i=0;i<(start.getUTCDay()+6)%7;i++)days.push('<span></span>');
-  const dayTotals=new Map();rows.forEach(h=>dayTotals.set(h.date,(dayTotals.get(h.date)||0)+hoursSum([h])));
-  for(let d=new Date(start);hoursDateKey(d)<range.end;d.setUTCDate(d.getUTCDate()+1)){
-    const key=hoursDateKey(d),total=dayTotals.get(key)||0;
-    days.push(`<button type="button" class="hours-day${key===hoursSummaryDay?' selected':''}${key===today()?' is-today':''}" data-summary-day="${key}" aria-pressed="${key===hoursSummaryDay}" aria-label="${esc(fullDate(key)+' — '+fmt(total)+' '+tr('hoursLower'))}"><b>${d.getUTCDate()}</b><small>${fmt(total)} h</small></button>`);
-  }
-  const weekdays=sv?['Mån','Tis','Ons','Tor','Fre','Lör','Sön']:['Hën','Mar','Mër','Enj','Pre','Sht','Die'];
-  $('hoursSummary').innerHTML=`<div class="row"><button type="button" id="hoursWeekTab" class="${hoursSummaryMode==='week'?'':'secondary'}" aria-pressed="${hoursSummaryMode==='week'}">${sv?'Vecka':'Javore'}</button><button type="button" id="hoursMonthTab" class="${hoursSummaryMode==='month'?'':'secondary'}" aria-pressed="${hoursSummaryMode==='month'}">${sv?'Månad':'Mujore'}</button></div>
-    <div class="hours-period-nav"><button type="button" id="hoursPeriodPrev" class="secondary" aria-label="${sv?'Föregående period':'Periudha e mëparshme'}">‹</button><strong>${esc(title)}</strong><button type="button" id="hoursPeriodNext" class="secondary" aria-label="${sv?'Nästa period':'Periudha pasuese'}">›</button></div>
-    <div class="grid"><div><label for="hoursPeriodPick">${sv?'Välj period':'Zgjidh periudhën'}</label><input id="hoursPeriodPick" type="${hoursSummaryMode==='month'?'month':'date'}" value="${hoursSummaryMode==='month'?hoursSummaryDate.slice(0,7):hoursSummaryDate}"></div><div><label for="hoursSummaryProject">${sv?'Projekt':'Projekti'}</label><select id="hoursSummaryProject"><option value="">${sv?'Alla projekt':'Të gjitha projektet'}</option>${projects.map(p=>`<option value="${esc(p.id)}" ${p.id===hoursSummaryProject?'selected':''}>${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</option>`).join('')}</select></div></div>
-    <div class="hours-calendar">${weekdays.map(w=>`<span class="hours-weekday">${w}</span>`).join('')}${days.join('')}</div>
-    <div class="hours-total"><span>${hoursSummaryMode==='month'?(sv?'Totalt denna månad':'Totali i muajit'):(sv?'Totalt denna vecka':'Totali i javës')}</span><b>${fmt(hoursSum(rows))} ${tr('hoursLower')}</b></div>
-    <div class="row"><button id="hoursSummaryToday" class="secondary" type="button">${sv?'Idag':'Sot'}</button><button id="hoursSummaryAllDays" class="secondary" type="button">${sv?'Visa perioden':'Shfaq periudhën'}</button></div>`;
-  $('hoursWeekTab').onclick=()=>{hoursSummaryMode='week';hoursSummaryDay='';renderHours()};
-  $('hoursMonthTab').onclick=()=>{hoursSummaryMode='month';hoursSummaryDay='';renderHours()};
-  $('hoursPeriodPrev').onclick=()=>moveHoursPeriod(-1);$('hoursPeriodNext').onclick=()=>moveHoursPeriod(1);
-  $('hoursPeriodPick').onchange=e=>{if(!e.target.value)return;hoursSummaryDate=e.target.value+(hoursSummaryMode==='month'?'-01':'');hoursSummaryDay='';renderHours()};
-  $('hoursSummaryProject').onchange=e=>{hoursSummaryProject=e.target.value;hoursSummaryDay='';renderHours()};
-  $('hoursSummaryToday').onclick=()=>{hoursSummaryDate=today();hoursSummaryDay='';renderHours()};
-  $('hoursSummaryAllDays').onclick=()=>{hoursSummaryDay='';renderHours();$('hoursList').scrollIntoView({behavior:'smooth',block:'start'})};
-  $('hoursSummary').querySelectorAll('[data-summary-day]').forEach(b=>b.onclick=()=>{hoursSummaryDay=b.dataset.summaryDay;renderHours();$('hoursList').scrollIntoView({behavior:'smooth',block:'start'})});
-  $('hoursListHeading').textContent=(hoursSummaryDay?fullDate(hoursSummaryDay):title)+' — '+fmt(hoursSum(hoursVisibleRows()))+' '+tr('hoursLower');
-}
-
-function renderHours(){refreshProjectSelectors();renderHoursSummary();const list=hoursVisibleRows().sort((a,b)=>(b.date||'').localeCompare(a.date||''));$('hoursList').innerHTML=list.length?list.map((h,index)=>{const p=projects.find(x=>x.id===h.projectId)||{};return `<div class="item"><h3>${esc(h.date)} — ${Number(h.total||0).toFixed(1)} ${tr('hoursLower')}</h3><div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}<br>${esc(h.start)}–${esc(h.end)} • ${tr('breakLower')} ${Number(h.breakMinutes||0)} min</div>${h.workDescription?`<div class="meta" style="margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere">${esc(h.workDescription)}</div>`:''}<button class="secondary editHourBtn" data-hour-index="${index}" type="button" style="margin-top:10px;min-height:44px;margin-right:8px">${tr('edit')}</button><button class="danger deleteHourBtn" data-hour-index="${index}" type="button" style="margin-top:10px;min-height:44px">${tr('deleteProject')}</button></div>`}).join(''):`<div class="empty">${tr('noHours')}</div>`;$('hoursList').querySelectorAll('.deleteHourBtn').forEach(button=>{const entry=list[Number(button.dataset.hourIndex)];button.onclick=()=>deleteHourEntry(entry)});$('hoursList').querySelectorAll('.editHourBtn').forEach(button=>{const entry=list[Number(button.dataset.hourIndex)];button.onclick=()=>editHourEntry(entry)})}
-function deleteHourEntry(entry){
-  const index=hours.indexOf(entry);
-  if(index<0)return;
-  const message=currentLang==='sv'?'Vill du ta bort denna tidsregistrering?':'Dëshiron ta fshish këtë regjistrim të orëve?';
-  if(!confirm(message))return;
-  hours.splice(index,1);
-  try{persistAll()}catch(error){hours.splice(index,0,entry);alert('Fshirja nuk u ruajt. Ruaj backup.');return}
-  if(editingHourEntry===entry)cancelHourEdit();
-  renderHours();renderHome();
-}
+function saveHours(){const projectId=$('hoursProject').value;if(!projectId)return;const start=$('startTime').value,end=$('endTime').value,br=Number($('breakMinutes').value||0);hours.unshift({id:uid(),projectId,date:$('hoursDate').value||today(),start,end,breakMinutes:br,total:calcHours(start,end,br)});persistAll();renderHours();renderHome()}
+function renderHours(){refreshProjectSelectors();const list=[...hours].sort((a,b)=>(b.date||'').localeCompare(a.date||''));$('hoursList').innerHTML=list.length?list.map(h=>{const p=projects.find(x=>x.id===h.projectId)||{};return `<div class="item"><h3>${esc(h.date)} — ${Number(h.total||0).toFixed(1)} ${tr('hoursLower')}</h3><div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}<br>${esc(h.start)}–${esc(h.end)} • ${tr('breakLower')} ${Number(h.breakMinutes||0)} min</div></div>`}).join(''):`<div class="empty">${tr('noHours')}</div>`}
 function saveMaterial(){const projectId=$('materialProject').value;if(!projectId)return;materials.unshift({id:uid(),projectId,date:$('materialDate').value||today(),name:$('materialName').value.trim(),cost:Number($('materialCost').value||0),note:$('materialNote').value.trim()});persistAll();$('materialName').value='';$('materialCost').value='';$('materialNote').value='';renderMaterials();renderHome()}
 function renderMaterials(){refreshProjectSelectors();$('materialsList').innerHTML=materials.length?materials.map(m=>{const p=projects.find(x=>x.id===m.projectId)||{};return `<div class="item"><h3>${esc(m.name||tr('material'))} — ${Number(m.cost||0).toLocaleString('sv-SE')} kr</h3><div class="meta">${esc(m.date)} • ${esc(p.projectNumber||'')} — ${esc(p.projectName||'')} ${m.note?'<br>'+esc(m.note):''}</div></div>`}).join(''):`<div class="empty">${tr('noMaterials')}</div>`}
-function refreshProjectSelectors(){const opts=projects.map(p=>`<option value="${esc(p.id)}">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</option>`).join('');['hoursProject','materialProject','photoProject','measureProject','voiceProject'].forEach(id=>{if($(id)){const selected=$(id).value;$(id).innerHTML=opts;if([...$(id).options].some(o=>o.value===selected))$(id).value=selected}})}
+function refreshProjectSelectors(){const opts=projects.map(p=>`<option value="${esc(p.id)}">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</option>`).join('');['hoursProject','materialProject','photoProject','measureProject','voiceProject'].forEach(id=>{if($(id))$(id).innerHTML=opts})}
 function renderHome(){$('countProjects').textContent=projects.length;$('countClients').textContent=new Set(projects.map(p=>(p.clientName||'').trim()).filter(Boolean)).size;$('countHours').textContent=hours.reduce((a,b)=>a+Number(b.total||0),0).toFixed(1)}
 function normalizeOfferStatus(s){return s==='accepted'?'unpaid':(s||'unsent')}
 function offerStatusText(s){s=normalizeOfferStatus(s);return s==='unsent'?tr('offerUnsent'):s==='sent'?tr('offerSent'):s==='unpaid'?tr('offerUnpaid'):tr('offerPaid')}
 function nextOfferNumber(){const y=new Date().getFullYear();const nums=offers.map(o=>String(o.number||'')).filter(n=>n.startsWith(y+'-')).map(n=>parseInt(n.split('-').pop(),10)).filter(Number.isFinite);const next=(nums.length?Math.max(...nums):0)+1;return `${y}-${String(next).padStart(3,'0')}`}
-const ILIRI_WORK_TYPES=['Måleriarbete','Målning','Väggmålning','Takmålning','Grundmålning','Spackling','Bredspackling','Slipning','Tapetsering','Tapetborttagning','Sprutmålning','Snickerimålning','Dörrmålning','Fönstermålning','Elementmålning','Köksluckor','Fasadmålning','Utvändig målning','Trämålning','Lackering','Dekorationsmålning','Renoveringsmålning','Fogning','Annat'];
-function addOfferLine(kind,data={}){const box=$(kind==='work'?'workLines':'materialLines');const row=document.createElement('div');row.className='offer-line '+(kind==='material'?'material-line':'');row.dataset.kind=kind;if(kind==='work'){const selected=String(data.description||'');const types=ILIRI_WORK_TYPES.includes(selected)||!selected?ILIRI_WORK_TYPES:[selected,...ILIRI_WORK_TYPES];const options='<option value="">Zgjidh llojin e punës</option>'+types.map(x=>`<option value="${esc(x)}"${x===selected?' selected':''}>${esc(x)}</option>`).join('');row.innerHTML=`<select class="desc" aria-label="Zgjidh llojin e punës">${options}</select><input class="qty" type="number" min="0" step="0.5" placeholder="${esc(tr('hoursLower'))}" value="${esc(data.qty??'')}"><input class="unitPrice" type="number" min="0" step="1" placeholder="kr/${esc(tr('hoursLower'))}" value="${esc(data.unitPrice??'')}"><button class="danger removeLine" type="button">×</button>`;}else row.innerHTML=`<input class="desc" placeholder="${esc(tr('material'))}" value="${esc(data.description||'')}"><input class="qty" type="number" min="0" step="1" placeholder="${esc(tr('quantity'))}" value="${esc(data.qty??'')}"><input class="unitPrice" type="number" min="0" step="1" placeholder="kr" value="${esc(data.unitPrice??'')}"><button class="danger removeLine" type="button">×</button>`;box.appendChild(row);row.querySelectorAll('input,select').forEach(x=>{x.addEventListener('input',calcOffer);x.addEventListener('change',calcOffer)});row.querySelector('.removeLine').addEventListener('click',()=>{row.remove();calcOffer()});calcOffer()}
+function addOfferLine(kind,data={}){const box=$(kind==='work'?'workLines':'materialLines');const row=document.createElement('div');row.className='offer-line '+(kind==='material'?'material-line':'');row.dataset.kind=kind;if(kind==='work'){const workTypes=currentLang==='sv'?['Målning av väggar','Målning av tak','Målning av snickerier','Målning av dörrar','Målning av karmar och foder','Målning av fönster','Målning av element','Målning av köksluckor','Fasadmålning','Målning av träpanel','Målning av betong','Målning av metall','Bredspackling','Skarvspackling','Lagning och spackling','Slipning','Grundmålning','Tapetsering','Tapetborttagning','Fogning','Sprutmålning','Lackering','Dekorationsmålning','Skrapning av färg','Målartvätt / rengöring','Maskering och täckning','Förarbete','Annat måleriarbete']:['Lyerje muresh','Lyerje tavani','Lyerje druri / snickeri','Lyerje dyersh','Lyerje kornizash dhe listelash','Lyerje dritaresh','Lyerje radiatorësh','Lyerje dyersh kuzhine','Lyerje fasade','Lyerje paneli druri','Lyerje betoni','Lyerje metali','Spatulim i plotë','Spatulim fugash','Riparim dhe spatulim','Lëmim / smerilim','Astar / grundim','Vendosje tapete','Heqje tapete','Fugim','Lyerje me sprucim','Llakim','Lyerje dekorative','Gërryerje boje','Larje / pastrim para lyerjes','Maskim dhe mbulim','Punë përgatitore','Punë tjetër molerie'];const selected=data.description||'';row.innerHTML=`<input class="desc" list="iliriWorkTypes" placeholder="${esc(tr('chooseWork'))}" value="${esc(selected)}"><datalist id="iliriWorkTypes">${workTypes.map(x=>`<option value="${esc(x)}"></option>`).join('')}</datalist><input class="qty" type="number" min="0" step="0.5" placeholder="${esc(tr('hoursLower'))}" value="${esc(data.qty??'')}"><input class="unitPrice" type="number" min="0" step="1" placeholder="kr/${esc(tr('hoursLower'))}" value="${esc(data.unitPrice??'')}"><button class="danger removeLine" type="button">×</button>`;}else row.innerHTML=`<input class="desc" placeholder="${esc(tr('material'))}" value="${esc(data.description||'')}"><input class="qty" type="number" min="0" step="1" placeholder="${esc(tr('quantity'))}" value="${esc(data.qty??'')}"><input class="unitPrice" type="number" min="0" step="1" placeholder="kr" value="${esc(data.unitPrice??'')}"><button class="danger removeLine" type="button">×</button>`;box.appendChild(row);row.querySelectorAll('input').forEach(x=>x.addEventListener('input',calcOffer));const desc=row.querySelector('.desc');if(desc&&desc.tagName==='SELECT')desc.addEventListener('change',calcOffer);row.querySelector('.removeLine').addEventListener('click',()=>{row.remove();calcOffer()});calcOffer()}
 function collectOfferLines(kind){return [...$(kind==='work'?'workLines':'materialLines').querySelectorAll('.offer-line')].map(r=>({description:r.querySelector('.desc').value.trim(),qty:Number(r.querySelector('.qty').value||0),unitPrice:Number(r.querySelector('.unitPrice').value||0)})).filter(x=>x.description||x.qty||x.unitPrice)}
 function calcOffer(){const lines=[...collectOfferLines('work'),...collectOfferLines('material')];const subtotal=lines.reduce((a,x)=>a+x.qty*x.unitPrice,0);const vatPct=Number($('offerVat').value||0);const vat=subtotal*vatPct/100;const fmt=n=>Number(n).toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';$('offerSubtotal').textContent=fmt(subtotal);$('offerVatAmount').textContent=fmt(vat);$('offerTotal').textContent=fmt(subtotal+vat);return{subtotal,vat,total:subtotal+vat}}
 function clearOfferForm(){$('offerId').value='';$('offerNumber').value=nextOfferNumber();$('offerDate').value=today();$('offerClient').value='';$('offerPhone').value='';$('offerAddress').value='';$('offerStatus').value='unsent';$('offerVat').value='25';$('offerNotes').value='';$('workLines').innerHTML='';$('materialLines').innerHTML='';addOfferLine('work');addOfferLine('material');$('deleteOfferBtn').classList.add('hidden');$('offerFormTitle').textContent=tr('newOfferTitle');calcOffer()}
@@ -570,195 +427,10 @@ function renderAcceptedDocs(){
 
 let currentPdfOfferId=null;
 
-/* Vula dhe firma e ILIA MITRO – ruhen në telefon dhe për çdo ofertë */
-const OWNER_SIG_KEY='iliri_owner_signature_v1';
-const OWNER_SIG_VERSION_KEY='iliri_owner_signature_embedded_version';
-const OWNER_SIG_DEFAULT='data:image/png;base64,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';
-// Vendos firmën e dërguar nga ILIA MITRO vetëm një herë në këtë version.
-if(localStorage.getItem(OWNER_SIG_VERSION_KEY)!=='firma-ilia-mitro-20260912'){
-  localStorage.setItem(OWNER_SIG_KEY,OWNER_SIG_DEFAULT);
-  localStorage.setItem(OWNER_SIG_VERSION_KEY,'firma-ilia-mitro-20260912');
-}
-function currentOwnerOffer(){return offers.find(x=>String(x.id)===String(currentPdfOfferId))}
-function ownerDecor(o){
-  if(!o.ownerDecor)o.ownerDecor={stamp:false,signature:false,stampX:147,stampY:239,signatureX:128,signatureY:263,stampSize:38,signatureSize:48};
-  if(!Number(o.ownerDecor.stampSize))o.ownerDecor.stampSize=38;
-  if(!Number(o.ownerDecor.signatureSize))o.ownerDecor.signatureSize=48;
-  return o.ownerDecor;
-}
-function saveOwnerDecor(o){persistAll();printOffer(o.id)}
-function toggleOwnerStamp(){
-  const o=currentOwnerOffer();if(!o)return;
-  const d=ownerDecor(o);d.stamp=!d.stamp;saveOwnerDecor(o);
-}
-function ownerSignatureControl(){
-  const o=currentOwnerOffer();if(!o)return;
-  const saved=localStorage.getItem(OWNER_SIG_KEY)||'';
-  if(saved){const d=ownerDecor(o);d.signature=!d.signature;saveOwnerDecor(o);return}
-  openOwnerSignaturePad();
-}
-function openOwnerSignaturePad(){
-  const o=currentOwnerOffer();if(!o)return;
-  const old=document.getElementById('ownerSigModal');if(old)old.remove();
-  const m=document.createElement('div');m.id='ownerSigModal';
-  m.style.cssText='position:fixed;inset:0;z-index:100002;background:#f3f4f6;padding:18px;overflow:auto';
-  m.innerHTML='<div style="max-width:600px;margin:auto;background:#fff;padding:18px;border-radius:16px"><button id="ownerSigClose" type="button" style="padding:10px 15px;border:0;border-radius:10px">← Kthehu</button><h2>Firma ime — ILIA MITRO</h2><p>Firmos me gisht brenda kutisë.</p><canvas id="ownerSigCanvas" width="900" height="300" style="width:100%;height:190px;border:2px solid #bbb;border-radius:12px;touch-action:none;background:#fff"></canvas><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px"><button id="ownerSigClear" type="button" style="padding:13px;border:0;border-radius:10px;background:#6b7280;color:#fff;font-weight:800">Pastro</button><button id="ownerSigSave" type="button" style="padding:13px;border:0;border-radius:10px;background:#159447;color:#fff;font-weight:800">Ruaj firmën</button></div></div>';
-  document.body.appendChild(m);
-  const cv=document.getElementById('ownerSigCanvas'),x=cv.getContext('2d');x.lineWidth=4;x.lineCap='round';let down=false,ink=false;
-  const p=e=>{const r=cv.getBoundingClientRect(),t=e.touches?e.touches[0]:e;return{x:(t.clientX-r.left)*cv.width/r.width,y:(t.clientY-r.top)*cv.height/r.height}};
-  const start=e=>{down=true;ink=true;const q=p(e);x.beginPath();x.moveTo(q.x,q.y);e.preventDefault()};
-  const move=e=>{if(!down)return;const q=p(e);x.lineTo(q.x,q.y);x.stroke();e.preventDefault()};
-  ['mousedown','touchstart'].forEach(n=>cv.addEventListener(n,start,{passive:false}));
-  ['mousemove','touchmove'].forEach(n=>cv.addEventListener(n,move,{passive:false}));
-  ['mouseup','mouseleave','touchend','touchcancel'].forEach(n=>cv.addEventListener(n,()=>down=false));
-  document.getElementById('ownerSigClose').onclick=()=>m.remove();
-  document.getElementById('ownerSigClear').onclick=()=>{x.clearRect(0,0,cv.width,cv.height);ink=false};
-  document.getElementById('ownerSigSave').onclick=()=>{if(!ink){alert('Firmos me gisht para se ta ruash.');return}localStorage.setItem(OWNER_SIG_KEY,cv.toDataURL('image/png'));ownerDecor(o).signature=true;persistAll();m.remove();printOffer(o.id)};
-}
-function clearOwnerSignature(){
-  if(!confirm('Ta fshij firmën time të ruajtur?'))return;
-  localStorage.removeItem(OWNER_SIG_KEY);offers.forEach(o=>{if(o.ownerDecor)o.ownerDecor.signature=false});persistAll();
-  const o=currentOwnerOffer();if(o)printOffer(o.id);
-}
-function makeOwnerStampDataUrl(){
-  const cv=document.createElement('canvas');cv.width=700;cv.height=700;
-  const c=cv.getContext('2d'),gold='#b58b20',dark='#111827';
-  c.clearRect(0,0,700,700);c.fillStyle='rgba(255,255,255,.96)';c.beginPath();c.arc(350,350,326,0,Math.PI*2);c.fill();
-  c.strokeStyle=gold;c.lineWidth=18;c.beginPath();c.arc(350,350,320,0,Math.PI*2);c.stroke();
-  c.lineWidth=7;c.beginPath();c.arc(350,350,290,0,Math.PI*2);c.stroke();
-  c.textAlign='center';c.textBaseline='middle';c.fillStyle=gold;c.font='bold 92px Georgia,serif';c.fillText('ILIRI',350,146);
-  c.strokeStyle=dark;c.lineWidth=14;c.lineCap='round';c.lineJoin='round';
-  c.beginPath();c.moveTo(205,300);c.lineTo(350,205);c.lineTo(495,300);c.moveTo(245,280);c.lineTo(245,370);c.moveTo(455,280);c.lineTo(455,370);c.stroke();
-  c.fillStyle=gold;c.fillRect(323,265,54,54);c.strokeStyle=dark;c.lineWidth=7;c.strokeRect(323,265,54,54);
-  c.beginPath();c.moveTo(180,360);c.bezierCurveTo(270,325,390,390,515,328);c.strokeStyle=gold;c.lineWidth=24;c.stroke();
-  c.save();c.translate(500,322);c.rotate(-0.55);c.fillStyle=dark;c.fillRect(-8,-10,88,20);c.fillStyle=gold;c.fillRect(70,-17,42,34);c.restore();
-  c.fillStyle=dark;c.font='bold 47px Arial,sans-serif';c.fillText('MÅLERI & DEKOR',350,421);
-  c.strokeStyle=gold;c.lineWidth=5;c.beginPath();c.moveTo(120,460);c.lineTo(580,460);c.stroke();
-  c.font='bold 38px Arial,sans-serif';c.fillText('ILIA MITRO',350,495);
-  c.font='27px Arial,sans-serif';c.fillText('076 922 53 61',350,532);c.fillText('ilia.mitro@yahoo.gr',350,568);
-  c.fillStyle=gold;c.font='bold 30px Arial,sans-serif';c.fillText('GÖTEBORG',350,604);
-  return cv.toDataURL('image/png');
-}
-function darkenOwnerSignatureDataUrl(src){
-  return new Promise(resolve=>{
-    if(!src){resolve(src);return}
-    const im=new Image();
-    im.onload=()=>{
-      try{
-        const cv=document.createElement('canvas');cv.width=im.naturalWidth||im.width;cv.height=im.naturalHeight||im.height;
-        const c=cv.getContext('2d');c.drawImage(im,0,0);
-        const data=c.getImageData(0,0,cv.width,cv.height),p=data.data;
-        for(let i=0;i<p.length;i+=4){if(p[i+3]){p[i]=0;p[i+1]=0;p[i+2]=0;p[i+3]=Math.min(255,p[i+3]*8)}}
-        c.putImageData(data,0,0);resolve(cv.toDataURL('image/png'));
-      }catch(e){resolve(src)}
-    };
-    im.onerror=()=>resolve(src);im.src=src;
-  });
-}
-// Shared A4 geometry: editor and PDF use identical millimetre coordinates.
-function ownerBox(d,kind){
-  const stamp=kind==='stamp', fallback=stamp?38:48;
-  const number=(value,otherwise)=>Number.isFinite(Number(value))?Number(value):otherwise;
-  const width=Math.max(25,Math.min(stamp?65:90,number(d[kind+'Size'],fallback)));
-  const height=stamp?width:width/3;
-  return {width,height,x:Math.max(0,Math.min(210-width,number(d[kind+'X'],stamp?147:128))),y:Math.max(0,Math.min(297-height,number(d[kind+'Y'],stamp?239:263)))};
-}
-function containOwnerImage(width,height,box){
-  const scale=Math.min(box.width/width,box.height/height);
-  const w=width*scale,h=height*scale;
-  return {x:box.x+(box.width-w)/2,y:box.y+(box.height-h)/2,width:w,height:h};
-}
-let ownerPdfRendererPromise=null;
-function loadOwnerPdfRenderer(){
-  if(window.pdfjsLib)return Promise.resolve(window.pdfjsLib);
-  if(!ownerPdfRendererPromise){
-    ownerPdfRendererPromise=new Promise((resolve,reject)=>{
-      const script=document.createElement('script');
-      script.src='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';
-      const timer=setTimeout(()=>{script.remove();reject(new Error('PDF renderer timeout'))},15000);
-      script.onload=()=>{
-        clearTimeout(timer);
-        if(!window.pdfjsLib){reject(new Error('PDF renderer unavailable'));return}
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-        resolve(window.pdfjsLib);
-      };
-      script.onerror=()=>{clearTimeout(timer);script.remove();reject(new Error('PDF renderer unavailable'))};
-      document.head.appendChild(script);
-    }).catch(error=>{ownerPdfRendererPromise=null;throw error});
-  }
-  return ownerPdfRendererPromise;
-}
-async function openOwnerPositionEditor(){
-  const o=currentOwnerOffer();if(!o)return;const d=ownerDecor(o),sig=localStorage.getItem(OWNER_SIG_KEY)||'';
-  if(!d.stamp&&!d.signature){alert('Aktivizo fillimisht Vulën ose Firmën time.');return}
-  const old=document.getElementById('ownerPosModal');if(old)old.remove();
-  const m=document.createElement('div');m.id='ownerPosModal';m.style.cssText='position:fixed;inset:0;z-index:100003;background:#e5e7eb;padding:12px;overflow:auto';
-  m.innerHTML='<div style="max-width:430px;margin:auto"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><button id="posBack" type="button" style="padding:12px;border:0;border-radius:10px">← Kthehu</button><button id="posSave" type="button" style="padding:12px;border:0;border-radius:10px;background:#159447;color:white;font-weight:900">Ruaj pozicionet</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><button id="stampMinus" type="button" style="padding:10px;border:0;border-radius:9px">Vula −</button><button id="stampPlus" type="button" style="padding:10px;border:0;border-radius:9px">Vula +</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><button id="sigMinus" type="button" style="padding:10px;border:0;border-radius:9px">Firma −</button><button id="sigPlus" type="button" style="padding:10px;border:0;border-radius:9px">Firma +</button></div></div><div id="a4pos" style="position:relative;width:315px;height:445.5px;margin:auto;background:white;box-shadow:0 2px 12px #999;overflow:hidden"><canvas id="ownerDocumentCanvas" style="display:block;width:315px;height:445.5px;pointer-events:none"></canvas></div><p style="text-align:center">Lëvizi me gisht. Përdor − dhe + për madhësinë.</p></div>';
-  document.body.appendChild(m);const a=document.getElementById('a4pos'),scale=1.5;
-  function syncBox(kind,el){const b=ownerBox(d,kind);d[kind+'X']=b.x;d[kind+'Y']=b.y;d[kind+'Size']=b.width;if(el){el.style.left=b.x*scale+'px';el.style.top=b.y*scale+'px';el.style.width=b.width*scale+'px';el.style.height=b.height*scale+'px'}}
-  syncBox('stamp');syncBox('signature');
-  function drag(el,keyX,keyY){
-    let active=false,dx=0,dy=0;
-    const st=e=>{active=true;const t=e.touches?e.touches[0]:e,r=el.getBoundingClientRect();dx=t.clientX-r.left;dy=t.clientY-r.top;e.preventDefault()};
-    const mv=e=>{if(!active)return;const t=e.touches?e.touches[0]:e,r=a.getBoundingClientRect();let l=Math.max(0,Math.min(315-el.getBoundingClientRect().width,t.clientX-r.left-dx));let top=Math.max(0,Math.min(445.5-el.getBoundingClientRect().height,t.clientY-r.top-dy));el.style.left=l+'px';el.style.top=top+'px';d[keyX]=l/scale;d[keyY]=top/scale;e.preventDefault()};
-    ['pointerdown','touchstart'].forEach(n=>el.addEventListener(n,st,{passive:false}));['pointermove','touchmove'].forEach(n=>m.addEventListener(n,mv,{passive:false}));['pointerup','pointercancel','touchend','touchcancel'].forEach(n=>m.addEventListener(n,()=>active=false));
-  }
-  let stampEl=null,sigEl=null;
-  if(d.stamp){stampEl=document.createElement('img');stampEl.src=makeOwnerStampDataUrl();stampEl.alt='Vula ILIRI Måleri & Dekor';stampEl.style.cssText='position:absolute;width:'+(d.stampSize*scale)+'px;height:'+(d.stampSize*scale)+'px;object-fit:contain;touch-action:none;left:'+(d.stampX*scale)+'px;top:'+(d.stampY*scale)+'px';a.appendChild(stampEl);drag(stampEl,'stampX','stampY')}
-  if(d.signature&&sig){sigEl=document.createElement('img');sigEl.src=sig;sigEl.style.cssText='position:absolute;width:'+(d.signatureSize*scale)+'px;height:'+(d.signatureSize*scale/3)+'px;object-fit:contain;touch-action:none;filter:contrast(350%) brightness(35%);left:'+(d.signatureX*scale)+'px;top:'+(d.signatureY*scale)+'px';a.appendChild(sigEl);drag(sigEl,'signatureX','signatureY')}
-  if(sigEl)darkenOwnerSignatureDataUrl(sig).then(src=>{sigEl.src=src;sigEl.style.filter='none'});
-  const resizeStamp=delta=>{d.stampSize=Math.max(25,Math.min(65,d.stampSize+delta));if(stampEl){stampEl.style.width=(d.stampSize*scale)+'px';stampEl.style.height=(d.stampSize*scale)+'px'}syncBox('stamp',stampEl)};
-  const resizeSig=delta=>{d.signatureSize=Math.max(25,Math.min(90,d.signatureSize+delta));if(sigEl){sigEl.style.width=(d.signatureSize*scale)+'px';sigEl.style.height=(d.signatureSize*scale/3)+'px'}syncBox('signature',sigEl)};
-  document.getElementById('stampMinus').onclick=()=>resizeStamp(-3);document.getElementById('stampPlus').onclick=()=>resizeStamp(3);
-  document.getElementById('sigMinus').onclick=()=>resizeSig(-4);document.getElementById('sigPlus').onclick=()=>resizeSig(4);
-  document.getElementById('posBack').onclick=()=>m.remove();document.getElementById('posSave').onclick=()=>{persistAll();m.remove();printOffer(o.id)};
-  const saveButton=m.querySelector('#posSave');
-  const status=document.createElement('p');status.setAttribute('role','status');status.style.textAlign='center';
-  a.parentNode.insertBefore(status,a);
-  const languageRow=document.createElement('div');languageRow.style.cssText='display:flex;gap:8px;margin-bottom:10px';
-  a.parentNode.insertBefore(languageRow,a);
-  let renderVersion=0;
-  async function renderDocument(lang){
-    const version=++renderVersion;
-    saveButton.disabled=true;status.textContent='Po ngarkohet dokumenti…';
-    a.style.visibility='hidden';
-    languageRow.querySelectorAll('button').forEach(b=>b.disabled=true);
-    let pdf=null;
-    try{
-      const library=await loadOwnerPdfRenderer();
-      const data=await _buildOfferPdfCore(lang,'positionBackground');
-      if(!data)throw new Error('Dokumenti nuk u krijua');
-      pdf=await library.getDocument({data:new Uint8Array(data)}).promise;
-      const page=await pdf.getPage(1),canvas=m.querySelector('#ownerDocumentCanvas');
-      const viewport=page.getViewport({scale:945/page.getViewport({scale:1}).width});
-      canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
-      await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
-      if(version!==renderVersion||!m.isConnected)return;
-      a.style.visibility='visible';saveButton.disabled=false;
-      status.textContent=pdf.numPages>1?'Faqja 1 nga '+pdf.numPages+' — vula dhe firma vendosen në faqen e parë.':'';
-    }catch(error){
-      if(m.isConnected)status.textContent='Dokumenti nuk u ngarkua. Kontrollo internetin dhe shtyp Shqip ose Suedisht për ta provuar përsëri.';
-      console.error('Pamja e dokumentit:',error);
-    }finally{
-      if(pdf)await pdf.destroy();
-      languageRow.querySelectorAll('button').forEach(b=>b.disabled=false);
-    }
-  }
-  for(const [lang,label] of [['sq','Shqip'],['sv','Suedisht']]){
-    const button=document.createElement('button');button.type='button';button.textContent=label;
-    button.style.cssText='flex:1;padding:10px;border:0;border-radius:9px';
-    button.onclick=()=>renderDocument(lang);languageRow.appendChild(button);
-  }
-  await renderDocument('sq');
-}
-
 function printOffer(id){
   window.__iliriCurrentOfferId=id;
   currentPdfOfferId=id;
   const o=offers.find(x=>x.id===id); if(!o)return;
-  const previewSubtotal=[...(o.work||[]),...(o.materials||[])].reduce((sum,x)=>sum+Number(x.qty||0)*Number(x.unitPrice||0),0);
-  const previewVat=previewSubtotal*Number(o.vatPct||0)/100;
-  const previewTotal=previewSubtotal+previewVat;
   let view=document.getElementById('iphonePdfView');
   if(!view){view=document.createElement('div');view.id='iphonePdfView';document.body.appendChild(view);}
   view.style.cssText='position:fixed;inset:0;z-index:99999;background:#f3f4f6;color:#111;overflow:auto;padding:14px;font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;';
@@ -767,20 +439,14 @@ function printOffer(id){
   view.innerHTML=`<div style="max-width:760px;margin:auto">
     <div style="position:sticky;top:0;z-index:2;background:#f3f4f6;padding-bottom:10px"><button type="button" onclick="document.getElementById('iphonePdfView').remove()" style="width:100%;padding:14px;border:0;border-radius:12px;font-size:17px;font-weight:800">← Kthehu</button></div>
     <div style="background:#fff;border-radius:16px;padding:20px;box-shadow:0 1px 4px #bbb">
-      <div style="display:flex;justify-content:space-between;gap:12px"><div><div style="font-size:24px;font-weight:900">ILIRI Måleri</div><div style="margin-top:9px;font-weight:800">ILIA MITRO</div><div>Tel: 076 922 53 61</div><div>E-post: ilia.mitro@yahoo.gr</div></div><div style="font-size:20px;font-weight:900">OFERTË</div></div>
+      <div style="display:flex;justify-content:space-between;gap:12px"><div><div style="font-size:24px;font-weight:900">${esc(COMPANY.brand)}</div><div style="margin-top:7px;font-weight:800">${esc(COMPANY.legalName)}</div><div>${esc(COMPANY.activity)}</div><div>${esc(COMPANY.address1)}</div><div>${esc(COMPANY.address2)}</div><div>Tel: ${esc(COMPANY.phone)}</div><div>E-post: ${esc(COMPANY.email)}</div><div>Org.nr: ${esc(COMPANY.orgNr)}</div><div>Momsreg.nr / VAT-nr: ${esc(COMPANY.vatNr)}</div><div>${esc(COMPANY.taxStatus)}</div><div>SNI: ${esc(COMPANY.sni)}</div></div><div style="font-size:20px;font-weight:900">OFERTË</div></div>
       <hr style="border:0;border-top:1px solid #ddd;margin:18px 0">
       ${o.number?`<div><b>Nr. ofertës:</b> ${esc(o.number)}</div>`:''}<div><b>Data:</b> ${esc(o.date||'')}</div><div><b>Klienti:</b> ${esc(o.client||'')}</div>${o.phone?`<div><b>Telefoni:</b> ${esc(o.phone)}</div>`:''}${o.address?`<div><b>Adresa:</b> ${esc(o.address)}</div>`:''}
       ${section('Punët',o.work)}${section('Materialet',o.materials)}
-      <div style="margin-top:20px;border-top:1px solid #ddd;padding-top:12px"><div style="display:flex;justify-content:space-between"><span>Pa moms:</span><b>${money(previewSubtotal)}</b></div><div style="display:flex;justify-content:space-between;margin-top:6px"><span>Moms:</span><b>${money(previewVat)}</b></div><div style="display:flex;justify-content:space-between;margin-top:8px;font-size:20px"><b>TOTALI:</b><b>${money(previewTotal)}</b></div></div>
+      <div style="margin-top:20px;border-top:1px solid #ddd;padding-top:12px"><div style="display:flex;justify-content:space-between"><span>Pa moms:</span><b>${money(o.subtotal)}</b></div><div style="display:flex;justify-content:space-between;margin-top:6px"><span>Moms:</span><b>${money(o.vat)}</b></div><div style="display:flex;justify-content:space-between;margin-top:8px;font-size:20px"><b>TOTALI:</b><b>${money(o.total)}</b></div></div>
       ${o.notes?`<div style="margin-top:18px"><b>Shënime:</b><div style="white-space:pre-wrap;margin-top:5px">${esc(o.notes)}</div></div>`:''}
     </div>
     <div style="background:#fff;border-radius:16px;padding:18px;margin:14px 0 30px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-        <button type="button" onclick="toggleOwnerStamp()" style="padding:14px;border:0;border-radius:14px;background:${ownerDecor(o).stamp?'#b58b20':'#6b7280'};color:#fff;font-size:16px;font-weight:900">🟡 ${ownerDecor(o).stamp?'Vula aktive':'Vulos'}</button>
-        <button type="button" onclick="ownerSignatureControl()" style="padding:14px;border:0;border-radius:14px;background:${ownerDecor(o).signature?'#159447':'#6b7280'};color:#fff;font-size:16px;font-weight:900">✍️ ${ownerDecor(o).signature?'Firma aktive':'Firma ime'}</button>
-        <button type="button" onclick="openOwnerPositionEditor()" style="padding:12px;border:0;border-radius:12px;background:#111827;color:#fff;font-weight:800">↔️ Pozicionet</button>
-        <button type="button" onclick="openOwnerSignaturePad()" style="padding:12px;border:0;border-radius:12px;background:#374151;color:#fff;font-weight:800">Ndrysho firmën</button>
-      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <button type="button" onclick="buildOfferPdf('sq','previewSign')" style="padding:16px;border:0;border-radius:14px;background:#159447;color:#fff;font-size:17px;font-weight:900">📄 PDF Shqip</button>
         <button type="button" onclick="buildOfferPdf('sv','previewSign')" style="padding:16px;border:0;border-radius:14px;background:#159447;color:#fff;font-size:17px;font-weight:900">📄 PDF Suedisht</button>
@@ -828,31 +494,31 @@ function openOfferPdfForSigning(pdfSource, lang, offer, pdfFile){
     </div>`;
   document.body.appendChild(v);
   document.getElementById('iliriPdfBack').onclick=()=>{revoke();v.remove();};
-  document.getElementById('iliriPdfSave').onclick=()=>{
-    // Ruajtje direkte e PDF-së. Në iPhone Safari/PWA nuk mund të hapim me detyrim
-    // një dosje specifike te Files; download-i shkon te vendndodhja Downloads e iOS.
+  document.getElementById('iliriPdfSave').onclick=async()=>{
+    const btn=document.getElementById('iliriPdfSave');
+    const saveName=(pdfFile&&pdfFile.name)?pdfFile.name:(((offer&&offer.number)?String(offer.number):'ofert')+'-'+(lang==='sv'?'sv':'sq')+'.pdf');
     try{
-      const x=offers.find(z=>z.id===currentPdfOfferId);
-      if(x){x.savedAt=new Date().toISOString();persistAll();renderOffers();}
-      const saveName = (pdfFile && pdfFile.name) ? pdfFile.name : ((offer && offer.number) ? String(offer.number) : 'ofert') + '-' + (lang==='sv'?'sv':'sq') + '.pdf';
-      let saveUrl = url;
-      let tempUrl = null;
-      if(pdfFile){
-        tempUrl = URL.createObjectURL(pdfFile);
-        saveUrl = tempUrl;
+      // Në iPhone kjo hap Share Sheet-in e sistemit. Prej aty zgjidhet “Save to Files”.
+      if(pdfFile && navigator.share && (!navigator.canShare || navigator.canShare({files:[pdfFile]}))){
+        await navigator.share({files:[pdfFile],title:saveName});
+        const x=offers.find(z=>z.id===currentPdfOfferId);
+        if(x){x.savedAt=new Date().toISOString();persistAll();renderOffers();}
+        if(btn){
+          const oldText=btn.textContent;
+          btn.textContent='✓ U ruajt';
+          setTimeout(()=>{if(document.body.contains(btn))btn.textContent=oldText;},2200);
+        }
+        return;
       }
-      const a=document.createElement('a');
-      a.href=saveUrl;
-      a.download=saveName;
-      a.rel='noopener';
-      a.style.display='none';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      if(tempUrl) setTimeout(()=>{try{URL.revokeObjectURL(tempUrl)}catch(e){}},60000);
+
+      // Fallback: hap PDF-në në viewer-in e iPhone/Safari që të përdoret Share → Save to Files.
+      const w=window.open(url,'_blank');
+      if(!w) window.location.href=url;
+      alert('PDF u hap. Shtyp Share dhe zgjidh Save to Files.');
     }catch(e){
-      console.error('PDF download error:',e);
-      try{ window.open(url,'_blank'); }catch(_e){}
+      if(e && e.name==='AbortError') return;
+      console.error('PDF save/share error:',e);
+      alert('Nuk u hap ruajtja. Provo përsëri dhe zgjidh Save to Files.');
     }
   };
   document.getElementById('iliriPdfSendSign').onclick=()=>window.iliriSendCurrentOfferForSignature(lang);
@@ -871,8 +537,8 @@ async function _buildOfferPdfCore(lang,action='share'){
     work:'Arbete',
     materials:'Material',
     desc:'Beskrivning',
-    qty:'Timmar',
-    price:'kr/timme',
+    qty:'Antal/timmar',
+    price:'Pris',
     amount:'Summa',
     subtotal:'Exkl. moms',
     vat:'Moms',
@@ -888,8 +554,8 @@ async function _buildOfferPdfCore(lang,action='share'){
     work:'Punët',
     materials:'Materialet',
     desc:'Përshkrimi',
-    qty:'Orë',
-    price:'kr/orë',
+    qty:'Sasia/orët',
+    price:'Çmimi',
     amount:'Shuma',
     subtotal:'Pa moms',
     vat:'Moms',
@@ -903,11 +569,6 @@ async function _buildOfferPdfCore(lang,action='share'){
   let work=(o.work||[]).map(x=>({...x}));
   let materials=(o.materials||[]).map(x=>({...x}));
   let notes=o.notes||'';
-
-  // Rillogarit gjithmonë nga rreshtat, edhe për ofertat e ruajtura me versione të vjetra.
-  const pdfSubtotal=[...work,...materials].reduce((sum,x)=>sum+Number(x.qty||0)*Number(x.unitPrice||0),0);
-  const pdfVat=pdfSubtotal*Number(o.vatPct||0)/100;
-  const pdfTotal=pdfSubtotal+pdfVat;
 
   if(sv){
     // Never let iPhone/Safari stay forever on the translation screen.
@@ -942,7 +603,7 @@ async function _buildOfferPdfCore(lang,action='share'){
 
   doc.setFont('helvetica','bold');
   doc.setFontSize(18);
-  doc.text('ILIRI Måleri', margin, y);
+  doc.text(COMPANY.brand, margin, y);
   doc.setFontSize(14);
   doc.text(L.title, right, y, {align:'right'});
   y += 7;
@@ -950,11 +611,18 @@ async function _buildOfferPdfCore(lang,action='share'){
   // Företagsuppgifter / të dhënat e kontaktit – shfaqen automatikisht në çdo PDF.
   doc.setFont('helvetica','bold');
   doc.setFontSize(10.5);
-  doc.text('ILIA MITRO', margin, y);
+  doc.text(COMPANY.legalName, margin, y);
   doc.setFont('helvetica','normal');
-  doc.text('Tel: 076 922 53 61', margin, y + 5);
-  doc.text('E-post: ilia.mitro@yahoo.gr', margin, y + 10);
-  y += 18;
+  doc.text(COMPANY.activity, margin, y + 5);
+  doc.text(COMPANY.address1, margin, y + 10);
+  doc.text(COMPANY.address2, margin, y + 15);
+  doc.text('Tel: '+COMPANY.phone, margin, y + 20);
+  doc.text('E-post: '+COMPANY.email, margin, y + 25);
+  doc.text('Org.nr: '+COMPANY.orgNr, margin, y + 30);
+  doc.text('Momsreg.nr / VAT-nr: '+COMPANY.vatNr, margin, y + 35);
+  doc.text(COMPANY.taxStatus, margin, y + 40);
+  doc.text('SNI: '+COMPANY.sni, margin, y + 45);
+  y += 53;
 
   doc.setFont('helvetica','normal');
   doc.setFontSize(10.5);
@@ -1014,13 +682,13 @@ async function _buildOfferPdfCore(lang,action='share'){
   doc.setFontSize(10.5);
   doc.setFont('helvetica','normal');
   doc.text(L.subtotal+':', 125, y, {align:'right'});
-  doc.text(money(pdfSubtotal), right, y, {align:'right'}); y += 6;
+  doc.text(money(o.subtotal), right, y, {align:'right'}); y += 6;
   doc.text(L.vat+':', 125, y, {align:'right'});
-  doc.text(money(pdfVat), right, y, {align:'right'}); y += 7;
+  doc.text(money(o.vat), right, y, {align:'right'}); y += 7;
   doc.setFont('helvetica','bold');
   doc.setFontSize(12);
   doc.text(L.total+':', 125, y, {align:'right'});
-  doc.text(money(pdfTotal), right, y, {align:'right'}); y += 10;
+  doc.text(money(o.total), right, y, {align:'right'}); y += 10;
 
   if(notes){
     if(y > 250){ doc.addPage(); y = 18; }
@@ -1058,29 +726,6 @@ async function _buildOfferPdfCore(lang,action='share'){
       doc.text(sv ? 'Kundens signatur' : 'Firma e klientit', margin, y);
     }catch(e){}
   }
-
-  // Use the exact PDF page as the positioning background, without movable decorations.
-  if(action==='positionBackground')return doc.output('arraybuffer');
-
-  // Vula dhe firma e pronarit shtohen në faqen e parë, në pozicionet e ruajtura.
-  const od=ownerDecor(o);
-  try{
-    doc.setPage(1);
-    if(od.stamp){
-      const b=ownerBox(od,'stamp');
-      doc.addImage(makeOwnerStampDataUrl(),'PNG',b.x,b.y,b.width,b.height);
-    }
-    if(od.signature){
-      const os=localStorage.getItem(OWNER_SIG_KEY)||'';
-      if(os){
-        const box=ownerBox(od,'signature');
-        const strongSignature=await darkenOwnerSignatureDataUrl(os);
-        const props=doc.getImageProperties(strongSignature);
-        const fitted=containOwnerImage(props.width,props.height,box);
-        doc.addImage(strongSignature,'PNG',fitted.x,fitted.y,fitted.width,fitted.height);
-      }
-    }
-  }catch(e){console.error('Vula/firma:',e)}
 
   // On iPhone/Safari a data URI is more reliable for an in-app PDF preview than a blob URL.
   const pdfBlob = doc.output('blob');
@@ -1224,7 +869,7 @@ function measureToOffer(){
   const p=projects.find(x=>x.id===m.projectId);newOffer();
   if(p){$('offerClient').value=p.clientName||'';$('offerPhone').value=p.phone||'';$('offerAddress').value=p.address||''}
   $('workLines').innerHTML='';$('materialLines').innerHTML='';
-  addOfferLine('work',{description:'Måleriarbete',qty:'',unitPrice:''});
+  addOfferLine('work',{description:`Måleriarbete ${m.total.toFixed(2)} m²`,qty:m.total.toFixed(2),unitPrice:m.laborPrice});
   addOfferLine('material',{description:`Målerimaterial ${m.total.toFixed(2)} m²`,qty:m.total.toFixed(2),unitPrice:m.materialPrice});
   calcOffer()
 }
@@ -1389,7 +1034,7 @@ function checkWeeklyBackupReminder(){
 
 function importBackup(file){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);projects=Array.isArray(d.projects)?d.projects:[];hours=Array.isArray(d.hours)?d.hours:[];materials=Array.isArray(d.materials)?d.materials:[];offers=Array.isArray(d.offers)?d.offers:[];invoices=Array.isArray(d.invoices)?d.invoices:[];photos=Array.isArray(d.photos)?d.photos:[];measures=Array.isArray(d.measures)?d.measures:[];reports=Array.isArray(d.reports)?d.reports:[];persistAll();refreshProjectSelectors();renderHome();alert(tr('backupRestored'))}catch(e){alert(tr('invalidBackup'))}};r.readAsText(file)}
 function setText(id,key){const el=$(id);if(el)el.textContent=tr(key)}
-function applyLang(){document.documentElement.lang=currentLang;$('lblHoursWork').textContent=currentLang==='sv'?'Vad gjorde jag idag / Typ av arbete':'Çfarë bëra sot / Lloji i punës';$('hoursWorkDescription').placeholder=currentLang==='sv'?'T.ex. Idag spacklade jag väggarna och målade taket.':'P.sh. Sot spatullova muret dhe lyeva tavanin.';setText('langBtn','langBtn');setText('backupBtn','backup');setText('btnProjects','projects');setText('btnClients','clients');setText('btnHours','hours');setText('btnMaterials','materials');setText('btnNewProject','newProject');setText('statProjects','projects');setText('statClients','clients');setText('statHours','hours');setText('lblProjectName','projectName');setText('lblProjectNumber','projectNumber');setText('lblClient','client');setText('lblPhone','phone');setText('lblAddress','address');setText('lblType','workType');setText('lblStatus','status');setText('lblPrice','offer');setText('lblNotes','notes');setText('saveProjectBtn','saveProject');setText('cancelProjectBtn','cancel');setText('deleteCurrentProjectBtn','deleteCurrentProject');setText('projectsTitle','projects');setText('clientsTitle','clients');setText('hoursTitle','hours');setText('materialsTitle','materials');setText('lblSearchProject','searchProject');setText('lblSearchClient','searchClient');$('projectSearch').placeholder=tr('searchProjectPh');$('clientSearch').placeholder=tr('searchClientPh');document.querySelectorAll('.backBtn').forEach(el=>el.textContent=tr('back'));document.querySelectorAll('.lblProject').forEach(el=>el.textContent=tr('project'));document.querySelectorAll('.lblDate').forEach(el=>el.textContent=tr('date'));setText('lblStart','start');setText('lblEnd','end');setText('lblBreak','break');setText('saveHoursBtn','saveHours');setText('lblMaterialName','material');setText('lblMaterialCost','cost');setText('lblMaterialNote','note');setText('saveMaterialBtn','saveMaterial');document.getElementById('saveBackupVisibleBtn').textContent='💾 Ruaj backup';document.getElementById('restoreBackupVisibleBtn').textContent='↩️ Rikthe backup';$('type').options[0].textContent=tr('chooseWork');$('status').options[0].textContent=tr('active');$('status').options[1].textContent=tr('waiting');$('status').options[2].textContent=tr('done');$('projectFormTitle').textContent=$('projectId').value?tr('editProject'):tr('newProjectTitle');setText('btnOffers','offers');setText('offersTitle','offers');setText('newOfferBtn','newOffer');setText('filterUnsent','offerUnsent');setText('filterSent','offerSent');setText('filterUnpaid','offerUnpaid');setText('filterPaid','offerPaid');setText('filterAll','all');setText('lblOfferNumber','offerNumber');setText('lblOfferDate','date');setText('lblOfferClient','client');setText('lblOfferPhone','phone');setText('lblOfferAddress','address');setText('lblOfferStatus','status');if($('offerStatus')){const so=$('offerStatus').options; if(so[0])so[0].textContent=tr('offerUnsent'); if(so[1])so[1].textContent=tr('offerSent'); if(so[2])so[2].textContent=tr('offerUnpaid'); if(so[3])so[3].textContent=tr('offerPaid');}setText('workLinesTitle','workLines');setText('materialLinesTitle','materials');setText('addWorkLineBtn','addWork');setText('addMaterialLineBtn','addMaterial');setText('lblVat','vat');setText('subtotalLabel','subtotal');setText('vatLabel','vat');setText('totalLabel','total');setText('lblOfferNotes','notes');setText('saveOfferBtn','saveOffer');setText('cancelOfferBtn','cancel');setText('deleteOfferBtn','deleteOffer');document.querySelectorAll('.backToOffersBtn').forEach(el=>el.textContent=tr('back'));$('offerFormTitle').textContent=$('offerId').value?tr('editOffer'):tr('newOfferTitle');renderHome();if(!$('projectsView').classList.contains('hidden'))renderProjects();if(!$('clientsView').classList.contains('hidden'))renderClients();if(!$('hoursView').classList.contains('hidden'))renderHours();if(!$('materialsView').classList.contains('hidden'))renderMaterials();if(!$('offersView').classList.contains('hidden'))renderOffers()}
+function applyLang(){document.documentElement.lang=currentLang;setText('langBtn','langBtn');setText('backupBtn','backup');setText('btnProjects','projects');setText('btnClients','clients');setText('btnHours','hours');setText('btnMaterials','materials');setText('btnNewProject','newProject');setText('statProjects','projects');setText('statClients','clients');setText('statHours','hours');setText('lblProjectName','projectName');setText('lblProjectNumber','projectNumber');setText('lblClient','client');setText('lblPhone','phone');setText('lblAddress','address');setText('lblType','workType');setText('lblStatus','status');setText('lblPrice','offer');setText('lblNotes','notes');setText('saveProjectBtn','saveProject');setText('cancelProjectBtn','cancel');setText('deleteCurrentProjectBtn','deleteCurrentProject');setText('projectsTitle','projects');setText('clientsTitle','clients');setText('hoursTitle','hours');setText('materialsTitle','materials');setText('lblSearchProject','searchProject');setText('lblSearchClient','searchClient');$('projectSearch').placeholder=tr('searchProjectPh');$('clientSearch').placeholder=tr('searchClientPh');document.querySelectorAll('.backBtn').forEach(el=>el.textContent=tr('back'));document.querySelectorAll('.lblProject').forEach(el=>el.textContent=tr('project'));document.querySelectorAll('.lblDate').forEach(el=>el.textContent=tr('date'));setText('lblStart','start');setText('lblEnd','end');setText('lblBreak','break');setText('saveHoursBtn','saveHours');setText('lblMaterialName','material');setText('lblMaterialCost','cost');setText('lblMaterialNote','note');setText('saveMaterialBtn','saveMaterial');document.getElementById('saveBackupVisibleBtn').textContent='💾 Ruaj backup';document.getElementById('restoreBackupVisibleBtn').textContent='↩️ Rikthe backup';$('type').options[0].textContent=tr('chooseWork');$('status').options[0].textContent=tr('active');$('status').options[1].textContent=tr('waiting');$('status').options[2].textContent=tr('done');$('projectFormTitle').textContent=$('projectId').value?tr('editProject'):tr('newProjectTitle');setText('btnOffers','offers');setText('offersTitle','offers');setText('newOfferBtn','newOffer');setText('filterUnsent','offerUnsent');setText('filterSent','offerSent');setText('filterUnpaid','offerUnpaid');setText('filterPaid','offerPaid');setText('filterAll','all');setText('lblOfferNumber','offerNumber');setText('lblOfferDate','date');setText('lblOfferClient','client');setText('lblOfferPhone','phone');setText('lblOfferAddress','address');setText('lblOfferStatus','status');if($('offerStatus')){const so=$('offerStatus').options; if(so[0])so[0].textContent=tr('offerUnsent'); if(so[1])so[1].textContent=tr('offerSent'); if(so[2])so[2].textContent=tr('offerUnpaid'); if(so[3])so[3].textContent=tr('offerPaid');}setText('workLinesTitle','workLines');setText('materialLinesTitle','materials');setText('addWorkLineBtn','addWork');setText('addMaterialLineBtn','addMaterial');setText('lblVat','vat');setText('subtotalLabel','subtotal');setText('vatLabel','vat');setText('totalLabel','total');setText('lblOfferNotes','notes');setText('saveOfferBtn','saveOffer');setText('cancelOfferBtn','cancel');setText('deleteOfferBtn','deleteOffer');document.querySelectorAll('.backToOffersBtn').forEach(el=>el.textContent=tr('back'));$('offerFormTitle').textContent=$('offerId').value?tr('editOffer'):tr('newOfferTitle');renderHome();if(!$('projectsView').classList.contains('hidden'))renderProjects();if(!$('clientsView').classList.contains('hidden'))renderClients();if(!$('hoursView').classList.contains('hidden'))renderHours();if(!$('materialsView').classList.contains('hidden'))renderMaterials();if(!$('offersView').classList.contains('hidden'))renderOffers()}
 
 let invoiceFilter='all';
 function nextInvoiceNumber(){
@@ -1451,7 +1096,7 @@ function printInvoice(id){
   let v=document.getElementById('invoicePreview');
   if(!v){v=document.createElement('div');v.id='invoicePreview';v.style.cssText='position:fixed;inset:0;z-index:99999;background:#fff;color:#111;overflow:auto;padding:20px;font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;';document.body.appendChild(v)}
   const money=n=>Number(n||0).toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';
-  v.innerHTML=`<div style="max-width:760px;margin:0 auto;min-height:calc(100vh - 40px);display:flex;flex-direction:column"><div style="margin-bottom:18px"><button class="pdf-close-btn" onclick="document.getElementById('invoicePreview').remove()">Kthehu</button></div><div style="flex:1"><h1>ILIRI Måleri</h1><h2>FATURË ${esc(o.number||'')}</h2><p><b>Data:</b> ${esc(o.date||'')}<br><b>Afati:</b> ${esc(o.dueDate||'')}<br><b>Klienti:</b> ${esc(o.client||'')}<br><b>Telefoni:</b> ${esc(o.phone||'')}<br><b>Adresa:</b> ${esc(o.address||'')}</p><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;border-bottom:1px solid #ccc;padding:8px 4px">Përshkrimi</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Sasia</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Çmimi</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Shuma</th></tr></thead><tbody>${(o.lines||[]).map(x=>`<tr><td style="padding:8px 4px;border-bottom:1px solid #eee">${esc(x.description||'')}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${x.qty||0}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${money(x.unitPrice)}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${money((x.qty||0)*(x.unitPrice||0))}</td></tr>`).join('')}</tbody></table><div style="margin-top:20px;line-height:1.8"><b>Pa moms:</b> ${money(o.subtotal)}<br><b>Moms (${o.vatPct||0}%):</b> ${money(o.vat)}<br><b style="font-size:20px">TOTALI: ${money(o.total)}</b></div>${o.notes?`<p><b>Shënime:</b><br>${esc(o.notes)}</p>`:''}</div><div style="display:flex;justify-content:space-between;gap:12px;margin-top:36px;padding-bottom:20px"><button onclick="buildInvoicePdf('${esc(id)}','sv')">🇸🇪 PDF Svenska</button><button onclick="buildInvoicePdf('${esc(id)}','sq')">🇦🇱 PDF Shqip</button></div></div>`;
+  v.innerHTML=`<div style="max-width:760px;margin:0 auto;min-height:calc(100vh - 40px);display:flex;flex-direction:column"><div style="margin-bottom:18px"><button class="pdf-close-btn" onclick="document.getElementById('invoicePreview').remove()">Kthehu</button></div><div style="flex:1"><div style="display:flex;justify-content:space-between;gap:14px"><div><h1 style="margin:0 0 6px">${esc(COMPANY.brand)}</h1><b>${esc(COMPANY.legalName)}</b><br>${esc(COMPANY.activity)}<br>${esc(COMPANY.address1)}<br>${esc(COMPANY.address2)}<br>Tel: ${esc(COMPANY.phone)}<br>E-post: ${esc(COMPANY.email)}<br>Org.nr: ${esc(COMPANY.orgNr)}<br>Momsreg.nr / VAT-nr: ${esc(COMPANY.vatNr)}<br>${esc(COMPANY.taxStatus)}<br>SNI: ${esc(COMPANY.sni)}</div><h2 style="margin-top:0">FATURË ${esc(o.number||'')}</h2></div><hr style="border:0;border-top:1px solid #ddd;margin:18px 0"><p><b>Data:</b> ${esc(o.date||'')}<br><b>Afati:</b> ${esc(o.dueDate||'')}<br><b>Klienti:</b> ${esc(o.client||'')}<br><b>Telefoni:</b> ${esc(o.phone||'')}<br><b>Adresa:</b> ${esc(o.address||'')}</p><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;border-bottom:1px solid #ccc;padding:8px 4px">Përshkrimi</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Sasia</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Çmimi</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Shuma</th></tr></thead><tbody>${(o.lines||[]).map(x=>`<tr><td style="padding:8px 4px;border-bottom:1px solid #eee">${esc(x.description||'')}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${x.qty||0}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${money(x.unitPrice)}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${money((x.qty||0)*(x.unitPrice||0))}</td></tr>`).join('')}</tbody></table><div style="margin-top:20px;line-height:1.8"><b>Pa moms:</b> ${money(o.subtotal)}<br><b>Moms (${o.vatPct||0}%):</b> ${money(o.vat)}<br><b style="font-size:20px">TOTALI: ${money(o.total)}</b></div>${o.notes?`<p><b>Shënime:</b><br>${esc(o.notes)}</p>`:''}</div><div style="display:flex;justify-content:space-between;gap:12px;margin-top:36px;padding-bottom:20px"><button onclick="buildInvoicePdf('${esc(id)}','sv')">🇸🇪 PDF Svenska</button><button onclick="buildInvoicePdf('${esc(id)}','sq')">🇦🇱 PDF Shqip</button></div></div>`;
 }
 function buildInvoicePdf(id,lang='sq'){
   const o=invoices.find(x=>x.id===id);if(!o)return;
@@ -1464,7 +1109,10 @@ function buildInvoicePdf(id,lang='sq'){
     desc:'Përshkrimi',qty:'Sasia/orët',price:'Çmimi',sum:'Shuma',exvat:'Pa moms',vat:'Moms',total:'TOTALI',notes:'Shënime'
   };
   const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4'}),money=n=>Number(n||0).toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';
-  let y=18;doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text('ILIRI Måleri',16,y);doc.setFontSize(14);doc.text(T.invoice+' '+String(o.number||''),194,y,{align:'right'});y+=10;
+  let y=18;doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text(COMPANY.brand,16,y);doc.setFontSize(14);doc.text(T.invoice+' '+String(o.number||''),194,y,{align:'right'});y+=7;
+  doc.setFontSize(10.5);doc.text(COMPANY.legalName,16,y);doc.setFont('helvetica','normal');
+  [COMPANY.activity,COMPANY.address1,COMPANY.address2,'Tel: '+COMPANY.phone,'E-post: '+COMPANY.email,'Org.nr: '+COMPANY.orgNr,'Momsreg.nr / VAT-nr: '+COMPANY.vatNr,COMPANY.taxStatus,'SNI: '+COMPANY.sni].forEach(t=>{y+=5;doc.text(t,16,y)});
+  y+=9;
   doc.setFont('helvetica','normal');doc.setFontSize(10.5);
   [T.date+': '+(o.date||''),T.due+': '+(o.dueDate||''),T.client+': '+(o.client||''),T.phone+': '+(o.phone||''),T.address+': '+(o.address||'')].forEach(t=>{doc.text(t,16,y);y+=5});
   y+=4;doc.setFont('helvetica','bold');doc.text(T.desc,16,y);doc.text(T.qty,125,y,{align:'right'});doc.text(T.price,158,y,{align:'right'});doc.text(T.sum,194,y,{align:'right'});y+=5;doc.line(16,y,194,y);y+=5;doc.setFont('helvetica','normal');
@@ -1568,7 +1216,7 @@ function bind(){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
- $('hoursDate').value=today();$('materialDate').value=today();if($('voiceDate')) $('voiceDate').value=today();refreshProjectSelectors();bind();applyLang();renderHome();checkWeeklyBackupReminder();setupHoursDraft();
+ $('hoursDate').value=today();$('materialDate').value=today();if($('voiceDate')) $('voiceDate').value=today();refreshProjectSelectors();bind();applyLang();renderHome();checkWeeklyBackupReminder();
 });
 
 
@@ -1845,6 +1493,100 @@ window.addEventListener('load',function(){
     alert('Linku i ofertës nuk u lexua siç duhet.');
   }
 });
+</script>
+
+<script>
+/* ILIRI Måleri – automatic local autosave of entered fields */
+(function(){
+  const AUTO_DRAFT_KEY='iliri_maleri_auto_draft_v1';
+  let saveTimer=null;
+
+  function saveAutoDraft(){
+    try{
+      const fields={};
+      document.querySelectorAll('input[id],select[id],textarea[id]').forEach(el=>{
+        if(!el.id || el.type==='file' || el.type==='button' || el.type==='submit') return;
+        if(el.type==='checkbox' || el.type==='radio') fields[el.id]={kind:'checked',value:!!el.checked};
+        else fields[el.id]={kind:'value',value:el.value};
+      });
+
+      let offerWork=[], offerMaterials=[];
+      try{
+        if(typeof collectOfferLines==='function'){
+          offerWork=collectOfferLines('work')||[];
+          offerMaterials=collectOfferLines('material')||[];
+        }
+      }catch(e){}
+
+      localStorage.setItem(AUTO_DRAFT_KEY,JSON.stringify({
+        savedAt:new Date().toISOString(),
+        fields,
+        offerWork,
+        offerMaterials
+      }));
+
+      /* Also keep all saved app data current in localStorage */
+      try{ if(typeof persistAll==='function') persistAll(); }catch(e){}
+    }catch(e){}
+  }
+
+  function scheduleSave(){
+    clearTimeout(saveTimer);
+    saveTimer=setTimeout(saveAutoDraft,150);
+  }
+
+  function restoreAutoDraft(){
+    try{
+      const raw=localStorage.getItem(AUTO_DRAFT_KEY);
+      if(!raw) return;
+      const d=JSON.parse(raw);
+      if(!d || !d.fields) return;
+
+      Object.keys(d.fields).forEach(id=>{
+        const el=document.getElementById(id);
+        if(!el || el.type==='file') return;
+        const item=d.fields[id];
+        if(item.kind==='checked') el.checked=!!item.value;
+        else if(item.value!==undefined && item.value!==null) el.value=item.value;
+      });
+
+      /* Restore unfinished offer/invoice work lines too */
+      const workBox=document.getElementById('workLines');
+      const materialBox=document.getElementById('materialLines');
+      if(typeof addOfferLine==='function'){
+        if(workBox && Array.isArray(d.offerWork) && d.offerWork.length){
+          workBox.innerHTML='';
+          d.offerWork.forEach(x=>addOfferLine('work',x));
+        }
+        if(materialBox && Array.isArray(d.offerMaterials) && d.offerMaterials.length){
+          materialBox.innerHTML='';
+          d.offerMaterials.forEach(x=>addOfferLine('material',x));
+        }
+        try{ if(typeof calcOffer==='function') calcOffer(); }catch(e){}
+      }
+    }catch(e){}
+  }
+
+  document.addEventListener('input',scheduleSave,true);
+  document.addEventListener('change',scheduleSave,true);
+  document.addEventListener('click',function(e){
+    if(e.target && (e.target.matches('button') || e.target.closest('button'))) {
+      setTimeout(saveAutoDraft,100);
+    }
+  },true);
+
+  window.addEventListener('beforeunload',saveAutoDraft);
+  window.addEventListener('pagehide',saveAutoDraft);
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='hidden') saveAutoDraft();
+  });
+
+  window.addEventListener('load',function(){
+    setTimeout(restoreAutoDraft,350);
+    /* Safety autosave every 5 seconds while the app is open */
+    setInterval(saveAutoDraft,5000);
+  });
+})();
 </script>
 
 </body>

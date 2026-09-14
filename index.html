@@ -75,7 +75,7 @@ html.client-sign-mode #iliriSigBack{display:none!important}
 
 
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-<meta name="iliri-build" content="iliri-mobile-pdf-fit-v15">
+<meta name="iliri-build" content="iliri-invoice-sign-return-v16">
 <!-- ILIRI FIRMA TEST V6 -->
 </head>
 <body>
@@ -110,7 +110,7 @@ html.client-sign-mode #iliriSigBack{display:none!important}
 
   <section id="acceptedDocsView" class="hidden card">
     <div class="section-title"><h2>Dokumenta të pranuara</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
-    <div class="small-note" style="margin-bottom:12px">Këtu ruhen automatikisht ofertat e firmosura/pranuara. Mund t’i hapësh ose t’i ruash si PDF me firmën e klientit.</div>
+    <div class="small-note" style="margin-bottom:12px">Këtu shfaqen ofertat dhe faturat e pranuara. Për faturat e firmosura nga klienti, hap linkun e kthyer për ta regjistruar pranimin.</div>
     <div id="acceptedDocsList"></div>
   </section>
 
@@ -291,6 +291,8 @@ html.client-sign-mode #iliriSigBack{display:none!important}
     <div id="invoiceStatusFilters" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0">
       <button type="button" class="invoiceFilterBtn" data-status="unsent">E pa dërguar</button>
       <button type="button" class="invoiceFilterBtn" data-status="sent">E dërguar</button>
+      <button type="button" class="invoiceFilterBtn" data-status="accepted">E pranuar</button>
+      <button type="button" class="invoiceFilterBtn" data-status="all">Të gjitha</button>
       <button type="button" class="invoiceFilterBtn" data-status="unpaid">E pa paguar</button>
       <button type="button" class="invoiceFilterBtn" data-status="paid">E paguar</button>
     </div>
@@ -313,7 +315,7 @@ html.client-sign-mode #iliriSigBack{display:none!important}
       <div><label>Klienti</label><input id="invoiceClient"></div>
       <div><label>Telefoni</label><input id="invoicePhone" inputmode="tel"></div>
       <div><label>Adresa</label><input id="invoiceAddress"></div>
-      <div><label>Statusi</label><select id="invoiceStatus"><option value="unsent">E pa dërguar</option><option value="sent">E dërguar</option><option value="unpaid">E pa paguar</option><option value="paid">E paguar</option></select></div>
+      <div><label>Statusi</label><select id="invoiceStatus"><option value="unsent">E pa dërguar</option><option value="sent">E dërguar</option><option value="accepted">E pranuar</option><option value="unpaid">E pa paguar</option><option value="paid">E paguar</option></select></div>
       <div><label>Moms (%)</label><input id="invoiceVat" type="number" value="25" min="0" step="1"></div>
     </div>
     <h3 style="margin-top:18px">Punët</h3><div id="invoiceLines"></div>
@@ -435,6 +437,17 @@ function renderAcceptedDocs(){
       <button type="button" class="secondary" onclick="currentPdfOfferId='${esc(o.id)}';window.__iliriCurrentOfferId='${esc(o.id)}';buildOfferPdf('sv','download')">💾 PDF Suedisht</button>
     </div>
   </div>`).join(''):`<div class="empty">Nuk ka ende dokumenta të firmosura.</div>`;
+  const signedInvoices=invoices.filter(o=>o.accepted||o.signature||o.status==='accepted');
+  if(signedInvoices.length){
+    if(!list.length)el.innerHTML='';
+    const title=document.createElement('h3');title.textContent='Faturat e pranuara';el.appendChild(title);
+    signedInvoices.forEach(o=>{
+      const card=document.createElement('div');card.className='item';
+      const heading=document.createElement('h3');heading.textContent=(o.number||'Faturë')+' — '+(o.client||'');card.appendChild(heading);
+      const label=document.createElement('p');label.textContent='✓ E pranuar'+(o.signedBy?' — '+o.signedBy:'')+(o.status==='paid'?' · E paguar':'');card.appendChild(label);
+      const button=document.createElement('button');button.type='button';button.textContent='👁️ Shiko faturën';button.onclick=()=>printInvoice(o.id);card.appendChild(button);el.appendChild(card);
+    });
+  }
 }
 
 
@@ -1338,8 +1351,16 @@ function clearInvoiceForm(){
 function newInvoice(){clearInvoiceForm();showView('invoiceFormView')}
 function saveInvoice(){
   const id=$('invoiceId').value, totals=calcInvoice();
-  const o={id:id||uid(),number:$('invoiceNumber').value.trim()||nextInvoiceNumber(),date:$('invoiceDate').value||today(),dueDate:$('invoiceDueDate').value,client:$('invoiceClient').value.trim(),phone:$('invoicePhone').value.trim(),address:$('invoiceAddress').value.trim(),status:$('invoiceStatus').value||'unpaid',vatPct:Number($('invoiceVat').value||0),notes:$('invoiceNotes').value.trim(),lines:collectInvoiceLines(),...totals,updatedAt:new Date().toISOString()};
+  const previous=invoices.find(x=>x.id===id);
+  const o={...previous,id:id||uid(),number:$('invoiceNumber').value.trim()||nextInvoiceNumber(),date:$('invoiceDate').value||today(),dueDate:$('invoiceDueDate').value,client:$('invoiceClient').value.trim(),phone:$('invoicePhone').value.trim(),address:$('invoiceAddress').value.trim(),status:$('invoiceStatus').value||'unpaid',vatPct:Number($('invoiceVat').value||0),notes:$('invoiceNotes').value.trim(),lines:collectInvoiceLines(),...totals,updatedAt:new Date().toISOString()};
   if(!o.client){$('invoiceClient').focus();return}
+  if(previous&&invoiceSnapshot(previous)!==invoiceSnapshot(o)&&(previous.signRequest||previous.signature||previous.accepted)){
+    if(!confirm('Ndryshimi i përmbajtjes anulon linkun dhe pranimin e mëparshëm. Vazhdo?'))return;
+    delete o.signRequest;delete o.signature;delete o.signedBy;delete o.signedAt;o.accepted=false;delete o.acceptedAt;
+    if(o.status==='accepted')o.status='unsent';
+  }
+  if(o.status==='accepted'){o.accepted=true;o.acceptedAt=o.acceptedAt||new Date().toISOString();}
+  if(o.status==='sent')o.sentAt=o.sentAt||new Date().toISOString();
   const i=invoices.findIndex(x=>x.id===o.id); if(i>=0)invoices[i]=o; else invoices.unshift(o);
   persistAll();showView('invoicesView');
 }
@@ -1352,26 +1373,193 @@ function deleteInvoice(id){
   invoices=invoices.filter(x=>x.id!==id);persistAll();showView('invoicesView');
 }
 function invoiceStatusText(v){
-  return v==='unsent'?'E pa dërguar':v==='sent'?'E dërguar':v==='paid'?'E paguar':'E pa paguar';
+  return v==='unsent'?'E pa dërguar':v==='sent'?'E dërguar':v==='accepted'?'E pranuar':v==='paid'?'E paguar':'E pa paguar';
 }
 function renderInvoices(){
   const all=[...invoices].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
-  const list=invoiceFilter==='all'?all:all.filter(o=>(o.status||'unsent')===invoiceFilter);
+  const list=all.filter(o=>invoiceMatchesFilter(o,invoiceFilter));
   $('invoicesList').innerHTML=list.length?list.map((o,idx)=>`<div class="item"><div class="section-title"><h3>${idx+1}. ${esc(o.number||'')} — ${esc(o.client||'')}</h3><span class="badge">${invoiceStatusText(o.status||'unsent')}</span></div><div class="meta">${esc(o.date||'')} ${o.dueDate?'• Afati: '+esc(o.dueDate):''}<br><b>TOTALI:</b> ${Number(o.total||0).toLocaleString('sv-SE',{maximumFractionDigits:2})} kr</div><div class="row" style="margin-top:10px;grid-template-columns:1fr 1fr 1fr"><button class="editInvoiceBtn" data-id="${esc(o.id)}" type="button">Ndrysho</button><button class="viewInvoiceBtn secondary" data-id="${esc(o.id)}" type="button">👁️ Shiko</button><button class="danger deleteInvoiceListBtn" data-id="${esc(o.id)}" type="button">Fshi</button></div></div>`).join(''):'<div class="empty">Nuk ka fatura në këtë kategori.</div>';
   document.querySelectorAll('.editInvoiceBtn').forEach(b=>b.addEventListener('click',()=>editInvoice(b.dataset.id)));
   document.querySelectorAll('.viewInvoiceBtn').forEach(b=>b.addEventListener('click',()=>printInvoice(b.dataset.id)));
   document.querySelectorAll('.deleteInvoiceListBtn').forEach(b=>b.addEventListener('click',()=>deleteInvoice(b.dataset.id)));
 }
 let currentInvoiceId=null;
+let invoiceGuest=null;
+function invoiceSnapshot(o){
+  return JSON.stringify({id:o.id,number:o.number,date:o.date,dueDate:o.dueDate,client:o.client,phone:o.phone,address:o.address,notes:o.notes,lines:o.lines,subtotal:o.subtotal,vatPct:o.vatPct,vat:o.vat,total:o.total});
+}
+function invoicePack(value){return btoa(unescape(encodeURIComponent(JSON.stringify(value)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+function invoiceUnpack(value){
+  if(!value||value.length>100000)throw Error('Link shumë i gjatë');
+  return JSON.parse(decodeURIComponent(escape(atob(value.replace(/-/g,'+').replace(/_/g,'/')))));
+}
+function invoiceBaseUrl(){return location.origin+location.pathname;}
+async function shareInvoiceLink(url,title){
+  if(navigator.share){await navigator.share({title,url});return;}
+  if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(url);alert('Linku u kopjua. Ngjite në email ose mesazh.');}
+  else prompt('Kopjo linkun / Kopiera länken:',url);
+}
+async function sendInvoiceForSignature(id,lang='sv'){
+  const o=invoices.find(x=>x.id===id);if(!o)return;
+  if(location.protocol!=='https:'&&location.protocol!=='http:'){alert('Hape aplikacionin nga linku online për të dërguar link firmosjeje.');return;}
+  if(!(o.lines||[]).length||!o.client){alert('Plotëso klientin dhe punët para dërgimit për firmë.');return;}
+  if(o.signature&&!confirm('Kjo faturë është firmosur. Të kërkohet firmë e re?'))return;
+  const snapshot=invoiceSnapshot(o);
+  const token=o.signRequest&&o.signRequest.snapshot===snapshot?o.signRequest.token:uid()+uid();
+  o.signRequest={token,snapshot,createdAt:new Date().toISOString(),lang};
+  const payload={invoice:JSON.parse(snapshot),token,lang};
+  const url=invoiceBaseUrl()+'#invoiceSign='+invoicePack(payload);
+  if(url.length>24000){alert('Fatura është shumë e gjatë për link. Dërgo PDF-në me butonin Dërgo.');return;}
+  persistAll();
+  try{
+    await shareInvoiceLink(url,lang==='sv'?'Granska och underteckna faktura '+o.number:'Kontrollo dhe firmos faturën '+o.number);
+    if(confirm('E dërgove linkun te klienti?')){
+      o.sentAt=new Date().toISOString();if(!['paid','accepted'].includes(o.status))o.status='sent';persistAll();renderInvoices();printInvoice(id);
+    }
+  }catch(e){if(e.name!=='AbortError')alert('Linku nuk u dërgua. Provo përsëri.');}
+}
+function showInvoiceReturn(guest){
+  const old=document.getElementById('invoiceGuestView');if(old)old.remove();
+  const o=guest.invoice;
+  const returnUrl=invoiceBaseUrl()+'#invoiceReturn='+invoicePack({id:o.id,token:guest.token,signature:o.signature,signedBy:o.signedBy,signedAt:o.signedAt});
+  const v=document.createElement('div');v.id='invoiceGuestView';v.style.cssText='position:fixed;inset:0;z-index:100001;background:white;overflow:auto;padding:20px;box-sizing:border-box';
+  v.innerHTML='<h2>✓ Undertecknad / E firmosur</h2><p>'+esc(o.number)+' — '+esc(o.signedBy)+'</p><p>Skicka tillbaka bekräftelselänken till avsändaren. Den skickas inte automatiskt.<br>Ktheja linkun dërguesit. Nuk kthehet automatikisht.</p><button type="button" id="invoiceReturnShare">↩️ Skicka tillbaka / Kthe të firmosur</button><button type="button" id="invoiceReturnEmail" style="margin-top:12px">✉️ E-post / Email</button><button type="button" id="invoiceGuestPdf" style="margin-top:12px">⬇️ PDF med underskrift / PDF i firmosur</button><p id="invoiceReturnHint"></p>';
+  document.body.appendChild(v);
+  v.querySelector('#invoiceReturnShare').onclick=async()=>{try{await shareInvoiceLink(returnUrl,'Undertecknad faktura '+o.number);v.querySelector('#invoiceReturnHint').textContent='Kontrollera att länken skickades till avsändaren. / Kontrollo që ia dërgove pronarit.';}catch(e){if(e.name!=='AbortError')alert('Prova E-post / Provo Email.');}};
+  v.querySelector('#invoiceReturnEmail').onclick=()=>{location.href='mailto:'+encodeURIComponent(COMPANY.email)+'?subject='+encodeURIComponent('Undertecknad faktura '+o.number)+'&body='+encodeURIComponent('Fakturan har undertecknats av '+o.signedBy+'. Öppna länken för att registrera underskriften:\n\n'+returnUrl);};
+  v.querySelector('#invoiceGuestPdf').onclick=()=>buildInvoicePdf(o.id,guest.lang,'download',o);
+}
+function validateInvoiceGuest(p){
+  const o=p&&p.invoice;
+  if(!o||typeof o.id!=='string'||typeof p.token!=='string'||p.token.length<20||p.token.length>160)throw Error('Link i pavlefshëm');
+  if(!Array.isArray(o.lines)||o.lines.length>250)throw Error('Punë të pavlefshme');
+  for(const key of ['id','number','date','dueDate','client','phone','address','notes'])if(o[key]!=null&&(typeof o[key]!=='string'||o[key].length>10000))throw Error('Fushë e pavlefshme');
+  for(const key of ['subtotal','vatPct','vat','total'])if(typeof o[key]!=='number'||!Number.isFinite(o[key]))throw Error('Shumë e pavlefshme');
+  for(const line of o.lines)if(!line||typeof line.description!=='string'||line.description.length>10000||!Number.isFinite(line.qty)||!Number.isFinite(line.unitPrice))throw Error('Rresht i pavlefshëm');
+  if(Math.abs(o.lines.reduce((s,x)=>s+x.qty*x.unitPrice,0)-o.subtotal)>0.02||Math.abs(o.subtotal*o.vatPct/100-o.vat)>0.02||Math.abs(o.subtotal+o.vat-o.total)>0.02)throw Error('Totali nuk përputhet');
+  // Only document fields enter guest mode; no incoming owner decoration or code.
+  return {invoice:JSON.parse(invoiceSnapshot(o)),token:p.token,lang:p.lang==='sq'?'sq':'sv'};
+}
+function importInvoiceReturn(p){
+  if(!p||typeof p.id!=='string'||typeof p.token!=='string'||typeof p.signedBy!=='string'||!p.signedBy.trim()||p.signedBy.length>200||typeof p.signedAt!=='string'||!Number.isFinite(Date.parse(p.signedAt))||typeof p.signature!=='string'||p.signature.length>70000||!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(p.signature))throw Error('Konfirmim i pavlefshëm');
+  const o=invoices.find(x=>x.id===p.id);
+  if(!o)throw Error('Fatura nuk u gjet. Hape linkun në të njëjtin Safari ku ruan faturat, ose rikthe backup-in.');
+  if(!o.signRequest||o.signRequest.token!==p.token||o.signRequest.snapshot!==invoiceSnapshot(o))throw Error('Ky konfirmim nuk përputhet me versionin aktual të faturës.');
+  if(o.signature===p.signature&&o.signedAt===p.signedAt){printInvoice(o.id);return true;}
+  if(!confirm('Regjistro pranimin e faturës '+o.number+' nga '+p.signedBy+'? Firma është me gisht; identiteti nuk është verifikuar me BankID.'))return false;
+  o.signature=p.signature;o.signedBy=p.signedBy;o.signedAt=p.signedAt;o.accepted=true;o.acceptedAt=p.signedAt;
+  if(o.status!=='paid')o.status='accepted';
+  persistAll();renderInvoices();printInvoice(o.id);return true;
+}
+function openInvoiceLink(){
+  const hash=new URLSearchParams(location.hash.slice(1));
+  if(hash.has('invoiceReturn')){
+    try{if(importInvoiceReturn(invoiceUnpack(hash.get('invoiceReturn'))))history.replaceState({},'',location.pathname+location.search);}
+    catch(e){alert(e.message);}return;
+  }
+  if(!hash.has('invoiceSign'))return;
+  try{
+    invoiceGuest=validateInvoiceGuest(invoiceUnpack(hash.get('invoiceSign')));
+    const o=invoiceGuest.invoice;
+    const v=document.createElement('div');v.id='invoiceGuestView';v.style.cssText='position:fixed;inset:0;z-index:100001;background:white;overflow:auto;padding:20px;box-sizing:border-box;font-family:Arial,sans-serif;line-height:1.5';
+    v.innerHTML='<div style="max-width:700px;margin:auto;overflow-wrap:anywhere"><h2>Faktura / Faturë '+esc(o.number)+'</h2><p><b>'+esc(COMPANY.legalName)+'</b><br>'+esc(COMPANY.activity)+'<br>'+esc(COMPANY.address1)+'<br>'+esc(COMPANY.address2)+'<br>'+esc(COMPANY.email)+'<br>Org.nr: '+esc(COMPANY.orgNr)+'</p><p>Datum / Data: '+esc(o.date)+'<br>Förfallodatum / Afati: '+esc(o.dueDate)+'<br>Kund / Klienti: '+esc(o.client)+'<br>'+esc(o.address||'')+'</p><div>'+(o.lines||[]).map(x=>'<p style="border-bottom:1px solid #ddd">'+esc(x.description)+'<br>'+esc(x.qty)+' × '+esc(x.unitPrice)+' kr = '+esc(x.qty*x.unitPrice)+' kr</p>').join('')+'</div><p>Exkl. moms: '+esc(o.subtotal)+' kr<br>Moms ('+esc(o.vatPct)+'%): '+esc(o.vat)+' kr<br><b>TOTALT: '+esc(o.total)+' kr</b></p><p>'+esc(o.notes||'')+'</p><p>Granska hela fakturan före underskrift. Inte BankID. / Lexoje para firmosjes.</p><button id="invoiceGuestSign" type="button">✍️ Underteckna / Firmos</button></div>';
+    document.body.appendChild(v);v.querySelector('#invoiceGuestSign').onclick=()=>signInvoice(o.id);
+  }catch(e){alert('Linku nuk u hap / Länken kunde inte öppnas: '+e.message);}
+}
+window.addEventListener('load',openInvoiceLink);
+window.addEventListener('hashchange',openInvoiceLink);
+function invoiceMatchesFilter(o,filter){
+  if(filter==='all')return true;
+  if(filter==='accepted')return !!o.accepted||o.status==='accepted';
+  if(filter==='sent')return !!o.sentAt||o.status==='sent';
+  return (o.status||'unsent')===filter;
+}
+function setInvoiceStatus(id,status){
+  const o=invoices.find(x=>x.id===id);if(!o)return;
+  if(status==='accepted'){o.accepted=true;o.acceptedAt=o.acceptedAt||new Date().toISOString();if(o.status!=='paid')o.status='accepted';}
+  else {o.status=status;if(status==='sent')o.sentAt=o.sentAt||new Date().toISOString();if(status==='unsent')o.sentAt=null;}
+  o.updatedAt=new Date().toISOString();persistAll();renderInvoices();printInvoice(id);
+}
+function toggleInvoiceDecor(id,kind){
+  const o=invoices.find(x=>x.id===id);if(!o)return;
+  if(kind==='signature'&&!localStorage.getItem(OWNER_SIG_KEY)){alert('Nuk ka firmë të pronarit të ruajtur. Vendose te Oferta → Firma ime.');return;}
+  const d=ownerDecor(o);d[kind]=!d[kind];persistAll();printInvoice(id);
+}
 function printInvoice(id){
   currentInvoiceId=id;const o=invoices.find(x=>x.id===id);if(!o)return;
-  let v=document.getElementById('invoicePreview');
-  if(!v){v=document.createElement('div');v.id='invoicePreview';v.style.cssText='position:fixed;inset:0;z-index:99999;background:#fff;color:#111;overflow:auto;padding:20px;font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;';document.body.appendChild(v)}
+  const old=document.getElementById('invoicePreview');if(old)old.remove();
+  const v=document.createElement('div');v.id='invoicePreview';
+  v.style.cssText='position:fixed;inset:0;z-index:99999;background:#f3f4f6;color:#111;overflow:auto;padding:12px;box-sizing:border-box;font-family:Arial,sans-serif;font-size:14px;-webkit-text-size-adjust:100%;';
   const money=n=>Number(n||0).toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';
-  v.innerHTML=`<div style="max-width:760px;margin:0 auto;min-height:calc(100vh - 40px);display:flex;flex-direction:column"><div style="margin-bottom:18px"><button class="pdf-close-btn" onclick="document.getElementById('invoicePreview').remove()">Kthehu</button></div><div style="flex:1"><div style="display:flex;justify-content:space-between;gap:14px"><div><h1 style="margin:0 0 6px">${esc(COMPANY.brand)}</h1><b>${esc(COMPANY.legalName)}</b><br>${esc(COMPANY.activity)}<br>${esc(COMPANY.address1)}<br>${esc(COMPANY.address2)}<br>Tel: ${esc(COMPANY.phone)}<br>E-post: ${esc(COMPANY.email)}<br>Org.nr: ${esc(COMPANY.orgNr)}<br>Momsreg.nr / VAT-nr: ${esc(COMPANY.vatNr)} (fr.o.m. ${esc(COMPANY.vatActiveFrom)})<br>${esc(COMPANY.taxStatus)}<br>SNI: ${esc(COMPANY.sni)}</div><h2 style="margin-top:0">FATURË ${esc(o.number||'')}</h2></div><hr style="border:0;border-top:1px solid #ddd;margin:18px 0"><p><b>Data:</b> ${esc(o.date||'')}<br><b>Afati:</b> ${esc(o.dueDate||'')}<br><b>Klienti:</b> ${esc(o.client||'')}<br><b>Telefoni:</b> ${esc(o.phone||'')}<br><b>Adresa:</b> ${esc(o.address||'')}</p><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;border-bottom:1px solid #ccc;padding:8px 4px">Përshkrimi</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Sasia</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Çmimi</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Shuma</th></tr></thead><tbody>${(o.lines||[]).map(x=>`<tr><td style="padding:8px 4px;border-bottom:1px solid #eee">${esc(x.description||'')}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${x.qty||0}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${money(x.unitPrice)}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${money((x.qty||0)*(x.unitPrice||0))}</td></tr>`).join('')}</tbody></table><div style="margin-top:20px;line-height:1.8"><b>Pa moms:</b> ${money(o.subtotal)}<br><b>Moms (${o.vatPct||0}%):</b> ${money(o.vat)}<br><b style="font-size:20px">TOTALI: ${money(o.total)}</b></div>${o.notes?`<p><b>Shënime:</b><br>${esc(o.notes)}</p>`:''}</div><div style="display:flex;justify-content:space-between;gap:12px;margin-top:36px;padding-bottom:20px"><button onclick="buildInvoicePdf('${esc(id)}','sv')">🇸🇪 PDF Svenska</button><button onclick="buildInvoicePdf('${esc(id)}','sq')">🇦🇱 PDF Shqip</button></div></div>`;
+  v.innerHTML='<div style="max-width:760px;margin:auto"><div id="invoiceActions" style="position:sticky;top:0;z-index:2;background:#f3f4f6;padding-bottom:10px"><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px"><button type="button" id="invoiceBack">← Kthehu</button><button type="button" id="invoiceSend">📤 Dërgo</button><button type="button" id="invoiceSign">✍️ Firmos</button></div><div style="display:flex;gap:8px;align-items:center;margin-top:8px"><label for="invoicePreviewStatus">Statusi</label><select id="invoicePreviewStatus" style="flex:1;min-width:0"><option value="unsent">E pa dërguar</option><option value="sent">E dërguar</option><option value="accepted">E pranuar</option><option value="unpaid">E pa paguar</option><option value="paid">E paguar</option></select></div><div style="display:flex;gap:8px;margin-top:8px"><button type="button" id="invoiceStamp">🔖 Vula</button><button type="button" id="invoiceOwnerSign">✍️ Firma ime</button><select id="invoicePdfLanguage" aria-label="Gjuha e PDF-së" style="flex:1;min-width:0"><option value="sv">Svenska</option><option value="sq">Shqip</option></select></div><small id="invoiceSendHint" role="status"></small></div><article style="background:white;padding:16px;border-radius:12px;line-height:1.5;overflow-wrap:anywhere"><h2 style="font-size:19px;margin:0 0 12px">FATURË <span style="white-space:nowrap">'+esc(o.number||'')+'</span></h2><h3 style="font-size:18px;margin:0">'+esc(COMPANY.brand)+'</h3><b>'+esc(COMPANY.legalName)+'</b><br>'+[COMPANY.activity,COMPANY.address1,COMPANY.address2,'Tel: '+COMPANY.phone,'E-post: '+COMPANY.email,'Org.nr: '+COMPANY.orgNr,'Momsreg.nr / VAT-nr: '+COMPANY.vatNr+' (fr.o.m. '+COMPANY.vatActiveFrom+')',COMPANY.taxStatus,'SNI: '+COMPANY.sni].map(esc).join('<br>')+'<hr><p><b>Data:</b> '+esc(o.date||'')+'<br><b>Afati:</b> '+esc(o.dueDate||'')+'<br><b>Klienti:</b> '+esc(o.client||'')+'<br><b>Telefoni:</b> '+esc(o.phone||'')+'<br><b>Adresa:</b> '+esc(o.address||'')+'</p><table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:12px"><thead><tr><th style="width:40%;text-align:left">Përshkrimi</th><th>Sasia</th><th>Çmimi</th><th>Shuma</th></tr></thead><tbody>'+(o.lines||[]).map(x=>'<tr><td style="padding:8px 2px;border-bottom:1px solid #ddd">'+esc(x.description||'')+'</td><td style="text-align:right">'+esc(x.qty||0)+'</td><td style="text-align:right">'+money(x.unitPrice)+'</td><td style="text-align:right">'+money((x.qty||0)*(x.unitPrice||0))+'</td></tr>').join('')+'</tbody></table><p>Pa moms: '+money(o.subtotal)+'<br>Moms ('+esc(o.vatPct||0)+'%): '+money(o.vat)+'<br><b>TOTALI: '+money(o.total)+'</b></p>'+(o.notes?'<p>'+esc(o.notes)+'</p>':'')+'<div id="invoiceDecorPreview"></div><div id="invoiceAcceptancePreview"></div></article><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0"><button id="invoicePdfSv" type="button">🇸🇪 PDF Svenska</button><button id="invoicePdfSq" type="button">🇦🇱 PDF Shqip</button></div></div>';
+  document.body.appendChild(v);
+  const requestButton=document.createElement('button');requestButton.type='button';requestButton.textContent='📨 Dërgo për firmë';requestButton.style.cssText='width:100%;margin-top:8px';
+  requestButton.onclick=()=>sendInvoiceForSignature(id,v.querySelector('#invoicePdfLanguage').value);
+  v.querySelector('#invoiceActions').appendChild(requestButton);
+  v.querySelectorAll('button').forEach(b=>{b.style.fontSize='14px';b.style.padding='11px 7px';b.style.minWidth='0'});
+  v.querySelector('#invoicePreviewStatus').value=o.status||'unsent';
+  v.querySelector('#invoicePreviewStatus').onchange=e=>setInvoiceStatus(id,e.target.value);
+  v.querySelector('#invoiceBack').onclick=()=>v.remove();
+  v.querySelector('#invoiceSend').onclick=()=>sendInvoice(id,v.querySelector('#invoicePdfLanguage').value);
+  v.querySelector('#invoiceSign').onclick=()=>signInvoice(id);
+  v.querySelector('#invoicePdfSv').onclick=()=>buildInvoicePdf(id,'sv');
+  v.querySelector('#invoicePdfSq').onclick=()=>buildInvoicePdf(id,'sq');
+  v.querySelector('#invoiceStamp').onclick=()=>toggleInvoiceDecor(id,'stamp');
+  v.querySelector('#invoiceOwnerSign').onclick=()=>toggleInvoiceDecor(id,'signature');
+  const decor=ownerDecor(o),box=v.querySelector('#invoiceDecorPreview');
+  if(decor.stamp){const im=document.createElement('img');im.src=makeOwnerStampDataUrl();im.style.cssText='width:100px;height:100px;object-fit:contain';box.appendChild(im);}
+  if(decor.signature){const im=document.createElement('img');im.src=localStorage.getItem(OWNER_SIG_KEY)||'';im.style.cssText='width:120px;max-height:65px;object-fit:contain';box.appendChild(im);}
+  const acceptance=v.querySelector('#invoiceAcceptancePreview');
+  if(o.accepted){const p=document.createElement('p');p.textContent='✓ E pranuar'+(o.signedBy?' — '+o.signedBy:'')+(o.signedAt?' · '+o.signedAt.slice(0,10):'');acceptance.appendChild(p);}
+  if(o.signature){const im=document.createElement('img');im.src=o.signature;im.alt='Firma e klientit';im.style.cssText='width:180px;max-width:100%;height:auto';acceptance.appendChild(im);}
 }
-function buildInvoicePdf(id,lang='sq'){
+async function sendInvoice(id,lang){
   const o=invoices.find(x=>x.id===id);if(!o)return;
+  const file=buildInvoicePdf(id,lang,'file');if(!file)return;
+  try{
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:file.name});
+      // Sharing may mean Save to Files; only the user can confirm delivery.
+      if(confirm('E dërgove faturën te klienti? Shënoje si E dërguar vetëm nëse e dërgove.')){
+        o.sentAt=new Date().toISOString();
+        if(!['paid','accepted'].includes(o.status))o.status='sent';
+        persistAll();renderInvoices();printInvoice(id);
+      }
+    }else{
+      buildInvoicePdf(id,lang);
+      alert('PDF u shkarkua. Bashkëngjite në email ose mesazh; pasi ta dërgosh, zgjidh statusin E dërguar.');
+    }
+  }catch(e){if(e.name!=='AbortError')alert('Dërgimi nuk u hap. Përdor PDF dhe bashkëngjite vetë. Statusi nuk u ndryshua.');}
+}
+function signInvoice(id){
+  const guest=invoiceGuest&&invoiceGuest.invoice.id===id?invoiceGuest:null;
+  const o=guest?guest.invoice:invoices.find(x=>x.id===id);if(!o)return;
+  if(document.getElementById('invoiceSignPad'))return;
+  const m=document.createElement('div');m.id='invoiceSignPad';m.style.cssText='position:fixed;inset:0;z-index:100002;background:#f3f4f6;overflow:auto;padding:16px;box-sizing:border-box';
+  m.innerHTML='<div style="max-width:600px;margin:auto"><button id="invoiceSignBack" type="button">← Kthehu</button><h2>Firma e klientit</h2><p>Fatura '+esc(o.number)+' · '+esc(o.client)+' · '+esc(o.total)+' kr</p><p>Klienti firmos në këtë pajisje për pranimin e faturës. Kjo nuk shënon pagesë dhe nuk është BankID.</p><label>Emri i klientit</label><input id="invoiceSignerName" autocomplete="name"><canvas id="invoiceSignatureCanvas" width="900" height="300" style="display:block;width:100%;height:180px;background:white;border:1px solid #aaa;touch-action:none;margin:12px 0"></canvas><label><input id="invoiceSignConsent" type="checkbox" style="width:auto"> E kam lexuar dhe e pranoj këtë faturë.</label><div style="display:flex;gap:10px;margin-top:16px"><button id="invoiceSignClear" type="button">Pastro</button><button id="invoiceSignSave" type="button">Ruaj firmën</button></div></div>';
+  document.body.appendChild(m);
+  if(guest){m.querySelector('h2').textContent='Kundens underskrift / Firma e klientit';m.querySelectorAll('p')[1].textContent='Jag har granskat och godkänner fakturan. Underskriften bekräftar inte betalning. Inte BankID. / Pranimi nuk është pagesë.';m.querySelectorAll('label')[0].textContent='Ditt namn / Emri juaj';m.querySelectorAll('label')[1].lastChild.textContent=' Jag har läst och godkänner fakturan / E pranoj faturën';m.querySelector('#invoiceSignSave').textContent='Spara underskrift / Ruaj firmën';m.querySelector('#invoiceSignBack').textContent='Tillbaka / Kthehu';m.querySelector('#invoiceSignClear').textContent='Rensa / Pastro';}
+  const c=m.querySelector('canvas'),ctx=c.getContext('2d');ctx.lineWidth=4;ctx.lineCap='round';ctx.strokeStyle='#111';
+  let active=false,ink=false;
+  const point=e=>{const r=c.getBoundingClientRect();return [(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height]};
+  c.onpointerdown=e=>{active=true;c.setPointerCapture(e.pointerId);ctx.beginPath();ctx.moveTo(...point(e));};
+  c.onpointermove=e=>{if(!active)return;ctx.lineTo(...point(e));ctx.stroke();ink=true;};
+  c.onpointerup=c.onpointercancel=()=>{active=false;};
+  m.querySelector('#invoiceSignBack').onclick=()=>m.remove();
+  m.querySelector('#invoiceSignClear').onclick=()=>{ctx.clearRect(0,0,c.width,c.height);ink=false;};
+  m.querySelector('#invoiceSignSave').onclick=()=>{
+    const name=m.querySelector('#invoiceSignerName').value.trim();
+    if(!name||name.length>200||!ink||!m.querySelector('#invoiceSignConsent').checked){alert('Ange namn, skriv under och godkänn. / Shkruaj emrin, firmos dhe konfirmo pranimin.');return;}
+    if(o.signature&&!confirm('Ta zëvendësoj firmën e klientit në këtë faturë?'))return;
+    const compact=document.createElement('canvas');compact.width=450;compact.height=150;const cc=compact.getContext('2d');cc.fillStyle='#fff';cc.fillRect(0,0,450,150);cc.drawImage(c,0,0,450,150);
+    o.signature=compact.toDataURL('image/jpeg',0.6);o.signedBy=name;o.signedAt=new Date().toISOString();o.accepted=true;o.acceptedAt=o.signedAt;
+    if(o.status!=='paid')o.status='accepted';
+    if(guest){m.remove();showInvoiceReturn(guest);return;}
+    persistAll();m.remove();renderInvoices();printInvoice(id);
+  };
+}
+function buildInvoicePdf(id,lang='sq',action='download',source=null){
+  const o=source||invoices.find(x=>x.id===id);if(!o)return;
   if(!window.jspdf||!window.jspdf.jsPDF){alert('PDF library nuk u ngarkua.');return}
   const T=lang==='sv'?{
     invoice:'FAKTURA',date:'Datum',due:'Förfallodatum',client:'Kund',phone:'Telefon',address:'Adress',
@@ -1388,11 +1576,26 @@ function buildInvoicePdf(id,lang='sq'){
   doc.setFont('helvetica','normal');doc.setFontSize(10.5);
   [T.date+': '+(o.date||''),T.due+': '+(o.dueDate||''),T.client+': '+(o.client||''),T.phone+': '+(o.phone||''),T.address+': '+(o.address||'')].forEach(t=>{doc.text(t,16,y);y+=5});
   y+=4;doc.setFont('helvetica','bold');doc.text(T.desc,16,y);doc.text(T.qty,125,y,{align:'right'});doc.text(T.price,158,y,{align:'right'});doc.text(T.sum,194,y,{align:'right'});y+=5;doc.line(16,y,194,y);y+=5;doc.setFont('helvetica','normal');
-  (o.lines||[]).forEach(x=>{if(y>270){doc.addPage();y=18}doc.text(String(x.description||'').slice(0,60),16,y);doc.text(String(x.qty||0),125,y,{align:'right'});doc.text(money(x.unitPrice),158,y,{align:'right'});doc.text(money((x.qty||0)*(x.unitPrice||0)),194,y,{align:'right'});y+=6});
+  (o.lines||[]).forEach(x=>{
+    const description=doc.splitTextToSize(String(x.description||''),90);
+    if(y+Math.min(description.length*5,20)>270){doc.addPage();y=18;}
+    doc.text(String(x.qty||0),125,y,{align:'right'});doc.text(money(x.unitPrice),158,y,{align:'right'});doc.text(money((x.qty||0)*(x.unitPrice||0)),194,y,{align:'right'});
+    description.forEach(line=>{if(y>270){doc.addPage();y=18;}doc.text(line,16,y);y+=5;});y+=3;
+  });
+  if(y>244){doc.addPage();y=18;}
   y+=5;doc.setFont('helvetica','bold');doc.text(T.exvat+': '+money(o.subtotal),194,y,{align:'right'});y+=6;doc.text(T.vat+' ('+(o.vatPct||0)+'%): '+money(o.vat),194,y,{align:'right'});y+=7;doc.setFontSize(13);doc.text(T.total+': '+money(o.total),194,y,{align:'right'});
-  if(o.notes){y+=10;doc.setFontSize(10.5);doc.text(T.notes+': '+String(o.notes).slice(0,120),16,y)}
+  if(o.notes){y+=10;doc.setFontSize(10.5);doc.setFont('helvetica','normal');doc.splitTextToSize(T.notes+': '+String(o.notes),178).forEach(line=>{if(y>270){doc.addPage();y=18;}doc.text(line,16,y);y+=5;});}
+  if(o.signature||o.ownerDecor?.stamp||o.ownerDecor?.signature){
+    if(y>210){doc.addPage();y=18;}else y+=18;
+    if(o.ownerDecor?.stamp)doc.addImage(makeOwnerStampDataUrl(),'PNG',16,y,36,36);
+    const ownerSig=localStorage.getItem(OWNER_SIG_KEY);
+    if(o.ownerDecor?.signature&&ownerSig)doc.addImage(ownerSig,'PNG',60,y+10,48,16);
+    if(o.signature){doc.setFontSize(10);doc.text(lang==='sv'?'Kundens underskrift':'Firma e klientit',120,y);doc.text(doc.splitTextToSize(String(o.signedBy||''),72),120,y+5);doc.addImage(o.signature,o.signature.startsWith('data:image/jpeg')?'JPEG':'PNG',120,y+14,64,22);doc.text(String(o.signedAt||'').slice(0,10),120,y+42);}
+  }
   const prefix=lang==='sv'?'Faktura':'Fatura';
-  doc.save(`${prefix}_${String(o.number||'').replace(/[^0-9A-Za-z_-]/g,'_')}.pdf`);
+  const filename=`${prefix}_${String(o.number||'').replace(/[^0-9A-Za-z_-]/g,'_')}.pdf`;
+  if(action==='file')return new File([doc.output('blob')],filename,{type:'application/pdf'});
+  doc.save(filename);
 }
 
 function renderReportsView(){

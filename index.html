@@ -2064,5 +2064,21 @@ window.addEventListener('load',function(){
 })();
 </script>
 
+<script>
+// Invoice sending always uses the signature-return link. The PDF-only share remains
+// available through the language PDF buttons.
+(function(){
+  const fix=()=>{const b=document.getElementById('invoiceSend');if(b)b.textContent='📨 Dërgo për firmë';document.querySelectorAll('#invoiceActions button').forEach(x=>{if(x!==b&&x.textContent.includes('Dërgo për firmë'))x.remove();});};
+  new MutationObserver(fix).observe(document.documentElement,{subtree:true,childList:true});
+  document.addEventListener('click',function(e){
+    const b=e.target.closest&&e.target.closest('#invoiceSend');
+    if(!b||typeof sendInvoiceForSignature!=='function')return;
+    e.preventDefault();e.stopImmediatePropagation();
+    const id=window.currentInvoiceId||currentInvoiceId;
+    const lang=document.getElementById('invoicePdfLanguage')?.value||'sv';
+    sendInvoiceForSignature(id,lang);
+  },true);
+})();
+</script>
 </body>
 </html>

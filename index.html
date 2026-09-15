@@ -75,7 +75,7 @@ html.client-sign-mode #iliriSigBack{display:none!important}
 
 
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-<meta name="iliri-build" content="iliri-invoice-sign-return-v16">
+<meta name="iliri-build" content="iliri-freeze-signature-fix-v19">
 <!-- ILIRI FIRMA TEST V6 -->
 </head>
 <body>
@@ -142,29 +142,6 @@ html.client-sign-mode #iliriSigBack{display:none!important}
     <div id="measureResult" class="measure-result">Vendos dimensionet.</div>
     <div class="row" style="margin-top:10px"><button id="measureToOfferBtn" type="button">Krijo ofertë</button><button id="saveMeasureBtn" class="secondary" type="button">Ruaj matjen</button></div>
     <div id="measureHistory"></div>
-  </section>
-
-  <section id="voiceView" class="hidden card">
-    <div class="section-title"><h2 id="voiceTitle">Raporti me zë</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
-    <label class="lblProject">Projekti</label><select id="voiceProject"></select>
-    <div class="voice-box">
-      <div class="row">
-        <button id="voiceStartSqBtn" class="voice-mic" type="button">🎙️ Fol shqip</button>
-        <button id="voiceStartSvBtn" class="voice-mic secondary" type="button">🎙️ Prata svenska</button>
-      </div>
-      <div id="voiceStatus" class="small-note">Zgjidh gjuhën dhe fol. Raporti ndahet automatikisht në datë, orë, vend dhe punë.</div>
-      <div class="small-note">Shembull: “Sot punova 8 orë në Kållered, spatullova dhe lyeva me bojë.”</div>
-    </div>
-    <label style="margin-top:12px">Teksti shqip</label><textarea id="voiceText" rows="5" placeholder="Fol ose shkruaj raportin këtu..."></textarea>
-    <div class="row" style="margin-top:10px"><button id="parseVoiceBtn" type="button">Kupto raportin</button><button id="translateVoiceBtn" class="secondary" type="button">🇸🇪 Suedisht</button></div>
-    <div class="grid" style="margin-top:12px">
-      <div><label>Data</label><input id="voiceDate" type="date"></div>
-      <div><label>Orët</label><input id="voiceHours" type="number" min="0" step="0.5"></div>
-      <div><label>Vendi</label><input id="voicePlace"></div>
-      <div><label>Punët</label><input id="voiceWork"></div>
-    </div>
-    <label style="margin-top:10px">Suedisht / Svenska</label><textarea id="voiceSwedish" rows="4" placeholder="Përkthimi suedez del këtu..."></textarea>
-    <button id="saveVoiceReportBtn" type="button" style="width:100%;margin-top:10px">Ruaj te orët dhe projekti</button>
   </section>
 
   <section id="projectFormView" class="hidden card">
@@ -244,8 +221,8 @@ html.client-sign-mode #iliriSigBack{display:none!important}
     <div style="margin:10px 0 14px;padding:12px;border:1px solid #d8e4dc;border-radius:12px;background:#f5fbf7;font-size:13px;line-height:1.55">
       <b>ILIRI Måleri — ILIA MITRO</b><br>
       Måleri &amp; Dekor · Keplers Gata 36, lgh 1302 · 415 55 Göteborg<br>
-      Org.nr: 710109-1432 · VAT-nr: SE710109143201 (fr.o.m. 2026-12-01)<br>
-      Godkänd för F-skatt med villkor (FA-skatt) · SNI 43.341
+      Org.nr: 710109-1432 · VAT-nr: SE710109143201<br>
+      Godkänd för F-skatt med villkor (FA-skatt)
     </div>
     <input type="hidden" id="offerId">
     <div class="grid">
@@ -304,16 +281,15 @@ html.client-sign-mode #iliriSigBack{display:none!important}
     <div style="margin:10px 0 14px;padding:12px;border:1px solid #d8e4dc;border-radius:12px;background:#f5fbf7;font-size:13px;line-height:1.55">
       <b>ILIRI Måleri — ILIA MITRO</b><br>
       Måleri &amp; Dekor · Keplers Gata 36, lgh 1302 · 415 55 Göteborg<br>
-      Org.nr: 710109-1432 · VAT-nr: SE710109143201 (fr.o.m. 2026-12-01)<br>
-      Godkänd för F-skatt med villkor (FA-skatt) · SNI 43.341
+      Org.nr: 710109-1432 · VAT-nr: SE710109143201<br>
+      Godkänd för F-skatt med villkor (FA-skatt)
     </div>
     <input type="hidden" id="invoiceId">
     <div class="grid">
       <div><label>Nr. faturës</label><input id="invoiceNumber"></div>
       <div><label>Data</label><input id="invoiceDate" type="date"></div>
       <div><label>Afati</label><input id="invoiceDueDate" type="date"></div>
-      <div><label>Klienti</label><input id="invoiceClient"></div>
-      <div><label>Telefoni</label><input id="invoicePhone" inputmode="tel"></div>
+      <div><label>Klienti</label><input id="invoiceClient" autocomplete="name"></div>
       <div><label>Adresa</label><input id="invoiceAddress"></div>
       <div><label>Statusi</label><select id="invoiceStatus"><option value="unsent">E pa dërguar</option><option value="sent">E dërguar</option><option value="accepted">E pranuar</option><option value="unpaid">E pa paguar</option><option value="paid">E paguar</option></select></div>
       <div><label>Moms (%)</label><input id="invoiceVat" type="number" value="25" min="0" step="1"></div>
@@ -1329,7 +1305,7 @@ function nextInvoiceNumber(){
 }
 function addInvoiceLine(v={}){
   const d=document.createElement('div'); d.className='offer-line';
-  d.innerHTML=`<input class="desc" placeholder="Përshkrimi" value="${esc(v.description||'')}"><input class="qty" type="number" step="0.01" placeholder="Sasia/orët" value="${v.qty??''}"><input class="price" type="number" step="0.01" placeholder="Çmimi" value="${v.unitPrice??''}"><button class="danger" type="button">×</button>`;
+  d.innerHTML=`<input class="desc" placeholder="Përshkrimi" value="${esc(v.description||'')}"><input class="qty" type="number" min="0" step="0.5" placeholder="Orët" value="${v.qty??''}"><input class="price" type="number" min="0" step="1" placeholder="Kr/orë" value="${v.unitPrice??''}"><button class="danger" type="button">×</button>`;
   d.querySelectorAll('input').forEach(i=>i.addEventListener('input',calcInvoice));
   d.querySelector('button').addEventListener('click',()=>{d.remove();calcInvoice()});
   $('invoiceLines').appendChild(d);
@@ -1346,13 +1322,13 @@ function calcInvoice(){
 function clearInvoiceForm(){
   $('invoiceId').value='';$('invoiceNumber').value=nextInvoiceNumber();$('invoiceDate').value=today();
   const due=new Date();due.setDate(due.getDate()+30);$('invoiceDueDate').value=due.toISOString().slice(0,10);
-  $('invoiceClient').value='';$('invoicePhone').value='';$('invoiceAddress').value='';$('invoiceStatus').value='unsent';$('invoiceVat').value='25';$('invoiceNotes').value='';$('invoiceLines').innerHTML='';addInvoiceLine();$('deleteInvoiceBtn').classList.add('hidden');$('invoiceFormTitle').textContent='Faturë e re';calcInvoice();
+  $('invoiceClient').value='';$('invoiceAddress').value='';$('invoiceStatus').value='unsent';$('invoiceVat').value='25';$('invoiceNotes').value='';$('invoiceLines').innerHTML='';addInvoiceLine();$('deleteInvoiceBtn').classList.add('hidden');$('invoiceFormTitle').textContent='Faturë e re';calcInvoice();
 }
 function newInvoice(){clearInvoiceForm();showView('invoiceFormView')}
 function saveInvoice(){
   const id=$('invoiceId').value, totals=calcInvoice();
   const previous=invoices.find(x=>x.id===id);
-  const o={...previous,id:id||uid(),number:$('invoiceNumber').value.trim()||nextInvoiceNumber(),date:$('invoiceDate').value||today(),dueDate:$('invoiceDueDate').value,client:$('invoiceClient').value.trim(),phone:$('invoicePhone').value.trim(),address:$('invoiceAddress').value.trim(),status:$('invoiceStatus').value||'unpaid',vatPct:Number($('invoiceVat').value||0),notes:$('invoiceNotes').value.trim(),lines:collectInvoiceLines(),...totals,updatedAt:new Date().toISOString()};
+  const o={...previous,id:id||uid(),number:$('invoiceNumber').value.trim()||nextInvoiceNumber(),date:$('invoiceDate').value||today(),dueDate:$('invoiceDueDate').value,client:$('invoiceClient').value.trim(),phone:'',address:$('invoiceAddress').value.trim(),status:$('invoiceStatus').value||'unpaid',vatPct:Number($('invoiceVat').value||0),notes:$('invoiceNotes').value.trim(),lines:collectInvoiceLines(),...totals,updatedAt:new Date().toISOString()};
   if(!o.client){$('invoiceClient').focus();return}
   if(previous&&invoiceSnapshot(previous)!==invoiceSnapshot(o)&&(previous.signRequest||previous.signature||previous.accepted)){
     if(!confirm('Ndryshimi i përmbajtjes anulon linkun dhe pranimin e mëparshëm. Vazhdo?'))return;
@@ -1366,7 +1342,7 @@ function saveInvoice(){
 }
 function editInvoice(id){
   const o=invoices.find(x=>x.id===id);if(!o)return;
-  $('invoiceId').value=o.id;$('invoiceNumber').value=o.number||'';$('invoiceDate').value=o.date||today();$('invoiceDueDate').value=o.dueDate||'';$('invoiceClient').value=o.client||'';$('invoicePhone').value=o.phone||'';$('invoiceAddress').value=o.address||'';$('invoiceStatus').value=o.status||'unpaid';$('invoiceVat').value=o.vatPct??25;$('invoiceNotes').value=o.notes||'';$('invoiceLines').innerHTML='';(o.lines||[]).forEach(addInvoiceLine);if(!(o.lines||[]).length)addInvoiceLine();$('deleteInvoiceBtn').classList.remove('hidden');$('invoiceFormTitle').textContent='Ndrysho faturën';calcInvoice();showView('invoiceFormView');
+  $('invoiceId').value=o.id;$('invoiceNumber').value=o.number||'';$('invoiceDate').value=o.date||today();$('invoiceDueDate').value=o.dueDate||'';$('invoiceClient').value=o.client||'';$('invoiceAddress').value=o.address||'';$('invoiceStatus').value=o.status||'unpaid';$('invoiceVat').value=o.vatPct??25;$('invoiceNotes').value=o.notes||'';$('invoiceLines').innerHTML='';(o.lines||[]).forEach(addInvoiceLine);if(!(o.lines||[]).length)addInvoiceLine();$('deleteInvoiceBtn').classList.remove('hidden');$('invoiceFormTitle').textContent='Ndrysho faturën';calcInvoice();showView('invoiceFormView');
 }
 function deleteInvoice(id){
   if(!confirm('Ta fshij këtë faturë?'))return;
@@ -1386,12 +1362,14 @@ function renderInvoices(){
 let currentInvoiceId=null;
 let invoiceGuest=null;
 function invoiceSnapshot(o){
-  return JSON.stringify({id:o.id,number:o.number,date:o.date,dueDate:o.dueDate,client:o.client,phone:o.phone,address:o.address,notes:o.notes,lines:o.lines,subtotal:o.subtotal,vatPct:o.vatPct,vat:o.vat,total:o.total});
+  return JSON.stringify({id:o.id,number:o.number,date:o.date,dueDate:o.dueDate,client:o.client,address:o.address,notes:o.notes,lines:o.lines,subtotal:o.subtotal,vatPct:o.vatPct,vat:o.vat,total:o.total});
 }
 function invoicePack(value){return btoa(unescape(encodeURIComponent(JSON.stringify(value)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 function invoiceUnpack(value){
   if(!value||value.length>100000)throw Error('Link shumë i gjatë');
-  return JSON.parse(decodeURIComponent(escape(atob(value.replace(/-/g,'+').replace(/_/g,'/')))));
+  let packed=value.replace(/-/g,'+').replace(/_/g,'/');
+  while(packed.length%4)packed+='=';
+  return JSON.parse(decodeURIComponent(escape(atob(packed))));
 }
 function invoiceBaseUrl(){return location.origin+location.pathname;}
 async function shareInvoiceLink(url,title){
@@ -1433,7 +1411,7 @@ function validateInvoiceGuest(p){
   const o=p&&p.invoice;
   if(!o||typeof o.id!=='string'||typeof p.token!=='string'||p.token.length<20||p.token.length>160)throw Error('Link i pavlefshëm');
   if(!Array.isArray(o.lines)||o.lines.length>250)throw Error('Punë të pavlefshme');
-  for(const key of ['id','number','date','dueDate','client','phone','address','notes'])if(o[key]!=null&&(typeof o[key]!=='string'||o[key].length>10000))throw Error('Fushë e pavlefshme');
+  for(const key of ['id','number','date','dueDate','client','address','notes'])if(o[key]!=null&&(typeof o[key]!=='string'||o[key].length>10000))throw Error('Fushë e pavlefshme');
   for(const key of ['subtotal','vatPct','vat','total'])if(typeof o[key]!=='number'||!Number.isFinite(o[key]))throw Error('Shumë e pavlefshme');
   for(const line of o.lines)if(!line||typeof line.description!=='string'||line.description.length>10000||!Number.isFinite(line.qty)||!Number.isFinite(line.unitPrice))throw Error('Rresht i pavlefshëm');
   if(Math.abs(o.lines.reduce((s,x)=>s+x.qty*x.unitPrice,0)-o.subtotal)>0.02||Math.abs(o.subtotal*o.vatPct/100-o.vat)>0.02||Math.abs(o.subtotal+o.vat-o.total)>0.02)throw Error('Totali nuk përputhet');
@@ -1491,16 +1469,14 @@ function printInvoice(id){
   const v=document.createElement('div');v.id='invoicePreview';
   v.style.cssText='position:fixed;inset:0;z-index:99999;background:#f3f4f6;color:#111;overflow:auto;padding:12px;box-sizing:border-box;font-family:Arial,sans-serif;font-size:14px;-webkit-text-size-adjust:100%;';
   const money=n=>Number(n||0).toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';
-  v.innerHTML='<div style="max-width:760px;margin:auto"><div id="invoiceActions" style="position:sticky;top:0;z-index:2;background:#f3f4f6;padding-bottom:10px"><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px"><button type="button" id="invoiceBack">← Kthehu</button><button type="button" id="invoiceSend">📤 Dërgo</button><button type="button" id="invoiceSign">✍️ Firmos</button></div><div style="display:flex;gap:8px;align-items:center;margin-top:8px"><label for="invoicePreviewStatus">Statusi</label><select id="invoicePreviewStatus" style="flex:1;min-width:0"><option value="unsent">E pa dërguar</option><option value="sent">E dërguar</option><option value="accepted">E pranuar</option><option value="unpaid">E pa paguar</option><option value="paid">E paguar</option></select></div><div style="display:flex;gap:8px;margin-top:8px"><button type="button" id="invoiceStamp">🔖 Vula</button><button type="button" id="invoiceOwnerSign">✍️ Firma ime</button><select id="invoicePdfLanguage" aria-label="Gjuha e PDF-së" style="flex:1;min-width:0"><option value="sv">Svenska</option><option value="sq">Shqip</option></select></div><small id="invoiceSendHint" role="status"></small></div><article style="background:white;padding:16px;border-radius:12px;line-height:1.5;overflow-wrap:anywhere"><h2 style="font-size:19px;margin:0 0 12px">FATURË <span style="white-space:nowrap">'+esc(o.number||'')+'</span></h2><h3 style="font-size:18px;margin:0">'+esc(COMPANY.brand)+'</h3><b>'+esc(COMPANY.legalName)+'</b><br>'+[COMPANY.activity,COMPANY.address1,COMPANY.address2,'Tel: '+COMPANY.phone,'E-post: '+COMPANY.email,'Org.nr: '+COMPANY.orgNr,'Momsreg.nr / VAT-nr: '+COMPANY.vatNr+' (fr.o.m. '+COMPANY.vatActiveFrom+')',COMPANY.taxStatus,'SNI: '+COMPANY.sni].map(esc).join('<br>')+'<hr><p><b>Data:</b> '+esc(o.date||'')+'<br><b>Afati:</b> '+esc(o.dueDate||'')+'<br><b>Klienti:</b> '+esc(o.client||'')+'<br><b>Telefoni:</b> '+esc(o.phone||'')+'<br><b>Adresa:</b> '+esc(o.address||'')+'</p><table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:12px"><thead><tr><th style="width:40%;text-align:left">Përshkrimi</th><th>Sasia</th><th>Çmimi</th><th>Shuma</th></tr></thead><tbody>'+(o.lines||[]).map(x=>'<tr><td style="padding:8px 2px;border-bottom:1px solid #ddd">'+esc(x.description||'')+'</td><td style="text-align:right">'+esc(x.qty||0)+'</td><td style="text-align:right">'+money(x.unitPrice)+'</td><td style="text-align:right">'+money((x.qty||0)*(x.unitPrice||0))+'</td></tr>').join('')+'</tbody></table><p>Pa moms: '+money(o.subtotal)+'<br>Moms ('+esc(o.vatPct||0)+'%): '+money(o.vat)+'<br><b>TOTALI: '+money(o.total)+'</b></p>'+(o.notes?'<p>'+esc(o.notes)+'</p>':'')+'<div id="invoiceDecorPreview"></div><div id="invoiceAcceptancePreview"></div></article><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0"><button id="invoicePdfSv" type="button">🇸🇪 PDF Svenska</button><button id="invoicePdfSq" type="button">🇦🇱 PDF Shqip</button></div></div>';
+  v.innerHTML='<div style="max-width:760px;margin:auto"><div id="invoiceActions" style="position:sticky;top:0;z-index:2;background:#f3f4f6;padding-bottom:10px"><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px"><button type="button" id="invoiceBack">← Kthehu</button><button type="button" id="invoiceSendPdf">📨 Dërgo PDF</button><button type="button" id="invoiceSendSign">🔗 Dërgo për firmë</button><button type="button" id="invoiceSign">✍️ Firmos</button></div><div style="display:flex;gap:8px;align-items:center;margin-top:8px"><label for="invoicePreviewStatus">Statusi</label><select id="invoicePreviewStatus" style="flex:1;min-width:0"><option value="unsent">E pa dërguar</option><option value="sent">E dërguar</option><option value="accepted">E pranuar</option><option value="unpaid">E pa paguar</option><option value="paid">E paguar</option></select></div><div style="display:flex;gap:8px;margin-top:8px"><button type="button" id="invoiceStamp">🔖 Vula</button><button type="button" id="invoiceOwnerSign">✍️ Firma ime</button><select id="invoicePdfLanguage" aria-label="Gjuha e PDF-së" style="flex:1;min-width:0"><option value="sv">Svenska</option><option value="sq">Shqip</option></select></div><small id="invoiceSendHint" role="status"></small></div><article style="background:white;padding:16px;border-radius:12px;line-height:1.5;overflow-wrap:anywhere"><h2 style="font-size:19px;margin:0 0 12px">FATURË <span style="white-space:nowrap">'+esc(o.number||'')+'</span></h2><h3 style="font-size:18px;margin:0">'+esc(COMPANY.brand)+'</h3><b>'+esc(COMPANY.legalName)+'</b><br>'+[COMPANY.activity,COMPANY.address1,COMPANY.address2,'Tel: '+COMPANY.phone,'E-post: '+COMPANY.email,'Org.nr: '+COMPANY.orgNr,'Momsreg.nr / VAT-nr: '+COMPANY.vatNr,COMPANY.taxStatus].map(esc).join('<br>')+'<hr><p><b>Data:</b> '+esc(o.date||'')+'<br><b>Afati:</b> '+esc(o.dueDate||'')+'<br><b>Klienti:</b> '+esc(o.client||'')+'<br><b>Adresa:</b> '+esc(o.address||'')+'</p><table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:12px"><thead><tr><th style="width:40%;text-align:left">Përshkrimi</th><th>Orët</th><th>Kr/orë</th><th>Shuma</th></tr></thead><tbody>'+(o.lines||[]).map(x=>'<tr><td style="padding:8px 2px;border-bottom:1px solid #ddd">'+esc(x.description||'')+'</td><td style="text-align:right">'+esc(x.qty||0)+'</td><td style="text-align:right">'+money(x.unitPrice)+'</td><td style="text-align:right">'+money((x.qty||0)*(x.unitPrice||0))+'</td></tr>').join('')+'</tbody></table><p>Pa moms: '+money(o.subtotal)+'<br>Moms ('+esc(o.vatPct||0)+'%): '+money(o.vat)+'<br><b>TOTALI: '+money(o.total)+'</b></p>'+(o.notes?'<p>'+esc(o.notes)+'</p>':'')+'<div id="invoiceDecorPreview"></div><div id="invoiceAcceptancePreview"></div></article><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0"><button id="invoicePdfSv" type="button">🇸🇪 PDF Svenska</button><button id="invoicePdfSq" type="button">🇦🇱 PDF Shqip</button></div></div>';
   document.body.appendChild(v);
-  const requestButton=document.createElement('button');requestButton.type='button';requestButton.textContent='📨 Dërgo për firmë';requestButton.style.cssText='width:100%;margin-top:8px';
-  requestButton.onclick=()=>sendInvoiceForSignature(id,v.querySelector('#invoicePdfLanguage').value);
-  v.querySelector('#invoiceActions').appendChild(requestButton);
   v.querySelectorAll('button').forEach(b=>{b.style.fontSize='14px';b.style.padding='11px 7px';b.style.minWidth='0'});
   v.querySelector('#invoicePreviewStatus').value=o.status||'unsent';
   v.querySelector('#invoicePreviewStatus').onchange=e=>setInvoiceStatus(id,e.target.value);
   v.querySelector('#invoiceBack').onclick=()=>v.remove();
-  v.querySelector('#invoiceSend').onclick=()=>sendInvoice(id,v.querySelector('#invoicePdfLanguage').value);
+  v.querySelector('#invoiceSendPdf').onclick=()=>sendInvoice(id,v.querySelector('#invoicePdfLanguage').value);
+  v.querySelector('#invoiceSendSign').onclick=()=>sendInvoiceForSignature(id,v.querySelector('#invoicePdfLanguage').value);
   v.querySelector('#invoiceSign').onclick=()=>signInvoice(id);
   v.querySelector('#invoicePdfSv').onclick=()=>buildInvoicePdf(id,'sv');
   v.querySelector('#invoicePdfSq').onclick=()=>buildInvoicePdf(id,'sq');
@@ -1558,23 +1534,28 @@ function signInvoice(id){
     persistAll();m.remove();renderInvoices();printInvoice(id);
   };
 }
+function addSignatureToPdf(doc,src,box){
+  const info=doc.getImageProperties(src);
+  const fit=containOwnerImage(info.width,info.height,box);
+  doc.addImage(src,src.startsWith('data:image/jpeg')?'JPEG':'PNG',fit.x,fit.y,fit.width,fit.height);
+}
 function buildInvoicePdf(id,lang='sq',action='download',source=null){
   const o=source||invoices.find(x=>x.id===id);if(!o)return;
   if(!window.jspdf||!window.jspdf.jsPDF){alert('PDF library nuk u ngarkua.');return}
   const T=lang==='sv'?{
-    invoice:'FAKTURA',date:'Datum',due:'Förfallodatum',client:'Kund',phone:'Telefon',address:'Adress',
-    desc:'Beskrivning',qty:'Antal/timmar',price:'Pris',sum:'Belopp',exvat:'Exkl. moms',vat:'Moms',total:'TOTALT',notes:'Anteckningar'
+    invoice:'FAKTURA',date:'Datum',due:'Förfallodatum',client:'Kund',address:'Adress',
+    desc:'Beskrivning',qty:'Timmar',price:'Kr/timme',sum:'Belopp',exvat:'Exkl. moms',vat:'Moms',total:'TOTALT',notes:'Anteckningar'
   }:{
-    invoice:'FATURË',date:'Data',due:'Afati',client:'Klienti',phone:'Telefoni',address:'Adresa',
-    desc:'Përshkrimi',qty:'Sasia/orët',price:'Çmimi',sum:'Shuma',exvat:'Pa moms',vat:'Moms',total:'TOTALI',notes:'Shënime'
+    invoice:'FATURË',date:'Data',due:'Afati',client:'Klienti',address:'Adresa',
+    desc:'Përshkrimi',qty:'Orët',price:'Kr/orë',sum:'Shuma',exvat:'Pa moms',vat:'Moms',total:'TOTALI',notes:'Shënime'
   };
   const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4'}),money=n=>Number(n||0).toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';
   let y=18;doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text(COMPANY.brand,16,y);doc.setFontSize(14);doc.text(T.invoice+' '+String(o.number||''),194,y,{align:'right'});y+=7;
   doc.setFontSize(10.5);doc.text(COMPANY.legalName,16,y);doc.setFont('helvetica','normal');
-  [COMPANY.activity,COMPANY.address1,COMPANY.address2,'Tel: '+COMPANY.phone,'E-post: '+COMPANY.email,'Org.nr: '+COMPANY.orgNr,'Momsreg.nr / VAT-nr: '+COMPANY.vatNr+' (fr.o.m. '+COMPANY.vatActiveFrom+')',COMPANY.taxStatus,'SNI: '+COMPANY.sni].forEach(t=>{y+=5;doc.text(t,16,y)});
+  [COMPANY.activity,COMPANY.address1,COMPANY.address2,'Tel: '+COMPANY.phone,'E-post: '+COMPANY.email,'Org.nr: '+COMPANY.orgNr,'Momsreg.nr / VAT-nr: '+COMPANY.vatNr,COMPANY.taxStatus].forEach(t=>{y+=5;doc.text(t,16,y)});
   y+=9;
   doc.setFont('helvetica','normal');doc.setFontSize(10.5);
-  [T.date+': '+(o.date||''),T.due+': '+(o.dueDate||''),T.client+': '+(o.client||''),T.phone+': '+(o.phone||''),T.address+': '+(o.address||'')].forEach(t=>{doc.text(t,16,y);y+=5});
+  [T.date+': '+(o.date||''),T.due+': '+(o.dueDate||''),T.client+': '+(o.client||''),T.address+': '+(o.address||'')].forEach(t=>{doc.text(t,16,y);y+=5});
   y+=4;doc.setFont('helvetica','bold');doc.text(T.desc,16,y);doc.text(T.qty,125,y,{align:'right'});doc.text(T.price,158,y,{align:'right'});doc.text(T.sum,194,y,{align:'right'});y+=5;doc.line(16,y,194,y);y+=5;doc.setFont('helvetica','normal');
   (o.lines||[]).forEach(x=>{
     const description=doc.splitTextToSize(String(x.description||''),90);
@@ -1589,8 +1570,8 @@ function buildInvoicePdf(id,lang='sq',action='download',source=null){
     if(y>210){doc.addPage();y=18;}else y+=18;
     if(o.ownerDecor?.stamp)doc.addImage(makeOwnerStampDataUrl(),'PNG',16,y,36,36);
     const ownerSig=localStorage.getItem(OWNER_SIG_KEY);
-    if(o.ownerDecor?.signature&&ownerSig)doc.addImage(ownerSig,'PNG',60,y+10,48,16);
-    if(o.signature){doc.setFontSize(10);doc.text(lang==='sv'?'Kundens underskrift':'Firma e klientit',120,y);doc.text(doc.splitTextToSize(String(o.signedBy||''),72),120,y+5);doc.addImage(o.signature,o.signature.startsWith('data:image/jpeg')?'JPEG':'PNG',120,y+14,64,22);doc.text(String(o.signedAt||'').slice(0,10),120,y+42);}
+    if(o.ownerDecor?.signature&&ownerSig)addSignatureToPdf(doc,ownerSig,{x:60,y:y+4,width:48,height:32});
+    if(o.signature){doc.setFontSize(10);doc.text(lang==='sv'?'Kundens underskrift':'Firma e klientit',120,y);doc.text(doc.splitTextToSize(String(o.signedBy||''),72),120,y+5);addSignatureToPdf(doc,o.signature,{x:120,y:y+14,width:64,height:22});doc.text(String(o.signedAt||'').slice(0,10),120,y+42);}
   }
   const prefix=lang==='sv'?'Faktura':'Fatura';
   const filename=`${prefix}_${String(o.number||'').replace(/[^0-9A-Za-z_-]/g,'_')}.pdf`;
@@ -1985,7 +1966,7 @@ window.addEventListener('load',function(){
         else fields[el.id]={kind:'value',value:el.value};
       });
 
-      let offerWork=[], offerMaterials=[];
+      let offerWork=[], offerMaterials=[], invoiceLines=[];
       try{
         if(typeof collectOfferLines==='function'){
           offerWork=collectOfferLines('work')||[];
@@ -1993,11 +1974,16 @@ window.addEventListener('load',function(){
         }
       }catch(e){}
 
+      try{
+        if(typeof collectInvoiceLines==='function') invoiceLines=collectInvoiceLines()||[];
+      }catch(e){}
+
       localStorage.setItem(AUTO_DRAFT_KEY,JSON.stringify({
         savedAt:new Date().toISOString(),
         fields,
         offerWork,
-        offerMaterials
+        offerMaterials,
+        invoiceLines
       }));
 
       /* Also keep all saved app data current in localStorage */
@@ -2039,6 +2025,13 @@ window.addEventListener('load',function(){
         }
         try{ if(typeof calcOffer==='function') calcOffer(); }catch(e){}
       }
+
+      const invoiceBox=document.getElementById('invoiceLines');
+      if(invoiceBox && typeof addInvoiceLine==='function' && Array.isArray(d.invoiceLines) && d.invoiceLines.length){
+        invoiceBox.innerHTML='';
+        d.invoiceLines.forEach(x=>addInvoiceLine(x));
+        try{ if(typeof calcInvoice==='function') calcInvoice(); }catch(e){}
+      }
     }catch(e){}
   }
 
@@ -2064,21 +2057,5 @@ window.addEventListener('load',function(){
 })();
 </script>
 
-<script>
-// Invoice sending always uses the signature-return link. The PDF-only share remains
-// available through the language PDF buttons.
-(function(){
-  const fix=()=>{const b=document.getElementById('invoiceSend');if(b)b.textContent='📨 Dërgo për firmë';document.querySelectorAll('#invoiceActions button').forEach(x=>{if(x!==b&&x.textContent.includes('Dërgo për firmë'))x.remove();});};
-  new MutationObserver(fix).observe(document.documentElement,{subtree:true,childList:true});
-  document.addEventListener('click',function(e){
-    const b=e.target.closest&&e.target.closest('#invoiceSend');
-    if(!b||typeof sendInvoiceForSignature!=='function')return;
-    e.preventDefault();e.stopImmediatePropagation();
-    const id=window.currentInvoiceId||currentInvoiceId;
-    const lang=document.getElementById('invoicePdfLanguage')?.value||'sv';
-    sendInvoiceForSignature(id,lang);
-  },true);
-})();
-</script>
 </body>
 </html>

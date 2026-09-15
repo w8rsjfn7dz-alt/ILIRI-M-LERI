@@ -209,7 +209,11 @@ html.client-sign-mode #iliriSigBack{display:none!important}
       <div><label id="lblEnd">Mbarimi</label><input id="endTime" type="time" value="15:30"></div>
     </div>
     <label id="lblBreak">Pushim (minuta)</label><input id="breakMinutes" type="number" min="0" step="5" value="30">
+    <label id="lblHoursNote" style="margin-top:12px">Çfarë bëra sot / Shënime</label>
+    <textarea id="hoursNote" placeholder="Shkruaj punën që bëre sot..."></textarea>
     <div class="row" style="margin-top:12px"><button id="saveHoursBtn" type="button">Ruaj orët</button></div>
+    <div id="hoursSaveStatus" class="meta" style="margin-top:10px;text-align:center"></div>
+    <div id="hoursSummary" class="grid" style="margin-top:14px"></div>
     <div id="hoursList"></div>
   </section>
 
@@ -331,6 +335,9 @@ const LANG_KEY='iliri_maleri_lang_v4';
 const OFFERS_KEY='iliri_maleri_offers_v1';
 const INVOICES_KEY='iliri_maleri_invoices_v1';
 const LAST_BACKUP_KEY='iliri_maleri_last_backup_v1';
+const DATA_SAVED_AT_KEY='iliri_maleri_saved_at_v1';
+const FORM_DRAFTS_KEY='iliri_maleri_form_drafts_v1';
+const DURABLE_DB_NAME='iliri_maleri_durable_v1';
 const BACKUP_INTERVAL_MS=7*24*60*60*1000;
 
 const PHOTOS_KEY='iliri_photos_v1', MEASURES_KEY='iliri_measures_v1', REPORTS_KEY='iliri_reports_v1';
@@ -343,11 +350,23 @@ let projects=load(PROJECTS_KEY,[]), hours=load(HOURS_KEY,[]), materials=load(MAT
 // offer status migration: old offer-only paid/unpaid labels
 /* offer status migration */ offers=offers.map(o=>({...o,status:o.status==='accepted'?'accepted':o.status==='rejected'?'rejected':o.status}));
 let photos=load(PHOTOS_KEY,[]), measures=load(MEASURES_KEY,[]), reports=load(REPORTS_KEY,[]);
-offers=offers.map(o=>({...o,status:o.status==='accepted'?'unpaid':(o.status||'unsent')}));persistAll();
+offers=offers.map(o=>({...o,status:o.status==='accepted'?'unpaid':(o.status||'unsent')}));
 let offerFilter='all';
 function $(id){return document.getElementById(id)}
 function load(k,d){try{const x=JSON.parse(localStorage.getItem(k));return Array.isArray(x)?x:d}catch(e){return d}}
-function persistAll(){localStorage.setItem(PROJECTS_KEY,JSON.stringify(projects));localStorage.setItem(HOURS_KEY,JSON.stringify(hours));localStorage.setItem(MATERIALS_KEY,JSON.stringify(materials));localStorage.setItem(OFFERS_KEY,JSON.stringify(offers));localStorage.setItem(INVOICES_KEY,JSON.stringify(invoices));localStorage.setItem(PHOTOS_KEY,JSON.stringify(photos));localStorage.setItem(MEASURES_KEY,JSON.stringify(measures));localStorage.setItem(REPORTS_KEY,JSON.stringify(reports))}
+let durableReady=false,draftTimer=null;
+function safeLocalSet(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}}
+function openDurableDB(){return new Promise((resolve,reject)=>{if(!window.indexedDB){reject(new Error('IndexedDB unavailable'));return}const req=indexedDB.open(DURABLE_DB_NAME,1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('app'))db.createObjectStore('app')};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
+function namedLocalStorage(){const out={};try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('iliri_'))out[k]=localStorage.getItem(k)}}catch(e){}return out}
+function appSnapshot(savedAt=Date.now()){return{version:8,savedAt,projects,hours,materials,offers,invoices,photos,measures,reports,namedStorage:namedLocalStorage()}}
+async function durablePut(key,value){try{const db=await openDurableDB();await new Promise((resolve,reject)=>{const tx=db.transaction('app','readwrite');tx.objectStore('app').put(value,key);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close();return true}catch(e){return false}}
+async function durableGet(key){try{const db=await openDurableDB();const value=await new Promise((resolve,reject)=>{const tx=db.transaction('app','readonly'),req=tx.objectStore('app').get(key);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});db.close();return value}catch(e){return null}}
+function persistAll(){const savedAt=Date.now(),sets=[[PROJECTS_KEY,projects],[HOURS_KEY,hours],[MATERIALS_KEY,materials],[OFFERS_KEY,offers],[INVOICES_KEY,invoices],[PHOTOS_KEY,photos],[MEASURES_KEY,measures],[REPORTS_KEY,reports]];sets.forEach(([k,v])=>safeLocalSet(k,JSON.stringify(v)));safeLocalSet(DATA_SAVED_AT_KEY,String(savedAt));if(durableReady)durablePut('snapshot',appSnapshot(savedAt))}
+async function restoreDurable(){const snap=await durableGet('snapshot'),localSaved=Number(localStorage.getItem(DATA_SAVED_AT_KEY)||0);if(snap&&Number(snap.savedAt||0)>=localSaved){projects=Array.isArray(snap.projects)?snap.projects:projects;hours=Array.isArray(snap.hours)?snap.hours:hours;materials=Array.isArray(snap.materials)?snap.materials:materials;offers=Array.isArray(snap.offers)?snap.offers:offers;invoices=Array.isArray(snap.invoices)?snap.invoices:invoices;photos=Array.isArray(snap.photos)?snap.photos:photos;measures=Array.isArray(snap.measures)?snap.measures:measures;reports=Array.isArray(snap.reports)?snap.reports:reports;if(snap.namedStorage)Object.entries(snap.namedStorage).forEach(([k,v])=>{if(localStorage.getItem(k)==null)safeLocalSet(k,v)})}durableReady=true;persistAll()}
+function collectFormDrafts(){const out={};document.querySelectorAll('input[id]:not([type="file"]),textarea[id],select[id]').forEach(el=>{out[el.id]=el.type==='checkbox'?!!el.checked:el.value});return out}
+function persistFormDrafts(){const drafts=collectFormDrafts();safeLocalSet(FORM_DRAFTS_KEY,JSON.stringify(drafts));if(durableReady)durablePut('formDrafts',drafts)}
+function scheduleDraftSave(){clearTimeout(draftTimer);draftTimer=setTimeout(persistFormDrafts,250)}
+async function restoreFormDrafts(){let drafts=null;try{drafts=JSON.parse(localStorage.getItem(FORM_DRAFTS_KEY)||'null')}catch(e){}const durable=await durableGet('formDrafts');if(durable&&typeof durable==='object')drafts=durable;if(!drafts)return;Object.entries(drafts).forEach(([id,value])=>{const el=$(id);if(!el||el.type==='file')return;if(el.type==='checkbox')el.checked=!!value;else if(el.tagName==='SELECT'&&![...el.options].some(o=>o.value===String(value)))return;else el.value=value==null?'':String(value)})}
 function tr(k){return (I18N[currentLang]&&I18N[currentLang][k])||I18N.sq[k]||k}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function uid(){return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)}
@@ -366,12 +385,15 @@ function toggleDetail(id){const el=$('detail-'+id);if(el)el.classList.toggle('hi
 function renderProjects(){const q=$('projectSearch').value.toLowerCase();const list=[...projects].sort((a,b)=>(a.projectNumber||'').localeCompare(b.projectNumber||'',undefined,{numeric:true})).filter(p=>[p.projectName,p.projectNumber,p.clientName].join(' ').toLowerCase().includes(q));$('projectsList').innerHTML=list.length?list.map(p=>`<div class="item clickable" data-detail="${esc(p.id)}"><h3>${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</h3><div class="meta">${tr('client')}: ${esc(p.clientName||'')} ${p.phone?'• '+esc(p.phone):''}</div><span class="badge">${statusText(p.status)}</span><div id="detail-${esc(p.id)}" class="detail hidden"><div class="meta"><b>${tr('address')}:</b> ${esc(p.address||'-')}<br><b>${tr('workType')}:</b> ${esc(p.type||'-')}<br><b>${tr('hours')}:</b> ${projectHours(p.id).toFixed(1)}<br><b>${tr('materials')}:</b> ${projectMaterials(p.id).toLocaleString('sv-SE')} kr<br><b>${tr('offer')}:</b> ${Number(p.price||0).toLocaleString('sv-SE')} kr<br><b>${tr('notes')}:</b> ${esc(p.notes||'-')}</div><div class="row" style="margin-top:10px"><button class="editProjectBtn" data-id="${esc(p.id)}" type="button">${tr('edit')}</button><button class="danger deleteProjectBtn" data-id="${esc(p.id)}" type="button">${tr('deleteProject')}</button></div></div></div>`).join(''):`<div class="empty">${tr('noProjects')}</div>`;document.querySelectorAll('[data-detail]').forEach(el=>el.addEventListener('click',e=>{if(e.target.closest('.editProjectBtn')||e.target.closest('.deleteProjectBtn'))return;toggleDetail(el.dataset.detail)}));document.querySelectorAll('.editProjectBtn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();editProject(b.dataset.id)}));document.querySelectorAll('.deleteProjectBtn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();deleteProject(b.dataset.id)}))}
 function renderClients(){const q=$('clientSearch').value.toLowerCase();const map={};projects.forEach(p=>{const n=(p.clientName||'').trim();if(n){if(!map[n])map[n]=[];map[n].push(p)}});const names=Object.keys(map).sort((a,b)=>a.localeCompare(b,currentLang==='sv'?'sv-SE':'sq-AL')).filter(n=>n.toLowerCase().includes(q));$('clientsList').innerHTML=names.length?names.map(n=>`<div class="item"><h3>${esc(n)}</h3>${map[n].sort((a,b)=>(a.projectNumber||'').localeCompare(b.projectNumber||'',undefined,{numeric:true})).map(p=>`<div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')} ${p.phone?'• '+esc(p.phone):''}</div>`).join('')}</div>`).join(''):`<div class="empty">${tr('noClients')}</div>`}
 function calcHours(start,end,br){if(!start||!end)return 0;const [sh,sm]=start.split(':').map(Number),[eh,em]=end.split(':').map(Number);let mins=(eh*60+em)-(sh*60+sm)-Number(br||0);if(mins<0)mins+=1440;return Math.max(0,mins/60)}
-function saveHours(){const projectId=$('hoursProject').value;if(!projectId)return;const start=$('startTime').value,end=$('endTime').value,br=Number($('breakMinutes').value||0);hours.unshift({id:uid(),projectId,date:$('hoursDate').value||today(),start,end,breakMinutes:br,total:calcHours(start,end,br)});persistAll();renderHours();renderHome()}
-function renderHours(){refreshProjectSelectors();const list=[...hours].sort((a,b)=>(b.date||'').localeCompare(a.date||''));$('hoursList').innerHTML=list.length?list.map(h=>{const p=projects.find(x=>x.id===h.projectId)||{};return `<div class="item"><h3>${esc(h.date)} — ${Number(h.total||0).toFixed(1)} ${tr('hoursLower')}</h3><div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}<br>${esc(h.start)}–${esc(h.end)} • ${tr('breakLower')} ${Number(h.breakMinutes||0)} min</div></div>`}).join(''):`<div class="empty">${tr('noHours')}</div>`}
+function hourTotal(h){const saved=Number(h&&h.total);return Number.isFinite(saved)&&saved>=0?saved:calcHours(h&&h.start,h&&h.end,Number((h&&h.breakMinutes)??(h&&h.breakMin)??0))}
+function localDate(value){const p=String(value||today()).split('-').map(Number);return new Date(p[0],(p[1]||1)-1,p[2]||1)}
+function renderHoursSummary(){const box=$('hoursSummary');if(!box)return;const ref=$('hoursDate').value||today(),d=localDate(ref),day=(d.getDay()+6)%7,monday=new Date(d);monday.setDate(d.getDate()-day);const sunday=new Date(monday);sunday.setDate(monday.getDate()+6);const iso=x=>`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;const weekStart=iso(monday),weekEnd=iso(sunday),month=ref.slice(0,7);const weekTotal=hours.filter(h=>String(h.date||'')>=weekStart&&String(h.date||'')<=weekEnd).reduce((a,h)=>a+hourTotal(h),0);const monthTotal=hours.filter(h=>String(h.date||'').slice(0,7)===month).reduce((a,h)=>a+hourTotal(h),0);const weekLabel=currentLang==='sv'?'Denna vecka':'Kjo javë',monthLabel=currentLang==='sv'?'Denna månad':'Ky muaj';box.innerHTML=`<div class="stat"><b>${weekTotal.toFixed(1)}</b><span>${weekLabel}</span></div><div class="stat"><b>${monthTotal.toFixed(1)}</b><span>${monthLabel}</span></div>`}
+function saveHours(){const projectId=$('hoursProject').value||'';const start=$('startTime').value,end=$('endTime').value,br=Math.max(0,Number($('breakMinutes').value||0)),total=calcHours(start,end,br);if(!start||!end||total<=0){$('hoursSaveStatus').textContent=currentLang==='sv'?'Kontrollera start- och sluttiden.':'Kontrollo orën e fillimit dhe mbarimit.';return}const entry={id:uid(),projectId,date:$('hoursDate').value||today(),start,end,breakMinutes:br,total,note:$('hoursNote').value.trim(),createdAt:new Date().toISOString()};hours.unshift(entry);persistAll();$('hoursNote').value='';persistFormDrafts();$('hoursSaveStatus').textContent=currentLang==='sv'?'Sparat ✅':'U ruajtën ✅';renderHours();renderHome()}
+function renderHours(){refreshProjectSelectors();renderHoursSummary();const list=[...hours].sort((a,b)=>(b.date||'').localeCompare(a.date||''));$('hoursList').innerHTML=list.length?list.map(h=>{const p=projects.find(x=>x.id===h.projectId)||{};const projectName=p.id?`${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}`:(currentLang==='sv'?'Utan projekt':'Pa projekt');const br=Number(h.breakMinutes??h.breakMin??0);return `<div class="item"><h3>${esc(h.date)} — ${hourTotal(h).toFixed(1)} ${tr('hoursLower')}</h3><div class="meta">${projectName}<br>${esc(h.start||'')}–${esc(h.end||'')} • ${tr('breakLower')} ${br} min${h.note?'<br><b>'+(currentLang==='sv'?'Anteckning':'Shënim')+':</b> '+esc(h.note):''}</div></div>`}).join(''):`<div class="empty">${tr('noHours')}</div>`}
 function saveMaterial(){const projectId=$('materialProject').value;if(!projectId)return;materials.unshift({id:uid(),projectId,date:$('materialDate').value||today(),name:$('materialName').value.trim(),cost:Number($('materialCost').value||0),note:$('materialNote').value.trim()});persistAll();$('materialName').value='';$('materialCost').value='';$('materialNote').value='';renderMaterials();renderHome()}
 function renderMaterials(){refreshProjectSelectors();$('materialsList').innerHTML=materials.length?materials.map(m=>{const p=projects.find(x=>x.id===m.projectId)||{};return `<div class="item"><h3>${esc(m.name||tr('material'))} — ${Number(m.cost||0).toLocaleString('sv-SE')} kr</h3><div class="meta">${esc(m.date)} • ${esc(p.projectNumber||'')} — ${esc(p.projectName||'')} ${m.note?'<br>'+esc(m.note):''}</div></div>`}).join(''):`<div class="empty">${tr('noMaterials')}</div>`}
-function refreshProjectSelectors(){const opts=projects.map(p=>`<option value="${esc(p.id)}">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</option>`).join('');['hoursProject','materialProject','photoProject','measureProject','voiceProject'].forEach(id=>{if($(id))$(id).innerHTML=opts})}
-function renderHome(){$('countProjects').textContent=projects.length;$('countClients').textContent=new Set(projects.map(p=>(p.clientName||'').trim()).filter(Boolean)).size;$('countHours').textContent=hours.reduce((a,b)=>a+Number(b.total||0),0).toFixed(1)}
+function refreshProjectSelectors(){const opts=projects.map(p=>`<option value="${esc(p.id)}">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</option>`).join('');['hoursProject','materialProject','photoProject','measureProject','voiceProject'].forEach(id=>{if($(id)){const previous=$(id).value;$(id).innerHTML=(id==='hoursProject'?`<option value="">${currentLang==='sv'?'Utan projekt':'Pa projekt'}</option>`:'')+opts;if([...$(id).options].some(o=>o.value===previous))$(id).value=previous}})}
+function renderHome(){$('countProjects').textContent=projects.length;$('countClients').textContent=new Set(projects.map(p=>(p.clientName||'').trim()).filter(Boolean)).size;$('countHours').textContent=hours.reduce((a,b)=>a+hourTotal(b),0).toFixed(1)}
 function normalizeOfferStatus(s){return s==='accepted'?'unpaid':(s||'unsent')}
 function offerStatusText(s){s=normalizeOfferStatus(s);return s==='unsent'?tr('offerUnsent'):s==='sent'?tr('offerSent'):s==='unpaid'?tr('offerUnpaid'):tr('offerPaid')}
 function nextOfferNumber(){const y=new Date().getFullYear();const nums=offers.map(o=>String(o.number||'')).filter(n=>n.startsWith(y+'-')).map(n=>parseInt(n.split('-').pop(),10)).filter(Number.isFinite);const next=(nums.length?Math.max(...nums):0)+1;return `${y}-${String(next).padStart(3,'0')}`}
@@ -992,7 +1014,7 @@ function saveVoiceReport(){
 }
 
 function exportBackup(){
-  const blob=new Blob([JSON.stringify({version:7,projects,hours,materials,offers,invoices,photos,measures,reports},null,2)],{type:'application/json'});
+  const blob=new Blob([JSON.stringify({version:8,projects,hours,materials,offers,invoices,photos,measures,reports},null,2)],{type:'application/json'});
   const a=document.createElement('a');
   const d=new Date();
   const pad=n=>String(n).padStart(2,'0');
@@ -1198,6 +1220,7 @@ function bind(){
  $('projectSearch').addEventListener('input',renderProjects);
  $('clientSearch').addEventListener('input',renderClients);
  $('saveHoursBtn').addEventListener('click',saveHours);
+ $('hoursDate').addEventListener('change',renderHoursSummary);
  $('saveMaterialBtn').addEventListener('click',saveMaterial);
  $('saveBackupVisibleBtn').addEventListener('click',exportBackup);
  $('restoreBackupVisibleBtn').addEventListener('click',()=>$('importFile').click());
@@ -1206,6 +1229,8 @@ function bind(){
 
 document.addEventListener('DOMContentLoaded',()=>{
  $('hoursDate').value=today();$('materialDate').value=today();if($('voiceDate')) $('voiceDate').value=today();refreshProjectSelectors();bind();applyLang();renderHome();checkWeeklyBackupReminder();
+ document.addEventListener('input',scheduleDraftSave);document.addEventListener('change',scheduleDraftSave);window.addEventListener('pagehide',()=>{persistFormDrafts();persistAll()});
+ restoreDurable().then(async()=>{refreshProjectSelectors();await restoreFormDrafts();renderHome();if(!$('hoursView').classList.contains('hidden'))renderHours();if(!$('projectsView').classList.contains('hidden'))renderProjects();if(!$('materialsView').classList.contains('hidden'))renderMaterials()});
 });
 
 

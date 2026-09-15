@@ -75,7 +75,7 @@ html.client-sign-mode #iliriSigBack{display:none!important}
 
 
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-<meta name="iliri-build" content="iliri-complete-offers-invoices-photos-backup-v12">
+<meta name="iliri-build" content="iliri-complete-offers-invoices-photos-backup-v13-autosave">
 <!-- ILIRI FIRMA TEST V6 -->
 </head>
 <body>
@@ -363,16 +363,19 @@ async function durablePut(key,value){try{const db=await openDurableDB();await ne
 async function durableGet(key){try{const db=await openDurableDB();const value=await new Promise((resolve,reject)=>{const tx=db.transaction('app','readonly'),req=tx.objectStore('app').get(key);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});db.close();return value}catch(e){return null}}
 function persistAll(){const savedAt=Date.now(),sets=[[PROJECTS_KEY,projects],[HOURS_KEY,hours],[MATERIALS_KEY,materials],[OFFERS_KEY,offers],[INVOICES_KEY,invoices],[PHOTOS_KEY,photos],[MEASURES_KEY,measures],[REPORTS_KEY,reports]];sets.forEach(([k,v])=>safeLocalSet(k,JSON.stringify(v)));safeLocalSet(DATA_SAVED_AT_KEY,String(savedAt));if(durableReady)durablePut('snapshot',appSnapshot(savedAt))}
 async function restoreDurable(){const snap=await durableGet('snapshot'),localSaved=Number(localStorage.getItem(DATA_SAVED_AT_KEY)||0);if(snap&&Number(snap.savedAt||0)>=localSaved){projects=Array.isArray(snap.projects)?snap.projects:projects;hours=Array.isArray(snap.hours)?snap.hours:hours;materials=Array.isArray(snap.materials)?snap.materials:materials;offers=Array.isArray(snap.offers)?snap.offers:offers;invoices=Array.isArray(snap.invoices)?snap.invoices:invoices;photos=Array.isArray(snap.photos)?snap.photos:photos;measures=Array.isArray(snap.measures)?snap.measures:measures;reports=Array.isArray(snap.reports)?snap.reports:reports;if(snap.namedStorage)Object.entries(snap.namedStorage).forEach(([k,v])=>{if(localStorage.getItem(k)==null)safeLocalSet(k,v)})}durableReady=true;persistAll()}
-function collectFormDrafts(){const out={};document.querySelectorAll('input[id]:not([type="file"]),textarea[id],select[id]').forEach(el=>{out[el.id]=el.type==='checkbox'?!!el.checked:el.value});return out}
-function persistFormDrafts(){const drafts=collectFormDrafts();safeLocalSet(FORM_DRAFTS_KEY,JSON.stringify(drafts));if(durableReady)durablePut('formDrafts',drafts)}
-function scheduleDraftSave(){clearTimeout(draftTimer);draftTimer=setTimeout(persistFormDrafts,250)}
-async function restoreFormDrafts(){let drafts=null;try{drafts=JSON.parse(localStorage.getItem(FORM_DRAFTS_KEY)||'null')}catch(e){}const durable=await durableGet('formDrafts');if(durable&&typeof durable==='object')drafts=durable;if(!drafts)return;Object.entries(drafts).forEach(([id,value])=>{const el=$(id);if(!el||el.type==='file')return;if(el.type==='checkbox')el.checked=!!value;else if(el.tagName==='SELECT'&&![...el.options].some(o=>o.value===String(value)))return;else el.value=value==null?'':String(value)})}
+function draftRows(boxId,priceClass){const box=$(boxId);if(!box)return[];return[...box.querySelectorAll('.offer-line')].map(row=>({description:(row.querySelector('.desc')||{}).value||'',qty:(row.querySelector('.qty')||{}).value||'',unitPrice:(row.querySelector(priceClass)||{}).value||''}))}
+function collectFormDrafts(){const values={};document.querySelectorAll('input[id]:not([type="file"]),textarea[id],select[id]').forEach(el=>{values[el.id]=el.type==='checkbox'?!!el.checked:el.value});return{savedAt:Date.now(),values,offerWork:draftRows('workLines','.unitPrice'),offerMaterials:draftRows('materialLines','.unitPrice'),invoiceLines:draftRows('invoiceLines','.price')}}
+function persistFormDrafts(){const drafts=collectFormDrafts();safeLocalSet(FORM_DRAFTS_KEY,JSON.stringify(drafts));if(durableReady)durablePut('formDrafts',drafts);return drafts}
+function scheduleDraftSave(){const drafts=collectFormDrafts();safeLocalSet(FORM_DRAFTS_KEY,JSON.stringify(drafts));clearTimeout(draftTimer);draftTimer=setTimeout(()=>{if(durableReady)durablePut('formDrafts',drafts)},250)}
+function normalizeDrafts(d){if(!d||typeof d!=='object')return null;if(d.values&&typeof d.values==='object')return d;return{savedAt:0,values:d,offerWork:[],offerMaterials:[],invoiceLines:[]}}
+async function restoreFormDrafts(){let local=null;try{local=normalizeDrafts(JSON.parse(localStorage.getItem(FORM_DRAFTS_KEY)||'null'))}catch(e){}const durable=normalizeDrafts(await durableGet('formDrafts'));const drafts=durable&&(!local||Number(durable.savedAt||0)>Number(local.savedAt||0))?durable:local;if(!drafts)return;Object.entries(drafts.values||{}).forEach(([id,value])=>{const el=$(id);if(!el||el.type==='file')return;if(el.type==='checkbox')el.checked=!!value;else if(el.tagName==='SELECT'&&![...el.options].some(o=>o.value===String(value)))return;else el.value=value==null?'':String(value)});if(Array.isArray(drafts.offerWork)&&drafts.offerWork.length){$('workLines').innerHTML='';drafts.offerWork.forEach(x=>addOfferLine('work',x))}if(Array.isArray(drafts.offerMaterials)&&drafts.offerMaterials.length){$('materialLines').innerHTML='';drafts.offerMaterials.forEach(x=>addOfferLine('material',x))}if(Array.isArray(drafts.invoiceLines)&&drafts.invoiceLines.length){$('invoiceLines').innerHTML='';drafts.invoiceLines.forEach(addInvoiceLine);calcInvoice()}calcOffer();renderHoursSummary()}
+async function requestPersistentStorage(){try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}}
 function tr(k){return (I18N[currentLang]&&I18N[currentLang][k])||I18N.sq[k]||k}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function uid(){return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)}
 function today(){const d=new Date();const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}
 function statusText(s){return s==='done'?tr('done'):s==='waiting'?tr('waiting'):tr('active')}
-function projectHours(id){return hours.filter(h=>h.projectId===id).reduce((a,b)=>a+Number(b.total||0),0)}
+function projectHours(id){return hours.filter(h=>h.projectId===id).reduce((a,b)=>a+hourTotal(b),0)}
 function projectMaterials(id){return materials.filter(m=>m.projectId===id).reduce((a,b)=>a+Number(m.cost||0),0)}
 
 function showView(id){['homeView','projectFormView','projectsView','clientsView','hoursView','materialsView','offersView','offerFormView','invoicesView','invoiceFormView','photosView','measureView','reportsView','voiceView','acceptedDocsView'].forEach(v=>{const el=$(v);if(el)el.classList.toggle('hidden',v!==id)});if(id==='projectsView')renderProjects();if(id==='clientsView')renderClients();if(id==='hoursView')renderHours();if(id==='materialsView')renderMaterials();if(id==='offersView')renderOffers();if(id==='invoicesView')renderInvoices();if(id==='photosView')renderPhotos();if(id==='measureView')renderMeasureHistory();if(id==='reportsView')renderReportsView();if(id==='acceptedDocsView')renderAcceptedDocs();window.scrollTo(0,0)}
@@ -1229,7 +1232,8 @@ function bind(){
 
 document.addEventListener('DOMContentLoaded',()=>{
  $('hoursDate').value=today();$('materialDate').value=today();if($('voiceDate')) $('voiceDate').value=today();refreshProjectSelectors();bind();applyLang();renderHome();checkWeeklyBackupReminder();
- document.addEventListener('input',scheduleDraftSave);document.addEventListener('change',scheduleDraftSave);window.addEventListener('pagehide',()=>{persistFormDrafts();persistAll()});
+ requestPersistentStorage();
+ document.addEventListener('input',scheduleDraftSave);document.addEventListener('change',scheduleDraftSave);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){persistFormDrafts();persistAll()}});window.addEventListener('pagehide',()=>{persistFormDrafts();persistAll()});
  restoreDurable().then(async()=>{refreshProjectSelectors();await restoreFormDrafts();renderHome();if(!$('hoursView').classList.contains('hidden'))renderHours();if(!$('projectsView').classList.contains('hidden'))renderProjects();if(!$('materialsView').classList.contains('hidden'))renderMaterials()});
 });
 

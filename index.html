@@ -77,6 +77,7 @@ html.client-sign-mode #iliriSigBack{display:none!important}
 <script async src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <meta name="iliri-build" content="iliri-v14-complete-backup-private-cloud-ready">
 <!-- ILIRI FIRMA TEST V6 -->
+<meta name="iliri-supabase-build" content="2026-09-17-iliri_data-online">
 </head>
 <body>
 <header>
@@ -590,39 +591,40 @@ const IliriStore=(()=>{
   }
   function setConflict(row){conflict=row;cloudMessage='⚠ Ka dy kopje të ndryshme — zgjidh te Ruajtja';panelMessage='Nuk u mbishkrua asnjë kopje. Mund ta shkarkosh secilën para se të zgjedhësh.';renderStatus()}
   async function sync(){
-    if(!ready||!client||cloudBusy||clientLink||conflict)return;
+    if(!ready||!client||cloudBusy||clientLink)return;
     if(!navigator.onLine){cloudMessage='Pa internet — në pritje për online';renderStatus();return}
-    saveDrafts();cloudBusy=true;cloudMessage='Po kontrollohet online…';renderStatus();
+    saveDrafts();cloudBusy=true;cloudMessage='Po ruhet online…';renderStatus();
     try{
-      const auth=await client.auth.getUser();if(auth.error||!auth.data?.user){user=null;cloudMessage='Online joaktiv — hyr në llogarinë e aplikacionit';return}
-      user=auth.data.user;const owner=config.url+'|'+user.id;
-      if(meta.owner&&meta.owner!==owner){cloudMessage='Ndalohet lidhja me llogari tjetër: të dhënat janë të llogarisë së parë.';return}
-      meta.owner=owner;
-      const read=await client.from('iliri_snapshots_v1').select('revision,mutation_id,payload,updated_at').eq('user_id',user.id).maybeSingle();if(read.error)throw read.error;
+      const read=await client.from('iliri_data').select('id,user_id,data,updated_at').eq('user_id','iliri').limit(1).maybeSingle();
+      if(read.error)throw read.error;
       const row=read.data;
-      if(row){
-        validSnapshot(row.payload);
-        if(row.mutation_id===snapshot.mutationId){meta.baseRevision=Number(row.revision);meta.dirty=false;meta.syncedAt=row.updated_at;await writeLocal()}
-        else if(Number(row.revision)!==meta.baseRevision){
-          if((meta.baseRevision===null&&useful(snapshot))||(meta.baseRevision!==null&&meta.dirty)){setConflict(row);return}
-          const before=snapshot.mutationId;
-          if(!await durablePut('before-cloud-pull',backupSnapshot()))throw Error('Local recovery copy failed');
-          if(snapshot.mutationId!==before){setConflict(row);return}
-          applySnapshot(row.payload);meta.baseRevision=Number(row.revision);meta.dirty=false;meta.syncedAt=row.updated_at;repaint();await writeLocal();
+      const localUseful=useful(snapshot);
+      const remoteUseful=row?.data && Object.keys(row.data||{}).length>0;
+      if(remoteUseful && !localUseful){
+        applySnapshot(row.data);
+        repaint();
+        await writeLocal();
+      }else{
+        const payload=backupSnapshot();
+        if(row){
+          const up=await client.from('iliri_data').update({data:payload,updated_at:new Date().toISOString()}).eq('id',row.id).select('id,updated_at').single();
+          if(up.error)throw up.error;
+          meta.syncedAt=up.data.updated_at;
+        }else{
+          const ins=await client.from('iliri_data').insert({user_id:'iliri',data:payload}).select('id,updated_at').single();
+          if(ins.error)throw ins.error;
+          meta.syncedAt=ins.data.updated_at;
         }
-      }else if(meta.baseRevision>0){cloudMessage='⚠ Kopja online mungon. Nuk u krijua kopje e re automatikisht.';return}
-      if(meta.dirty&&(useful(snapshot)||meta.baseRevision>0)){
-        const sent=clone(snapshot),expected=meta.baseRevision||0;
-        cloudMessage='Po ruhet online…';renderStatus();
-        const result=await client.rpc('iliri_save_snapshot_v1',{p_expected_revision:expected,p_mutation_id:sent.mutationId,p_payload:sent});
-        if(result.error)throw result.error;
-        if(result.data?.conflict){cloudMessage='Kopja online ndryshoi; po rikontrollohet.';queueSync(100);return}
-        if(!Number.isSafeInteger(Number(result.data?.revision))||Number(result.data.revision)<=0)throw Error('Invalid acknowledgement');
-        meta.baseRevision=Number(result.data.revision);meta.syncedAt=result.data.updated_at;meta.dirty=snapshot.mutationId!==sent.mutationId;await writeLocal();
+        meta.dirty=false;
+        await writeLocal();
       }
-      retryMs=3000;panelMessage='';cloudMessage=meta.dirty?'Ndryshime në pritje për online':meta.baseRevision?'Ruajtur online ✓ '+new Date(meta.syncedAt).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'}):'Lidhur — ende pa të dhëna online';
-      if(meta.dirty&&useful(snapshot))queueSync();
-    }catch(e){cloudMessage=cloudError(e);queueSync(retryMs);retryMs=Math.min(retryMs*2,60000)}finally{cloudBusy=false;renderStatus()}
+      user={email:'ILIRI'};
+      retryMs=3000;panelMessage='';
+      cloudMessage='Ruajtur online ✓ '+new Date(meta.syncedAt||Date.now()).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
+    }catch(e){
+      cloudMessage=cloudError(e);
+      queueSync(retryMs);retryMs=Math.min(retryMs*2,60000);
+    }finally{cloudBusy=false;renderStatus()}
   }
   async function chooseConflict(which){
     if(!conflict||cloudBusy)return;
@@ -644,7 +646,7 @@ const IliriStore=(()=>{
       <p>Fushat dhe shënimet ruhen vetë në këtë pajisje. Butonat “Ruaj projektin/orët/…” e përfundojnë regjistrimin në listë. Mbaje edhe një backup jashtë telefonit.</p>
       <p id="iliriCloudMessage" role="status" style="font-weight:bold"></p><p id="iliriCloudUser"></p>
       <div id="iliriCloudConflict" class="hidden"><p>U gjetën dy kopje. Nuk bashkohen automatikisht.</p><div class="row"><button id="iliriCloudCopy">Shkarko kopjen online</button><button id="iliriLocalCopy">Shkarko këtë kopje</button></div><div class="row" style="margin-top:8px"><button id="iliriUseRemote" class="secondary">Përdor kopjen online</button><button id="iliriUseLocal" class="secondary">Përdor këtë kopje online</button></div></div>
-      <details><summary>Aktivizo Supabase (vetëm një herë)</summary><p>1. Në projektin tënd Supabase, ekzekuto kodin SQL më poshtë në SQL Editor. Mos e ekzekuto mbi një konfigurim ekzistues pa e kontrolluar.</p><button id="iliriDownloadSQL" type="button">Shkarko konfigurimin SQL</button><p>2. Krijo llogarinë private të aplikacionit te Authentication → Users. Kjo është e ndryshme nga hyrja jote në panelin Supabase. Mos çaktivizo sigurinë RLS.</p><p>3. Plotëso Project URL dhe çelësin publik. Hyr më poshtë me llogarinë e aplikacionit. Mos vendos kurrë secret/service_role në këtë faqe.</p><p>Ruajtja përdor një kopje të plotë, deri në 32 MB, dhe pesë versione të mëparshme. Me shumë foto duhet zgjeruar ruajtja. Varet nga hapësira dhe funksionimi i Supabase; nuk është garanci “përgjithmonë”.</p></details>
+      <details><summary>Aktivizo Supabase (vetëm një herë)</summary><p>1. Në projektin tënd Supabase, ekzekuto kodin SQL më poshtë në SQL Editor. Mos e ekzekuto mbi një konfigurim ekzistues pa e kontrolluar.</p><button id="iliriDownloadSQL" type="button">Shkarko konfigurimin SQL</button><p>2. Project URL dhe Publishable key janë vendosur. Shtyp “Aktivizo ruajtjen online”. Mos vendos kurrë secret/service_role në këtë faqe.</p><p>Ruajtja përdor një kopje të plotë, deri në 32 MB, dhe pesë versione të mëparshme. Me shumë foto duhet zgjeruar ruajtja. Varet nga hapësira dhe funksionimi i Supabase; nuk është garanci “përgjithmonë”.</p></details>
       <form id="iliriCloudForm"><label for="iliriCloudURL">Project URL</label><input id="iliriCloudURL" type="url" placeholder="https://projekti.supabase.co" required autocomplete="off"><label for="iliriCloudKey">Publishable / anon key (publik)</label><input id="iliriCloudKey" type="text" required autocomplete="off" autocapitalize="none" spellcheck="false"><label for="iliriCloudEmail">Email i llogarisë së aplikacionit</label><input id="iliriCloudEmail" type="email" required autocomplete="username"><label for="iliriCloudPassword">Fjalëkalimi i aplikacionit</label><input id="iliriCloudPassword" type="password" required autocomplete="current-password"><button type="submit" id="iliriCloudLogin" style="margin-top:12px">Hyr dhe aktivizo ruajtjen online</button></form>
       <div class="row" style="margin-top:12px"><button id="iliriCloudRetry" type="button" class="secondary">Kontrollo online tani</button><button id="iliriCloudSignOut" type="button" class="secondary hidden">Dil nga ruajtja online</button></div><button id="iliriRecovery" type="button" class="secondary" style="margin-top:12px">Shkarko kopjen para rikthimit</button><p class="small-note">Pas daljes, kopja lokale mbetet në këtë pajisje. Mos e përdor në pajisje publike. Fjalëkalimi nuk përfshihet në backup.</p></div>`;
     document.body.append(box);
@@ -654,20 +656,17 @@ const IliriStore=(()=>{
     $('iliriUseRemote').onclick=()=>chooseConflict('online');$('iliriUseLocal').onclick=()=>chooseConflict('local');
     $('iliriDownloadSQL').onclick=()=>download($('iliriSupabaseSQL').textContent,'ILIRI_SUPABASE_SETUP.sql');
     $('iliriRecovery').onclick=async()=>{const s=await durableGet('before-restore')||await durableGet('before-cloud-pull');if(s)download(s,'ILIRI_Para_rikthimit_'+today()+'.json');else{panelMessage='Nuk ka ende kopje para rikthimit.';renderStatus()}};
-    const old=json(safeLocalGet(CONFIG_KEY));$('iliriCloudURL').value=old?.url||'';$('iliriCloudKey').value=old?.key||'sb_publishable_i2GBw8vT5HFAGHxI4m8fUQ_e5tTMOEg';
+    const old=json(safeLocalGet(CONFIG_KEY));$('iliriCloudURL').value=old?.url||'https://ihghchzhknjtrzawnhdt.supabase.co';$('iliriCloudKey').value=old?.key||'sb_publishable_i2GBw8vT5HFAGHxI4m8fUQ_e5tTMOEg';
     $('iliriCloudForm').onsubmit=async e=>{
       e.preventDefault();const button=$('iliriCloudLogin');if(button.disabled)return;button.disabled=true;
       try{
         const c=validConfig($('iliriCloudURL').value.trim(),$('iliriCloudKey').value.trim());
-        if(meta.owner&&!meta.owner.startsWith(c.url+'|'))throw Error('Të dhënat janë të një projekti tjetër. Lidh projektin e parë.');
         await connect(c);
-        const {error}=await client.auth.signInWithPassword({email:$('iliriCloudEmail').value.trim(),password:$('iliriCloudPassword').value});
-        $('iliriCloudPassword').value='';if(error)throw error;
-        safeLocalSet(CONFIG_KEY,JSON.stringify(c));panelMessage='';await sync();
-      }catch(e){panelMessage=e.message&&(!e.status&&!e.code)?e.message:cloudError(e);renderStatus()}finally{button.disabled=false;$('iliriCloudPassword').value=''}
+        safeLocalSet(CONFIG_KEY,JSON.stringify(c));panelMessage='';user={email:'ILIRI'};await sync();
+      }catch(e){panelMessage=e.message&&(!e.status&&!e.code)?e.message:cloudError(e);renderStatus()}finally{button.disabled=false}
     };
     $('iliriCloudRetry').onclick=()=>{panelMessage='';if(!client){panelMessage='Plotëso lidhjen dhe hyr më parë.';renderStatus()}else sync()};
-    $('iliriCloudSignOut').onclick=async()=>{if(cloudBusy)return;const {error}=await client.auth.signOut({scope:'local'});if(error){panelMessage=cloudError(error);renderStatus();return}user=null;cloudMessage='Online joaktiv — ke dalë';renderStatus()};
+    $('iliriCloudSignOut').onclick=()=>{user=null;client=null;config=null;safeLocalSet(CONFIG_KEY,'');cloudMessage='Online joaktiv';renderStatus()};
     renderStatus();
   }
   async function start(){
@@ -677,7 +676,7 @@ const IliriStore=(()=>{
     window.addEventListener('online',()=>queueSync(50));window.addEventListener('offline',()=>{cloudMessage='Pa internet — në pritje për online';renderStatus()});
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')queueSync(50)});
     setInterval(()=>{if(document.visibilityState==='visible')queueSync(10)},30000);
-    const saved=json(safeLocalGet(CONFIG_KEY));if(saved){try{await connect(validConfig(saved.url,saved.key));queueSync(10)}catch(e){panelMessage=cloudError(e);renderStatus()}}
+    const saved=json(safeLocalGet(CONFIG_KEY))||{url:'https://ihghchzhknjtrzawnhdt.supabase.co',key:'sb_publishable_i2GBw8vT5HFAGHxI4m8fUQ_e5tTMOEg'};if(saved){try{await connect(validConfig(saved.url,saved.key));user={email:'ILIRI'};safeLocalSet(CONFIG_KEY,JSON.stringify(saved));queueSync(10)}catch(e){panelMessage=cloudError(e);renderStatus()}}
   }
   return {initLocal,start,initialized,saveData,saveDrafts,restoreDrafts:()=>applyDrafts(),backupSnapshot,exportAll,importAll,readExtra,setExtra,sync,
     // Testable pure validation and state inspection; does not expose credentials.

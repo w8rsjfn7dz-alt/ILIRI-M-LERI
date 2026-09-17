@@ -74,8 +74,8 @@ html.client-sign-mode #iliriSigBack{display:none!important}
 
 
 
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-<meta name="iliri-build" content="iliri-freeze-signature-fix-v19">
+<script async src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<meta name="iliri-build" content="iliri-v14-complete-backup-private-cloud-ready">
 <!-- ILIRI FIRMA TEST V6 -->
 </head>
 <body>
@@ -110,7 +110,7 @@ html.client-sign-mode #iliriSigBack{display:none!important}
 
   <section id="acceptedDocsView" class="hidden card">
     <div class="section-title"><h2>Dokumenta të pranuara</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
-    <div class="small-note" style="margin-bottom:12px">Këtu shfaqen ofertat dhe faturat e pranuara. Për faturat e firmosura nga klienti, hap linkun e kthyer për ta regjistruar pranimin.</div>
+    <div class="small-note" style="margin-bottom:12px">Këtu ruhen automatikisht ofertat e firmosura/pranuara. Mund t’i hapësh ose t’i ruash si PDF me firmën e klientit.</div>
     <div id="acceptedDocsList"></div>
   </section>
 
@@ -142,6 +142,29 @@ html.client-sign-mode #iliriSigBack{display:none!important}
     <div id="measureResult" class="measure-result">Vendos dimensionet.</div>
     <div class="row" style="margin-top:10px"><button id="measureToOfferBtn" type="button">Krijo ofertë</button><button id="saveMeasureBtn" class="secondary" type="button">Ruaj matjen</button></div>
     <div id="measureHistory"></div>
+  </section>
+
+  <section id="voiceView" class="hidden card">
+    <div class="section-title"><h2 id="voiceTitle">Raporti me zë</h2><button class="secondary backBtn" type="button">Kthehu</button></div>
+    <label class="lblProject">Projekti</label><select id="voiceProject"></select>
+    <div class="voice-box">
+      <div class="row">
+        <button id="voiceStartSqBtn" class="voice-mic" type="button">🎙️ Fol shqip</button>
+        <button id="voiceStartSvBtn" class="voice-mic secondary" type="button">🎙️ Prata svenska</button>
+      </div>
+      <div id="voiceStatus" class="small-note">Zgjidh gjuhën dhe fol. Raporti ndahet automatikisht në datë, orë, vend dhe punë.</div>
+      <div class="small-note">Shembull: “Sot punova 8 orë në Kållered, spatullova dhe lyeva me bojë.”</div>
+    </div>
+    <label style="margin-top:12px">Teksti shqip</label><textarea id="voiceText" rows="5" placeholder="Fol ose shkruaj raportin këtu..."></textarea>
+    <div class="row" style="margin-top:10px"><button id="parseVoiceBtn" type="button">Kupto raportin</button><button id="translateVoiceBtn" class="secondary" type="button">🇸🇪 Suedisht</button></div>
+    <div class="grid" style="margin-top:12px">
+      <div><label>Data</label><input id="voiceDate" type="date"></div>
+      <div><label>Orët</label><input id="voiceHours" type="number" min="0" step="0.5"></div>
+      <div><label>Vendi</label><input id="voicePlace"></div>
+      <div><label>Punët</label><input id="voiceWork"></div>
+    </div>
+    <label style="margin-top:10px">Suedisht / Svenska</label><textarea id="voiceSwedish" rows="4" placeholder="Përkthimi suedez del këtu..."></textarea>
+    <button id="saveVoiceReportBtn" type="button" style="width:100%;margin-top:10px">Ruaj te orët dhe projekti</button>
   </section>
 
   <section id="projectFormView" class="hidden card">
@@ -186,7 +209,11 @@ html.client-sign-mode #iliriSigBack{display:none!important}
       <div><label id="lblEnd">Mbarimi</label><input id="endTime" type="time" value="15:30"></div>
     </div>
     <label id="lblBreak">Pushim (minuta)</label><input id="breakMinutes" type="number" min="0" step="5" value="30">
+    <label id="lblHoursNote" style="margin-top:12px">Çfarë bëra sot / Shënime</label>
+    <textarea id="hoursNote" placeholder="Shkruaj punën që bëre sot..."></textarea>
     <div class="row" style="margin-top:12px"><button id="saveHoursBtn" type="button">Ruaj orët</button></div>
+    <div id="hoursSaveStatus" class="meta" style="margin-top:10px;text-align:center"></div>
+    <div id="hoursSummary" class="grid" style="margin-top:14px"></div>
     <div id="hoursList"></div>
   </section>
 
@@ -209,8 +236,8 @@ html.client-sign-mode #iliriSigBack{display:none!important}
     <div class="offer-tabs">
       <button class="secondary offerFilter" data-status="unsent" id="filterUnsent" type="button">E pa dërguar</button>
       <button class="secondary offerFilter" data-status="sent" id="filterSent" type="button">E dërguar</button>
-      <button class="secondary offerFilter" data-status="accepted" id="filterUnpaid" type="button">E pranuar</button>
-      <button class="secondary offerFilter" data-status="rejected" id="filterPaid" type="button">E pa pranuar</button>
+      <button class="secondary offerFilter" data-status="unpaid" id="filterUnpaid" type="button">E pranuar</button>
+      <button class="secondary offerFilter" data-status="paid" id="filterPaid" type="button">E pa pranuar</button>
       <button class="secondary offerFilter" data-status="all" id="filterAll" type="button" style="grid-column:1/-1">Të gjitha ofertat</button>
     </div>
     <div id="offersList"></div>
@@ -218,12 +245,6 @@ html.client-sign-mode #iliriSigBack{display:none!important}
 
   <section id="offerFormView" class="hidden card">
     <div class="section-title"><h2 id="offerFormTitle">Ofertë e re</h2><button class="secondary backToOffersBtn" type="button">Kthehu</button></div>
-    <div style="margin:10px 0 14px;padding:12px;border:1px solid #d8e4dc;border-radius:12px;background:#f5fbf7;font-size:13px;line-height:1.55">
-      <b>ILIRI Måleri — ILIA MITRO</b><br>
-      Måleri &amp; Dekor · Keplers Gata 36, lgh 1302 · 415 55 Göteborg<br>
-      Org.nr: 710109-1432 · VAT-nr: SE710109143201<br>
-      Godkänd för F-skatt med villkor (FA-skatt)
-    </div>
     <input type="hidden" id="offerId">
     <div class="grid">
       <div><label id="lblOfferNumber">Nr. ofertës</label><input id="offerNumber"></div>
@@ -233,7 +254,7 @@ html.client-sign-mode #iliriSigBack{display:none!important}
       <div><label id="lblOfferAddress">Adresa</label><input id="offerAddress"></div>
       <div><label id="lblOfferStatus">Statusi</label><select id="offerStatus"><option value="unsent">E pa dërguar</option><option value="sent">E dërguar</option><option value="accepted">E pranuar</option><option value="rejected">E pa pranuar</option></select></div>
     </div>
-    <h3 id="workLinesTitle">Punët</h3><div id="workLines"></div><button id="addWorkLineBtn" class="secondary" type="button" style="width:100%;margin-top:8px">+ Shto punë</button>
+    <h3 id="workLinesTitle">Punët</h3><div class="small-note" style="margin-bottom:6px"><b>Puna llogaritet me orë:</b> Orë pune × Çmimi/orë</div><div id="workLines"></div><button id="addWorkLineBtn" class="secondary" type="button" style="width:100%;margin-top:8px">+ Shto punë</button>
     <h3 id="materialLinesTitle" style="margin-top:18px">Materialet</h3><div id="materialLines"></div><button id="addMaterialLineBtn" class="secondary" type="button" style="width:100%;margin-top:8px">+ Shto material</button>
     <div class="grid" style="margin-top:12px"><div><label id="lblVat">Moms (%)</label><input id="offerVat" type="number" value="25" min="0" step="1"></div></div>
     <div class="totalbox"><div><span id="subtotalLabel">Pa moms</span>: <b id="offerSubtotal">0 kr</b></div><div><span id="vatLabel">Moms</span>: <b id="offerVatAmount">0 kr</b></div><div><span id="totalLabel">TOTALI</span>: <b id="offerTotal">0 kr</b></div></div>
@@ -268,8 +289,6 @@ html.client-sign-mode #iliriSigBack{display:none!important}
     <div id="invoiceStatusFilters" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0">
       <button type="button" class="invoiceFilterBtn" data-status="unsent">E pa dërguar</button>
       <button type="button" class="invoiceFilterBtn" data-status="sent">E dërguar</button>
-      <button type="button" class="invoiceFilterBtn" data-status="accepted">E pranuar</button>
-      <button type="button" class="invoiceFilterBtn" data-status="all">Të gjitha</button>
       <button type="button" class="invoiceFilterBtn" data-status="unpaid">E pa paguar</button>
       <button type="button" class="invoiceFilterBtn" data-status="paid">E paguar</button>
     </div>
@@ -278,20 +297,15 @@ html.client-sign-mode #iliriSigBack{display:none!important}
 
   <section id="invoiceFormView" class="hidden card">
     <div class="section-title"><h2 id="invoiceFormTitle">Faturë e re</h2><button class="secondary backToInvoicesBtn" type="button">Kthehu</button></div>
-    <div style="margin:10px 0 14px;padding:12px;border:1px solid #d8e4dc;border-radius:12px;background:#f5fbf7;font-size:13px;line-height:1.55">
-      <b>ILIRI Måleri — ILIA MITRO</b><br>
-      Måleri &amp; Dekor · Keplers Gata 36, lgh 1302 · 415 55 Göteborg<br>
-      Org.nr: 710109-1432 · VAT-nr: SE710109143201<br>
-      Godkänd för F-skatt med villkor (FA-skatt)
-    </div>
     <input type="hidden" id="invoiceId">
     <div class="grid">
       <div><label>Nr. faturës</label><input id="invoiceNumber"></div>
       <div><label>Data</label><input id="invoiceDate" type="date"></div>
       <div><label>Afati</label><input id="invoiceDueDate" type="date"></div>
-      <div><label>Klienti</label><input id="invoiceClient" autocomplete="name"></div>
+      <div><label>Klienti</label><input id="invoiceClient"></div>
+      <div><label>Telefoni</label><input id="invoicePhone" inputmode="tel"></div>
       <div><label>Adresa</label><input id="invoiceAddress"></div>
-      <div><label>Statusi</label><select id="invoiceStatus"><option value="unsent">E pa dërguar</option><option value="sent">E dërguar</option><option value="accepted">E pranuar</option><option value="unpaid">E pa paguar</option><option value="paid">E paguar</option></select></div>
+      <div><label>Statusi</label><select id="invoiceStatus"><option value="unsent">E pa dërguar</option><option value="sent">E dërguar</option><option value="unpaid">E pa paguar</option><option value="paid">E paguar</option></select></div>
       <div><label>Moms (%)</label><input id="invoiceVat" type="number" value="25" min="0" step="1"></div>
     </div>
     <h3 style="margin-top:18px">Punët</h3><div id="invoiceLines"></div>
@@ -320,21 +334,10 @@ const MATERIALS_KEY='iliri_maleri_materials_v1';
 const LANG_KEY='iliri_maleri_lang_v4';
 const OFFERS_KEY='iliri_maleri_offers_v1';
 const INVOICES_KEY='iliri_maleri_invoices_v1';
-const COMPANY={
-  brand:'ILIRI Måleri',
-  legalName:'ILIA MITRO',
-  activity:'Måleri & Dekor',
-  address1:'KEPLERS GATA 36 LGH 1302',
-  address2:'415 55 Göteborg',
-  phone:'076 922 53 61',
-  email:'ilia.mitro@yahoo.gr',
-  orgNr:'710109-1432',
-  vatNr:'SE710109143201',
-  vatActiveFrom:'2026-12-01',
-  taxStatus:'Godkänd för F-skatt med villkor (FA-skatt)',
-  sni:'43.341 – Måleriarbeten'
-};
 const LAST_BACKUP_KEY='iliri_maleri_last_backup_v1';
+const DATA_SAVED_AT_KEY='iliri_maleri_saved_at_v1';
+const FORM_DRAFTS_KEY='iliri_maleri_form_drafts_v1';
+const DURABLE_DB_NAME='iliri_maleri_durable_v1';
 const BACKUP_INTERVAL_MS=7*24*60*60*1000;
 
 const PHOTOS_KEY='iliri_photos_v1', MEASURES_KEY='iliri_measures_v1', REPORTS_KEY='iliri_reports_v1';
@@ -343,56 +346,397 @@ const I18N={
  sv:{langBtn:'SQ',backup:'Backup',projects:'Projekt',clients:'Kunder',hours:'Timmar',materials:'Material',newProject:'+ Nytt projekt',newProjectTitle:'Nytt projekt',project:'Projekt',date:'Datum',projectName:'Projektnamn',projectNumber:'Projektnummer',client:'Kund',phone:'Telefon',address:'Adress',workType:'Typ av arbete',chooseWork:'Välj typ av arbete',status:'Status',active:'Aktiv',waiting:'Väntar',done:'Klar',offer:'Pris / offert (kr)',notes:'Anteckningar',saveProject:'Spara projekt',cancel:'Avbryt',back:'Tillbaka',searchProject:'Sök projekt',searchProjectPh:'Projektnamn eller nummer...',searchClient:'Sök kund',searchClientPh:'Kundens namn...',start:'Starttid',end:'Sluttid',break:'Rast (minuter)',saveHours:'Spara timmar',material:'Material',cost:'Kostnad (kr)',note:'Anteckning',saveMaterial:'Spara material',saveBackup:'Spara backup',restoreBackup:'Återställ backup',editProject:'Redigera projekt',edit:'Redigera',deleteProject:'Ta bort',deleteCurrentProject:'Ta bort projektet',deleteConfirm:'Är du säker på att du vill ta bort projektet?',noProjects:'Inga projekt.',noClients:'Inga kunder.',noHours:'Inga registrerade timmar.',noMaterials:'Inga registrerade material.',hoursLower:'timmar',breakLower:'rast',backupRestored:'Backup återställd.',invalidBackup:'Ogiltig backup.',offers:'OFFERTER',newOffer:'+ Skapa ny offert',newOfferTitle:'Ny offert',editOffer:'Redigera offert',offerNumber:'Offertnummer',offerUnsent:'Ej skickad',offerSent:'Skickad',offerUnpaid:'Accepterad',offerPaid:'Ej accepterad',offerSaved:'Sparad',all:'Alla',workLines:'Arbeten',addWork:'+ Lägg till arbete',addMaterial:'+ Lägg till material',description:'Beskrivning',quantity:'Antal',vat:'Moms (%)',subtotal:'Exkl. moms',total:'TOTALT',saveOffer:'Spara offert',deleteOffer:'Ta bort offert',deleteOfferConfirm:'Är du säker på att du vill ta bort offerten?',noOffers:'Inga offerter i denna kategori.',pdf:'PDF'}
 };
 
-let projects=load(PROJECTS_KEY,[]), hours=load(HOURS_KEY,[]), materials=load(MATERIALS_KEY,[]), offers=load(OFFERS_KEY,[]), invoices=load(INVOICES_KEY,[]), currentLang=localStorage.getItem(LANG_KEY)||'sq';
-// Offer status migration from older versions that used invoice-style labels.
-offers=offers.map(o=>({...o,status:o.status==='unpaid'?'accepted':o.status==='paid'?'rejected':(o.status||'unsent')}));
+let projects=load(PROJECTS_KEY,[]), hours=load(HOURS_KEY,[]), materials=load(MATERIALS_KEY,[]), offers=load(OFFERS_KEY,[]), invoices=load(INVOICES_KEY,[]), currentLang=safeLocalGet(LANG_KEY)||'sq';
+// offer status migration: old offer-only paid/unpaid labels
+/* offer status migration */ offers=offers.map(o=>({...o,status:o.status==='accepted'?'accepted':o.status==='rejected'?'rejected':o.status}));
 let photos=load(PHOTOS_KEY,[]), measures=load(MEASURES_KEY,[]), reports=load(REPORTS_KEY,[]);
-persistAll();
+offers=offers.map(o=>({...o,status:o.status==='accepted'?'unpaid':(o.status||'unsent')}));
 let offerFilter='all';
 function $(id){return document.getElementById(id)}
 function load(k,d){try{const x=JSON.parse(localStorage.getItem(k));return Array.isArray(x)?x:d}catch(e){return d}}
-function persistAll(){localStorage.setItem(PROJECTS_KEY,JSON.stringify(projects));localStorage.setItem(HOURS_KEY,JSON.stringify(hours));localStorage.setItem(MATERIALS_KEY,JSON.stringify(materials));localStorage.setItem(OFFERS_KEY,JSON.stringify(offers));localStorage.setItem(INVOICES_KEY,JSON.stringify(invoices));localStorage.setItem(PHOTOS_KEY,JSON.stringify(photos));localStorage.setItem(MEASURES_KEY,JSON.stringify(measures));localStorage.setItem(REPORTS_KEY,JSON.stringify(reports))}
+let durableReady=false;
+function safeLocalGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function safeLocalSet(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}}
+function openDurableDB(){return new Promise((resolve,reject)=>{
+ if(!window.indexedDB){reject(Error('IndexedDB unavailable'));return}
+ let expired=false;const timer=setTimeout(()=>{expired=true;reject(Error('IndexedDB timeout'))},3500),req=indexedDB.open(DURABLE_DB_NAME,1);
+ req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('app'))db.createObjectStore('app')};
+ req.onsuccess=()=>{clearTimeout(timer);if(expired)req.result.close();else resolve(req.result)};
+ req.onerror=()=>{clearTimeout(timer);reject(req.error)};
+ req.onblocked=()=>{clearTimeout(timer);expired=true;reject(Error('IndexedDB blocked'))};
+})}
+async function durablePut(key,value){let db;try{db=await openDurableDB();await new Promise((resolve,reject)=>{const tx=db.transaction('app','readwrite');tx.objectStore('app').put(value,key);tx.oncomplete=resolve;tx.onerror=tx.onabort=()=>reject(tx.error||Error('Storage aborted'))});return true}catch(e){return false}finally{db?.close()}}
+async function durableGet(key){let db;try{db=await openDurableDB();return await new Promise((resolve,reject)=>{const tx=db.transaction('app','readonly'),req=tx.objectStore('app').get(key);let value;req.onsuccess=()=>{value=req.result};tx.oncomplete=()=>resolve(value);tx.onerror=tx.onabort=()=>reject(tx.error||Error('Storage aborted'))})}catch(e){return null}finally{db?.close()}}
+function draftRows(boxId,priceClass){const box=$(boxId);if(!box)return[];return[...box.querySelectorAll('.offer-line')].map(row=>({description:(row.querySelector('.desc')||{}).value||'',qty:(row.querySelector('.qty')||{}).value||'',unitPrice:(row.querySelector(priceClass)||{}).value||''}))}
+function normalizeDrafts(d){if(!d||typeof d!=='object')return null;if(d.values&&typeof d.values==='object')return d;return{savedAt:0,values:d,offerWork:[],offerMaterials:[],invoiceLines:[]}}
+/* ILIRI storage v9. No secrets are included in snapshots or backups.
+ * Supabase references: /docs/guides/database/postgres/row-level-security
+ * and /docs/reference/javascript/auth-signinwithpassword.
+ */
+const IliriStore=(()=>{
+  const STATE_KEY='iliri_maleri_state_v9', CONFIG_KEY='iliri_cloud_config_v1';
+  const collections=['projects','hours','materials','offers','invoices','photos','measures','reports'];
+  const views=['homeView','projectFormView','projectsView','clientsView','hoursView','materialsView','offersView','offerFormView','invoicesView','invoiceFormView','photosView','measureView','reportsView','voiceView','acceptedDocsView'];
+  const clientLink=new URLSearchParams(location.search).has('signOffer');
+  let ready=false, applying=false, extras={}, drafts=null, snapshot=null, lastContent='';
+  let meta={owner:null,baseRevision:null,dirty:false,syncedAt:null};
+  let localQueue=Promise.resolve(), saveNumber=0, localRevision=0, localMessage='Po hap të dhënat…';
+  let client=null, user=null, config=null, cloudBusy=false, syncTimer=null, retryMs=3000, conflict=null;
+  let cloudMessage='Online joaktiv — lidh Supabase', panelMessage='', sdkPromise=null;
+  let resolveReady; const initialized=new Promise(r=>resolveReady=r);
+  const clone=x=>JSON.parse(JSON.stringify(x));
+  const json=(x,fallback=null)=>{try{return JSON.parse(x)||fallback}catch(e){return fallback}};
+  function extraKey(k){return k===LANG_KEY||k==='iliri_owner_signature_png'||/^iliri_pdf_deco_(offer|invoice)_/.test(k)||k.startsWith('iliri_signature_demo_')}
+  function uuid(){return crypto.randomUUID?crypto.randomUUID():'10000000-1000-4000-8000-100000000000'.replace(/[018]/g,c=>(Number(c)^crypto.getRandomValues(new Uint8Array(1))[0]&15>>Number(c)/4).toString(16))}
+  function businessExtras(){const out={...extras};try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&extraKey(k)&&!(k in out))out[k]=localStorage.getItem(k)}}catch(e){}return out}
+  function readExtra(k){return Object.prototype.hasOwnProperty.call(extras,k)?extras[k]:safeLocalGet(k)}
+  function setExtra(k,v){if(!extraKey(k))return false;extras[k]=String(v);safeLocalSet(k,String(v));commit();return true}
+  function values(){return {projects,hours,materials,offers,invoices,photos,measures,reports}}
+  function assignArrays(d){({projects,hours,materials,offers,invoices,photos,measures,reports}=d)}
+  function content(){return {...values(),namedStorage:businessExtras(),drafts}}
+  function validSnapshot(data,partial=false){
+    if(!data||typeof data!=='object'||Array.isArray(data)||Number(data.version)>9)throw Error('Backup i pavlefshëm ose nga version më i ri.');
+    if(!collections.some(k=>Array.isArray(data[k])))throw Error('Skedari nuk është backup i ILIRI Måleri.');
+    if(data.app&&data.app!=='ILIRI-MALERI')throw Error('Backup nga një aplikacion tjetër.');
+    const result={app:'ILIRI-MALERI',version:9,savedAt:Number(data.savedAt)||0,mutationId:/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.mutationId)?data.mutationId:uuid()};
+    for(const k of collections){
+      const items=data[k]===undefined&&partial?values()[k]:data[k];
+      if(!Array.isArray(items)||items.some(x=>!x||typeof x!=='object'||Array.isArray(x)))throw Error('Të dhëna të pavlefshme: '+k);
+      result[k]=clone(items);
+    }
+    result.namedStorage={};
+    for(const [k,v] of Object.entries(data.namedStorage||{}))if(extraKey(k)&&typeof v==='string')result.namedStorage[k]=v;
+    result.drafts=cleanDrafts(data.drafts||json(data.namedStorage?.[FORM_DRAFTS_KEY]));
+    return result;
+  }
+  function cleanDrafts(input){
+    const d=normalizeDrafts(input);if(!d)return null;
+    const values={};
+    for(const [id,v] of Object.entries(d.values||{})){
+      const el=$(id);
+      if(!el||!['INPUT','TEXTAREA','SELECT'].includes(el.tagName)||['file','password'].includes(el.type)||id.startsWith('iliriCloud')||el.dataset.private!==undefined)continue;
+      if(v===null||['string','number','boolean'].includes(typeof v))values[id]=v;
+    }
+    const out={values,view:views.includes(d.view)?d.view:'homeView',reportOpen:!!d.reportOpen,offerFilter:d.offerFilter,invoiceFilter:d.invoiceFilter};
+    for(const k of ['offerWork','offerMaterials','invoiceLines'])if(Array.isArray(d[k]))out[k]=d[k].filter(x=>x&&typeof x==='object').map(x=>({description:String(x.description||''),qty:String(x.qty??''),unitPrice:String(x.unitPrice??'')}));
+    return out;
+  }
+  function takeDrafts(){
+    const v={};
+    document.querySelectorAll('input[id],textarea[id],select[id]').forEach(el=>{
+      if(el.type==='file'||el.type==='password'||el.closest('#iliriCloudPanel')||el.dataset.private!==undefined)return;
+      v[el.id]=el.type==='checkbox'?el.checked:el.value;
+    });
+    const view=views.find(id=>$(id)&&!$(id).classList.contains('hidden'))||'homeView';
+    return {values:v,view,reportOpen:!$('reportFormBox')?.classList.contains('hidden'),offerFilter,invoiceFilter,
+      offerWork:draftRows('workLines','.unitPrice'),offerMaterials:draftRows('materialLines','.unitPrice'),invoiceLines:draftRows('invoiceLines','.price')};
+  }
+  function applyDrafts(d=drafts,resume=true){
+    if(!d)return;
+    applying=true;
+    try{
+      for(const [id,value] of Object.entries(d.values||{})){
+        const el=$(id);if(!el||el.type==='file'||el.type==='password'||el.closest('#iliriCloudPanel'))continue;
+        if(el.type==='checkbox')el.checked=!!value;
+        else if(el.tagName==='SELECT'&&![...el.options].some(o=>o.value===String(value)))continue;
+        else el.value=value==null?'':String(value);
+      }
+      for(const [field,box,fn] of [['offerWork','workLines',x=>addOfferLine('work',x)],['offerMaterials','materialLines',x=>addOfferLine('material',x)],['invoiceLines','invoiceLines',addInvoiceLine]]){
+        if(Array.isArray(d[field])){$(box).innerHTML='';d[field].forEach(fn)}
+      }
+      if(['all','unsent','sent','unpaid','paid'].includes(d.offerFilter))offerFilter=d.offerFilter;
+      if(['all','unsent','sent','unpaid','paid'].includes(d.invoiceFilter))invoiceFilter=d.invoiceFilter;
+      $('reportFormBox')?.classList.toggle('hidden',!d.reportOpen);
+      $('deleteCurrentProjectBtn').classList.toggle('hidden',!$('projectId').value);
+      $('deleteOfferBtn').classList.toggle('hidden',!$('offerId').value);
+      $('deleteInvoiceBtn').classList.toggle('hidden',!$('invoiceId').value);
+      calcOffer();calcInvoice();renderHoursSummary();
+      if(resume&&!clientLink&&views.includes(d.view))showView(d.view);
+    }finally{applying=false}
+  }
+  function repaint(){refreshProjectSelectors();applyLang();renderHome();applyDrafts();}
+  function applySnapshot(data){
+    const s=validSnapshot(data);
+    assignArrays(s);extras={...s.namedStorage};drafts=s.drafts;snapshot=s;
+    // Ignore stale legacy keys after a restore, including removed signatures.
+    try{Object.keys(businessExtras()).forEach(k=>{if(!(k in extras))localStorage.removeItem(k)})}catch(e){}
+    Object.entries(extras).forEach(([k,v])=>safeLocalSet(k,v));
+    currentLang=extras[LANG_KEY]==='sv'?'sv':'sq';
+    lastContent=JSON.stringify(content());
+  }
+  function envelope(){return {format:9,localRevision:++localRevision,snapshot:clone(snapshot),meta:clone(meta)}}
+  function renderStatus(){
+    const el=$('iliriStorageStatus');if(el)el.textContent=localMessage+' · '+cloudMessage;
+    if($('iliriCloudMessage'))$('iliriCloudMessage').textContent=panelMessage||cloudMessage;
+    if($('iliriCloudConflict'))$('iliriCloudConflict').classList.toggle('hidden',!conflict);
+    if($('iliriCloudUser'))$('iliriCloudUser').textContent=user?'Lidhur: '+(user.email||'llogaria jote'):'';
+    if($('iliriCloudSignOut'))$('iliriCloudSignOut').classList.toggle('hidden',!user);
+  }
+  function writeLocal(){
+    if(!snapshot||clientLink)return Promise.resolve(false);
+    const n=++saveNumber, data=envelope();
+    const localOK=safeLocalSet(STATE_KEY,JSON.stringify(data));
+    localMessage='Po ruhet në pajisje…';renderStatus();
+    localQueue=localQueue.catch(()=>false).then(()=>durablePut('state-v9',data)).then(ok=>{
+      if(n===saveNumber){localMessage=ok||localOK?'Ruajtur në pajisje ✓':'⚠ Nuk u ruajt! Shkarko backup tani.';renderStatus()}
+      return ok||localOK;
+    });
+    return localQueue;
+  }
+  function commit(){
+    if(!ready||applying||clientLink)return;
+    const data=content(), key=JSON.stringify(data);
+    if(key===lastContent)return;
+    lastContent=key;snapshot={app:'ILIRI-MALERI',version:9,savedAt:Date.now(),mutationId:uuid(),...clone(data)};
+    meta.dirty=true;writeLocal();queueSync();
+  }
+  function saveData(){if(!ready)return;drafts=takeDrafts();commit()}
+  function saveDrafts(event){
+    if(!ready||applying||clientLink||event?.target?.closest?.('#iliriCloudPanel'))return drafts;
+    drafts=takeDrafts();commit();return drafts;
+  }
+  function useful(s){return collections.some(k=>s[k]?.length)||Object.keys(s.namedStorage||{}).some(k=>k!==LANG_KEY)||Object.entries(s.drafts?.values||{}).some(([k,v])=>/notes|name|client|work|description|note|reportProject/i.test(k)&&String(v||'').trim())||['offerWork','offerMaterials','invoiceLines'].some(k=>(s.drafts?.[k]||[]).some(r=>r.description));}
+  async function initLocal(){
+    if(clientLink){ready=true;durableReady=true;resolveReady();return}
+    // Safari/Chrome Web Locks: one editable tab per origin, preventing stale
+    // tabs from overwriting each other's local snapshots before cloud sync.
+    if(navigator.locks?.request){
+      const acquired=await new Promise(resolve=>{
+        navigator.locks.request('iliri-malari-writer-v9',{ifAvailable:true},lock=>{
+          if(!lock){resolve(false);return}
+          resolve(true);return new Promise(release=>window.addEventListener('pagehide',()=>{saveDrafts();localQueue.finally(release)},{once:true}));
+        }).catch(()=>resolve(false));
+      });
+      if(!acquired){resolveReady(false);return false}
+      window.addEventListener('pageshow',e=>{if(e.persisted)location.reload()});
+    }
+    const local=json(safeLocalGet(STATE_KEY));
+    const db=await durableGet('state-v9');
+    const candidates=[db,local].filter(x=>x?.format===9&&x.snapshot).sort((a,b)=>(b.localRevision||0)-(a.localRevision||0)||(b.snapshot.savedAt||0)-(a.snapshot.savedAt||0));
+    let restored=false;
+    for(const e of candidates){try{applySnapshot(e.snapshot);meta={...meta,...e.meta};localRevision=Number(e.localRevision)||0;restored=true;break}catch(err){panelMessage=err.message}}
+    if(!restored){
+      const old=await durableGet('snapshot');
+      if(old&&Number(old.savedAt||0)>=Number(safeLocalGet(DATA_SAVED_AT_KEY)||0)){
+        try{applySnapshot({...values(),...old})}catch(e){panelMessage=e.message}
+      }
+      extras=businessExtras();
+      const oldDraft=json(safeLocalGet(FORM_DRAFTS_KEY)),dbDraft=await durableGet('formDrafts');
+      drafts=cleanDrafts((dbDraft?.savedAt||0)>(oldDraft?.savedAt||0)?dbDraft:oldDraft)||drafts;
+      snapshot={app:'ILIRI-MALERI',version:9,savedAt:Date.now(),mutationId:uuid(),...clone(content())};
+      meta.dirty=useful(snapshot);lastContent=JSON.stringify(content());
+    }
+    ready=true;durableReady=true;
+    await writeLocal();resolveReady(true);
+  }
+  function backupSnapshot(){saveDrafts();return validSnapshot(snapshot||{...values(),namedStorage:businessExtras(),drafts})}
+  function download(data,name){
+    const blob=new Blob([typeof data==='string'?data:JSON.stringify(data,null,2)],{type:typeof data==='string'?'text/plain':'application/json'});
+    const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }
+  function exportAll(){download(backupSnapshot(),'ILIRI_Maleri_Backup_'+today()+'.json');safeLocalSet(LAST_BACKUP_KEY,String(Date.now()));panelMessage='Backup-i u përgatit. Zgjidh Ruaj te Files/Skedarët.';renderStatus()}
+  async function importAll(file){
+    if(!file)return;
+    try{
+      const raw=JSON.parse(await file.text()), data=validSnapshot(raw,true);
+      // Older backups omitted decorations/drafts. Preserve those, never erase them.
+      if(!raw.namedStorage)data.namedStorage=businessExtras();
+      if(!raw.drafts&&!raw.namedStorage?.[FORM_DRAFTS_KEY])data.drafts=drafts;
+      if(!confirm('Ky backup zëvendëson të dhënat e përfshira në të. Të vazhdoj?'))return;
+      if(!await durablePut('before-restore',backupSnapshot())){alert('Nuk u krijua kopja mbrojtëse. Ruaj backup dhe liro hapësirë përpara rikthimit.');return}
+      applySnapshot(data);snapshot.savedAt=Date.now();snapshot.mutationId=uuid();meta.dirty=true;
+      repaint();await writeLocal();queueSync();alert('Backup u rikthye. Kopja e mëparshme mund të shkarkohet te Ruajtja.');
+    }catch(e){alert('Backup nuk u ndryshua: '+e.message)}
+  }
+  function validConfig(url,key){
+    let u;try{u=new URL(url)}catch(e){throw Error('Vendos Project URL nga Supabase.')}
+    if(u.protocol!=='https:'||!/^[-a-z0-9]+\.supabase\.co$/.test(u.hostname)||u.username||u.password||u.search||u.hash||!['','/'].includes(u.pathname))throw Error('Përdor vetëm Project URL: https://projekti.supabase.co');
+    if(key.startsWith('sb_secret_'))throw Error('Mos përdor çelës secret/service_role. Duhet publishable ose anon.');
+    if(!/^sb_publishable_[\w-]+$/.test(key)){
+      let token;try{token=JSON.parse(atob(key.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')))}catch(e){}
+      if(token?.role!=='anon')throw Error('Duhet çelësi publik publishable/anon.');
+    }
+    return {url:u.origin,key};
+  }
+  function loadSdk(){
+    if(window.supabase?.createClient)return Promise.resolve();
+    if(sdkPromise)return sdkPromise;
+    sdkPromise=new Promise((resolve,reject)=>{
+      const tag=document.createElement('script');tag.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js';
+      const timer=setTimeout(()=>{tag.remove();sdkPromise=null;reject(Error('Lidhja Supabase nuk u ngarkua. Kontrollo internetin.'))},12000);
+      tag.onload=()=>{clearTimeout(timer);resolve()};tag.onerror=()=>{clearTimeout(timer);sdkPromise=null;tag.remove();reject(Error('Lidhja Supabase nuk u ngarkua. Provo përsëri.'))};document.head.append(tag);
+    });return sdkPromise;
+  }
+  async function networkFetch(input,options={}){
+    const ac=new AbortController(),timer=setTimeout(()=>ac.abort(),20000);
+    const abort=()=>ac.abort();options.signal?.addEventListener('abort',abort,{once:true});
+    try{return await fetch(input,{...options,signal:ac.signal})}finally{clearTimeout(timer);options.signal?.removeEventListener('abort',abort)}
+  }
+  async function connect(c){
+    if(config&&client&&config.url===c.url&&config.key===c.key)return;
+    if(client)throw Error('Lidhja është aktive. Mos ndërro projektin në këtë pajisje.');
+    await loadSdk();config=c;
+    client=window.supabase.createClient(c.url,c.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false},global:{fetch:networkFetch}});
+    client.auth.onAuthStateChange((_event,session)=>{setTimeout(()=>{if(session){queueSync(10)}else{user=null;cloudMessage='Online joaktiv — hyr në llogarinë e aplikacionit';renderStatus()}},0)});
+  }
+  function queueSync(delay=1500){clearTimeout(syncTimer);if(client&&!clientLink)syncTimer=setTimeout(sync,delay)}
+  function cloudError(e){
+    const code=e.code||'',msg=String(e.message||'');
+    if(['42P01','PGRST202','PGRST205'].includes(code))return 'Duhet aktivizuar databaza: hap udhëzimet te Ruajtja.';
+    if(code==='42501')return 'Nuk ka leje për ruajtje. Kontrollo llogarinë dhe konfigurimin SQL.';
+    if(/Invalid login credentials|Email not confirmed/i.test(msg))return 'Hyrja nuk u pranua. Duhet llogaria e aplikacionit e krijuar te Authentication → Users.';
+    if(/snapshot exceeds/.test(msg))return 'Kopja kalon 32 MB. Online nuk u ruajt; shkarko backup dhe kërko zgjerimin për fotot.';
+    return 'Online nuk u konfirmua. Të dhënat mbeten në pajisje; do të riprovoj.';
+  }
+  function setConflict(row){conflict=row;cloudMessage='⚠ Ka dy kopje të ndryshme — zgjidh te Ruajtja';panelMessage='Nuk u mbishkrua asnjë kopje. Mund ta shkarkosh secilën para se të zgjedhësh.';renderStatus()}
+  async function sync(){
+    if(!ready||!client||cloudBusy||clientLink||conflict)return;
+    if(!navigator.onLine){cloudMessage='Pa internet — në pritje për online';renderStatus();return}
+    saveDrafts();cloudBusy=true;cloudMessage='Po kontrollohet online…';renderStatus();
+    try{
+      const auth=await client.auth.getUser();if(auth.error||!auth.data?.user){user=null;cloudMessage='Online joaktiv — hyr në llogarinë e aplikacionit';return}
+      user=auth.data.user;const owner=config.url+'|'+user.id;
+      if(meta.owner&&meta.owner!==owner){cloudMessage='Ndalohet lidhja me llogari tjetër: të dhënat janë të llogarisë së parë.';return}
+      meta.owner=owner;
+      const read=await client.from('iliri_snapshots_v1').select('revision,mutation_id,payload,updated_at').eq('user_id',user.id).maybeSingle();if(read.error)throw read.error;
+      const row=read.data;
+      if(row){
+        validSnapshot(row.payload);
+        if(row.mutation_id===snapshot.mutationId){meta.baseRevision=Number(row.revision);meta.dirty=false;meta.syncedAt=row.updated_at;await writeLocal()}
+        else if(Number(row.revision)!==meta.baseRevision){
+          if((meta.baseRevision===null&&useful(snapshot))||(meta.baseRevision!==null&&meta.dirty)){setConflict(row);return}
+          const before=snapshot.mutationId;
+          if(!await durablePut('before-cloud-pull',backupSnapshot()))throw Error('Local recovery copy failed');
+          if(snapshot.mutationId!==before){setConflict(row);return}
+          applySnapshot(row.payload);meta.baseRevision=Number(row.revision);meta.dirty=false;meta.syncedAt=row.updated_at;repaint();await writeLocal();
+        }
+      }else if(meta.baseRevision>0){cloudMessage='⚠ Kopja online mungon. Nuk u krijua kopje e re automatikisht.';return}
+      if(meta.dirty&&(useful(snapshot)||meta.baseRevision>0)){
+        const sent=clone(snapshot),expected=meta.baseRevision||0;
+        cloudMessage='Po ruhet online…';renderStatus();
+        const result=await client.rpc('iliri_save_snapshot_v1',{p_expected_revision:expected,p_mutation_id:sent.mutationId,p_payload:sent});
+        if(result.error)throw result.error;
+        if(result.data?.conflict){cloudMessage='Kopja online ndryshoi; po rikontrollohet.';queueSync(100);return}
+        if(!Number.isSafeInteger(Number(result.data?.revision))||Number(result.data.revision)<=0)throw Error('Invalid acknowledgement');
+        meta.baseRevision=Number(result.data.revision);meta.syncedAt=result.data.updated_at;meta.dirty=snapshot.mutationId!==sent.mutationId;await writeLocal();
+      }
+      retryMs=3000;panelMessage='';cloudMessage=meta.dirty?'Ndryshime në pritje për online':meta.baseRevision?'Ruajtur online ✓ '+new Date(meta.syncedAt).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'}):'Lidhur — ende pa të dhëna online';
+      if(meta.dirty&&useful(snapshot))queueSync();
+    }catch(e){cloudMessage=cloudError(e);queueSync(retryMs);retryMs=Math.min(retryMs*2,60000)}finally{cloudBusy=false;renderStatus()}
+  }
+  async function chooseConflict(which){
+    if(!conflict||cloudBusy)return;
+    const row=conflict;
+    if(which==='download'){download(validSnapshot(row.payload),'ILIRI_Kopja_online_'+today()+'.json');return}
+    if(!confirm(which==='online'?'Të zëvendësoj të dhënat e kësaj pajisjeje me kopjen online? Kopja aktuale ruhet për rikthim.':'Të zëvendësoj kopjen online me të dhënat e kësaj pajisjeje? Versioni i mëparshëm ruhet online.'))return;
+    if(!await durablePut('before-restore',backupSnapshot())){panelMessage='Kopja mbrojtëse dështoi. Ruaj backup dhe liro hapësirë.';renderStatus();return}
+    if(which==='online'){applySnapshot(row.payload);meta.dirty=false;meta.syncedAt=row.updated_at;repaint()}
+    else {snapshot.savedAt=Date.now();snapshot.mutationId=uuid();meta.dirty=true}
+    meta.baseRevision=Number(row.revision);conflict=null;panelMessage='';await writeLocal();queueSync(10);renderStatus();
+  }
+  function installUI(){
+    const banner=document.createElement('div');banner.id='iliriStorageBar';banner.className='wrap';
+    banner.innerHTML='<div class="card" style="padding:9px 12px;display:flex;align-items:center;gap:8px"><span id="iliriStorageStatus" role="status" aria-live="polite" style="font-size:12px;flex:1"></span><button type="button" id="iliriCloudOpen" class="secondary" style="padding:8px">☁️ Ruajtja</button></div>';
+    document.querySelector('header').after(banner);
+    const box=document.createElement('div');box.id='iliriCloudPanel';box.className='hidden';box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');box.setAttribute('aria-label','Ruajtja e të dhënave');
+    box.style.cssText='position:fixed;inset:0;z-index:1000002;background:#f4f5f7;overflow:auto;padding:16px;';
+    box.innerHTML=`<div class="card" style="max-width:680px;margin:auto"><button type="button" id="iliriCloudClose">Kthehu</button><h2>Ruajtja e të dhënave</h2>
+      <p>Fushat dhe shënimet ruhen vetë në këtë pajisje. Butonat “Ruaj projektin/orët/…” e përfundojnë regjistrimin në listë. Mbaje edhe një backup jashtë telefonit.</p>
+      <p id="iliriCloudMessage" role="status" style="font-weight:bold"></p><p id="iliriCloudUser"></p>
+      <div id="iliriCloudConflict" class="hidden"><p>U gjetën dy kopje. Nuk bashkohen automatikisht.</p><div class="row"><button id="iliriCloudCopy">Shkarko kopjen online</button><button id="iliriLocalCopy">Shkarko këtë kopje</button></div><div class="row" style="margin-top:8px"><button id="iliriUseRemote" class="secondary">Përdor kopjen online</button><button id="iliriUseLocal" class="secondary">Përdor këtë kopje online</button></div></div>
+      <details><summary>Aktivizo Supabase (vetëm një herë)</summary><p>1. Në projektin tënd Supabase, ekzekuto kodin SQL më poshtë në SQL Editor. Mos e ekzekuto mbi një konfigurim ekzistues pa e kontrolluar.</p><button id="iliriDownloadSQL" type="button">Shkarko konfigurimin SQL</button><p>2. Krijo llogarinë private të aplikacionit te Authentication → Users. Kjo është e ndryshme nga hyrja jote në panelin Supabase. Mos çaktivizo sigurinë RLS.</p><p>3. Plotëso Project URL dhe çelësin publik. Hyr më poshtë me llogarinë e aplikacionit. Mos vendos kurrë secret/service_role në këtë faqe.</p><p>Ruajtja përdor një kopje të plotë, deri në 32 MB, dhe pesë versione të mëparshme. Me shumë foto duhet zgjeruar ruajtja. Varet nga hapësira dhe funksionimi i Supabase; nuk është garanci “përgjithmonë”.</p></details>
+      <form id="iliriCloudForm"><label for="iliriCloudURL">Project URL</label><input id="iliriCloudURL" type="url" placeholder="https://projekti.supabase.co" required autocomplete="off"><label for="iliriCloudKey">Publishable / anon key (publik)</label><input id="iliriCloudKey" type="text" required autocomplete="off" autocapitalize="none" spellcheck="false"><label for="iliriCloudEmail">Email i llogarisë së aplikacionit</label><input id="iliriCloudEmail" type="email" required autocomplete="username"><label for="iliriCloudPassword">Fjalëkalimi i aplikacionit</label><input id="iliriCloudPassword" type="password" required autocomplete="current-password"><button type="submit" id="iliriCloudLogin" style="margin-top:12px">Hyr dhe aktivizo ruajtjen online</button></form>
+      <div class="row" style="margin-top:12px"><button id="iliriCloudRetry" type="button" class="secondary">Kontrollo online tani</button><button id="iliriCloudSignOut" type="button" class="secondary hidden">Dil nga ruajtja online</button></div><button id="iliriRecovery" type="button" class="secondary" style="margin-top:12px">Shkarko kopjen para rikthimit</button><p class="small-note">Pas daljes, kopja lokale mbetet në këtë pajisje. Mos e përdor në pajisje publike. Fjalëkalimi nuk përfshihet në backup.</p></div>`;
+    document.body.append(box);
+    $('iliriCloudOpen').onclick=()=>{box.classList.remove('hidden');renderStatus()};
+    $('iliriCloudClose').onclick=()=>{box.classList.add('hidden');$('iliriCloudPassword').value=''};
+    $('iliriCloudCopy').onclick=()=>chooseConflict('download');$('iliriLocalCopy').onclick=exportAll;
+    $('iliriUseRemote').onclick=()=>chooseConflict('online');$('iliriUseLocal').onclick=()=>chooseConflict('local');
+    $('iliriDownloadSQL').onclick=()=>download($('iliriSupabaseSQL').textContent,'ILIRI_SUPABASE_SETUP.sql');
+    $('iliriRecovery').onclick=async()=>{const s=await durableGet('before-restore')||await durableGet('before-cloud-pull');if(s)download(s,'ILIRI_Para_rikthimit_'+today()+'.json');else{panelMessage='Nuk ka ende kopje para rikthimit.';renderStatus()}};
+    const old=json(safeLocalGet(CONFIG_KEY));$('iliriCloudURL').value=old?.url||'';$('iliriCloudKey').value=old?.key||'sb_publishable_i2GBw8vT5HFAGHxI4m8fUQ_e5tTMOEg';
+    $('iliriCloudForm').onsubmit=async e=>{
+      e.preventDefault();const button=$('iliriCloudLogin');if(button.disabled)return;button.disabled=true;
+      try{
+        const c=validConfig($('iliriCloudURL').value.trim(),$('iliriCloudKey').value.trim());
+        if(meta.owner&&!meta.owner.startsWith(c.url+'|'))throw Error('Të dhënat janë të një projekti tjetër. Lidh projektin e parë.');
+        await connect(c);
+        const {error}=await client.auth.signInWithPassword({email:$('iliriCloudEmail').value.trim(),password:$('iliriCloudPassword').value});
+        $('iliriCloudPassword').value='';if(error)throw error;
+        safeLocalSet(CONFIG_KEY,JSON.stringify(c));panelMessage='';await sync();
+      }catch(e){panelMessage=e.message&&(!e.status&&!e.code)?e.message:cloudError(e);renderStatus()}finally{button.disabled=false;$('iliriCloudPassword').value=''}
+    };
+    $('iliriCloudRetry').onclick=()=>{panelMessage='';if(!client){panelMessage='Plotëso lidhjen dhe hyr më parë.';renderStatus()}else sync()};
+    $('iliriCloudSignOut').onclick=async()=>{if(cloudBusy)return;const {error}=await client.auth.signOut({scope:'local'});if(error){panelMessage=cloudError(error);renderStatus();return}user=null;cloudMessage='Online joaktiv — ke dalë';renderStatus()};
+    renderStatus();
+  }
+  async function start(){
+    if(clientLink)return;
+    installUI();
+    document.addEventListener('click',e=>{if(!e.target.closest('#iliriCloudPanel'))queueMicrotask(()=>saveDrafts())});
+    window.addEventListener('online',()=>queueSync(50));window.addEventListener('offline',()=>{cloudMessage='Pa internet — në pritje për online';renderStatus()});
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')queueSync(50)});
+    setInterval(()=>{if(document.visibilityState==='visible')queueSync(10)},30000);
+    const saved=json(safeLocalGet(CONFIG_KEY));if(saved){try{await connect(validConfig(saved.url,saved.key));queueSync(10)}catch(e){panelMessage=cloudError(e);renderStatus()}}
+  }
+  return {initLocal,start,initialized,saveData,saveDrafts,restoreDrafts:()=>applyDrafts(),backupSnapshot,exportAll,importAll,readExtra,setExtra,sync,
+    // Testable pure validation and state inspection; does not expose credentials.
+    validSnapshot,validConfig,flush:()=>localQueue,inspect:()=>({snapshot:clone(snapshot),meta:clone(meta),localMessage,cloudMessage})};
+})();
+window.iliriReady=IliriStore.initialized;
+
+function persistAll(){IliriStore.saveData()}
+function persistFormDrafts(){return IliriStore.saveDrafts()}
+function scheduleDraftSave(e){return IliriStore.saveDrafts(e)}
+function restoreDurable(){return IliriStore.initLocal()}
+function restoreFormDrafts(){return IliriStore.restoreDrafts()}
+function appSnapshot(){return IliriStore.backupSnapshot()}
+function namedLocalStorage(){return IliriStore.backupSnapshot().namedStorage}
+async function requestPersistentStorage(){try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}}
 function tr(k){return (I18N[currentLang]&&I18N[currentLang][k])||I18N.sq[k]||k}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function uid(){return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)}
 function today(){const d=new Date();const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}
 function statusText(s){return s==='done'?tr('done'):s==='waiting'?tr('waiting'):tr('active')}
-function projectHours(id){return hours.filter(h=>h.projectId===id).reduce((a,b)=>a+Number(b.total||0),0)}
+function projectHours(id){return hours.filter(h=>h.projectId===id).reduce((a,b)=>a+hourTotal(b),0)}
 function projectMaterials(id){return materials.filter(m=>m.projectId===id).reduce((a,b)=>a+Number(m.cost||0),0)}
 
 function showView(id){['homeView','projectFormView','projectsView','clientsView','hoursView','materialsView','offersView','offerFormView','invoicesView','invoiceFormView','photosView','measureView','reportsView','voiceView','acceptedDocsView'].forEach(v=>{const el=$(v);if(el)el.classList.toggle('hidden',v!==id)});if(id==='projectsView')renderProjects();if(id==='clientsView')renderClients();if(id==='hoursView')renderHours();if(id==='materialsView')renderMaterials();if(id==='offersView')renderOffers();if(id==='invoicesView')renderInvoices();if(id==='photosView')renderPhotos();if(id==='measureView')renderMeasureHistory();if(id==='reportsView')renderReportsView();if(id==='acceptedDocsView')renderAcceptedDocs();window.scrollTo(0,0)}
 function newProject(){clearProjectForm();showView('projectFormView')}
 function clearProjectForm(){$('deleteCurrentProjectBtn').classList.add('hidden');['projectId','projectName','projectNumber','clientName','phone','address','price','notes'].forEach(id=>$(id).value='');$('type').value='';$('status').value='active';$('projectFormTitle').textContent=tr('newProjectTitle')}
-function saveProject(){const id=$('projectId').value;const p={id:id||uid(),projectName:$('projectName').value.trim(),projectNumber:$('projectNumber').value.trim(),clientName:$('clientName').value.trim(),phone:$('phone').value.trim(),address:$('address').value.trim(),type:$('type').value,status:$('status').value,price:Number($('price').value||0),notes:$('notes').value.trim(),updatedAt:new Date().toISOString()};if(!p.projectName){$('projectName').focus();return}if(!p.projectNumber)p.projectNumber=String(projects.length+1).padStart(3,'0');const i=projects.findIndex(x=>x.id===p.id);if(i>=0)projects[i]=p;else projects.push(p);persistAll();refreshProjectSelectors();renderHome();showView('projectsView')}
+function saveProject(){const id=$('projectId').value;const p={id:id||uid(),projectName:$('projectName').value.trim(),projectNumber:$('projectNumber').value.trim(),clientName:$('clientName').value.trim(),phone:$('phone').value.trim(),address:$('address').value.trim(),type:$('type').value,status:$('status').value,price:Number($('price').value||0),notes:$('notes').value.trim(),updatedAt:new Date().toISOString()};if(!p.projectName){$('projectName').focus();return}if(!p.projectNumber)p.projectNumber=String(projects.length+1).padStart(3,'0');const i=projects.findIndex(x=>x.id===p.id);if(i>=0)projects[i]=p;else projects.push(p);$('projectId').value=p.id;persistAll();refreshProjectSelectors();renderHome();showView('projectsView')}
 function deleteProject(id){if(!confirm(tr('deleteConfirm')))return;projects=projects.filter(p=>p.id!==id);hours=hours.filter(h=>h.projectId!==id);materials=materials.filter(m=>m.projectId!==id);persistAll();refreshProjectSelectors();renderHome();renderProjects();renderClients()}
 function editProject(id){const p=projects.find(x=>x.id===id);if(!p)return;$('deleteCurrentProjectBtn').classList.remove('hidden');$('projectId').value=p.id;$('projectName').value=p.projectName||'';$('projectNumber').value=p.projectNumber||'';$('clientName').value=p.clientName||'';$('phone').value=p.phone||'';$('address').value=p.address||'';$('type').value=p.type||'';$('status').value=p.status||'active';$('price').value=p.price||'';$('notes').value=p.notes||'';$('projectFormTitle').textContent=tr('editProject');showView('projectFormView')}
 function toggleDetail(id){const el=$('detail-'+id);if(el)el.classList.toggle('hidden')}
 function renderProjects(){const q=$('projectSearch').value.toLowerCase();const list=[...projects].sort((a,b)=>(a.projectNumber||'').localeCompare(b.projectNumber||'',undefined,{numeric:true})).filter(p=>[p.projectName,p.projectNumber,p.clientName].join(' ').toLowerCase().includes(q));$('projectsList').innerHTML=list.length?list.map(p=>`<div class="item clickable" data-detail="${esc(p.id)}"><h3>${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</h3><div class="meta">${tr('client')}: ${esc(p.clientName||'')} ${p.phone?'• '+esc(p.phone):''}</div><span class="badge">${statusText(p.status)}</span><div id="detail-${esc(p.id)}" class="detail hidden"><div class="meta"><b>${tr('address')}:</b> ${esc(p.address||'-')}<br><b>${tr('workType')}:</b> ${esc(p.type||'-')}<br><b>${tr('hours')}:</b> ${projectHours(p.id).toFixed(1)}<br><b>${tr('materials')}:</b> ${projectMaterials(p.id).toLocaleString('sv-SE')} kr<br><b>${tr('offer')}:</b> ${Number(p.price||0).toLocaleString('sv-SE')} kr<br><b>${tr('notes')}:</b> ${esc(p.notes||'-')}</div><div class="row" style="margin-top:10px"><button class="editProjectBtn" data-id="${esc(p.id)}" type="button">${tr('edit')}</button><button class="danger deleteProjectBtn" data-id="${esc(p.id)}" type="button">${tr('deleteProject')}</button></div></div></div>`).join(''):`<div class="empty">${tr('noProjects')}</div>`;document.querySelectorAll('[data-detail]').forEach(el=>el.addEventListener('click',e=>{if(e.target.closest('.editProjectBtn')||e.target.closest('.deleteProjectBtn'))return;toggleDetail(el.dataset.detail)}));document.querySelectorAll('.editProjectBtn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();editProject(b.dataset.id)}));document.querySelectorAll('.deleteProjectBtn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();deleteProject(b.dataset.id)}))}
 function renderClients(){const q=$('clientSearch').value.toLowerCase();const map={};projects.forEach(p=>{const n=(p.clientName||'').trim();if(n){if(!map[n])map[n]=[];map[n].push(p)}});const names=Object.keys(map).sort((a,b)=>a.localeCompare(b,currentLang==='sv'?'sv-SE':'sq-AL')).filter(n=>n.toLowerCase().includes(q));$('clientsList').innerHTML=names.length?names.map(n=>`<div class="item"><h3>${esc(n)}</h3>${map[n].sort((a,b)=>(a.projectNumber||'').localeCompare(b.projectNumber||'',undefined,{numeric:true})).map(p=>`<div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')} ${p.phone?'• '+esc(p.phone):''}</div>`).join('')}</div>`).join(''):`<div class="empty">${tr('noClients')}</div>`}
 function calcHours(start,end,br){if(!start||!end)return 0;const [sh,sm]=start.split(':').map(Number),[eh,em]=end.split(':').map(Number);let mins=(eh*60+em)-(sh*60+sm)-Number(br||0);if(mins<0)mins+=1440;return Math.max(0,mins/60)}
-function saveHours(){const projectId=$('hoursProject').value;if(!projectId)return;const start=$('startTime').value,end=$('endTime').value,br=Number($('breakMinutes').value||0);hours.unshift({id:uid(),projectId,date:$('hoursDate').value||today(),start,end,breakMinutes:br,total:calcHours(start,end,br)});persistAll();renderHours();renderHome()}
-function renderHours(){refreshProjectSelectors();const list=[...hours].sort((a,b)=>(b.date||'').localeCompare(a.date||''));$('hoursList').innerHTML=list.length?list.map(h=>{const p=projects.find(x=>x.id===h.projectId)||{};return `<div class="item"><h3>${esc(h.date)} — ${Number(h.total||0).toFixed(1)} ${tr('hoursLower')}</h3><div class="meta">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}<br>${esc(h.start)}–${esc(h.end)} • ${tr('breakLower')} ${Number(h.breakMinutes||0)} min</div></div>`}).join(''):`<div class="empty">${tr('noHours')}</div>`}
+function hourTotal(h){const saved=Number(h&&h.total);return Number.isFinite(saved)&&saved>=0?saved:calcHours(h&&h.start,h&&h.end,Number((h&&h.breakMinutes)??(h&&h.breakMin)??0))}
+function localDate(value){const p=String(value||today()).split('-').map(Number);return new Date(p[0],(p[1]||1)-1,p[2]||1)}
+function renderHoursSummary(){const box=$('hoursSummary');if(!box)return;const ref=$('hoursDate').value||today(),d=localDate(ref),day=(d.getDay()+6)%7,monday=new Date(d);monday.setDate(d.getDate()-day);const sunday=new Date(monday);sunday.setDate(monday.getDate()+6);const iso=x=>`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;const weekStart=iso(monday),weekEnd=iso(sunday),month=ref.slice(0,7);const weekTotal=hours.filter(h=>String(h.date||'')>=weekStart&&String(h.date||'')<=weekEnd).reduce((a,h)=>a+hourTotal(h),0);const monthTotal=hours.filter(h=>String(h.date||'').slice(0,7)===month).reduce((a,h)=>a+hourTotal(h),0);const weekLabel=currentLang==='sv'?'Denna vecka':'Kjo javë',monthLabel=currentLang==='sv'?'Denna månad':'Ky muaj';box.innerHTML=`<div class="stat"><b>${weekTotal.toFixed(1)}</b><span>${weekLabel}</span></div><div class="stat"><b>${monthTotal.toFixed(1)}</b><span>${monthLabel}</span></div>`}
+function saveHours(){const projectId=$('hoursProject').value||'';const start=$('startTime').value,end=$('endTime').value,br=Math.max(0,Number($('breakMinutes').value||0)),total=calcHours(start,end,br);if(!start||!end||total<=0){$('hoursSaveStatus').textContent=currentLang==='sv'?'Kontrollera start- och sluttiden.':'Kontrollo orën e fillimit dhe mbarimit.';return}const entry={id:uid(),projectId,date:$('hoursDate').value||today(),start,end,breakMinutes:br,total,note:$('hoursNote').value.trim(),createdAt:new Date().toISOString()};hours.unshift(entry);persistAll();$('hoursNote').value='';persistFormDrafts();$('hoursSaveStatus').textContent=currentLang==='sv'?'Sparat ✅':'U ruajtën ✅';renderHours();renderHome()}
+function renderHours(){refreshProjectSelectors();renderHoursSummary();const list=[...hours].sort((a,b)=>(b.date||'').localeCompare(a.date||''));$('hoursList').innerHTML=list.length?list.map(h=>{const p=projects.find(x=>x.id===h.projectId)||{};const projectName=p.id?`${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}`:(currentLang==='sv'?'Utan projekt':'Pa projekt');const br=Number(h.breakMinutes??h.breakMin??0);return `<div class="item"><h3>${esc(h.date)} — ${hourTotal(h).toFixed(1)} ${tr('hoursLower')}</h3><div class="meta">${projectName}<br>${esc(h.start||'')}–${esc(h.end||'')} • ${tr('breakLower')} ${br} min${h.note?'<br><b>'+(currentLang==='sv'?'Anteckning':'Shënim')+':</b> '+esc(h.note):''}</div></div>`}).join(''):`<div class="empty">${tr('noHours')}</div>`}
 function saveMaterial(){const projectId=$('materialProject').value;if(!projectId)return;materials.unshift({id:uid(),projectId,date:$('materialDate').value||today(),name:$('materialName').value.trim(),cost:Number($('materialCost').value||0),note:$('materialNote').value.trim()});persistAll();$('materialName').value='';$('materialCost').value='';$('materialNote').value='';renderMaterials();renderHome()}
 function renderMaterials(){refreshProjectSelectors();$('materialsList').innerHTML=materials.length?materials.map(m=>{const p=projects.find(x=>x.id===m.projectId)||{};return `<div class="item"><h3>${esc(m.name||tr('material'))} — ${Number(m.cost||0).toLocaleString('sv-SE')} kr</h3><div class="meta">${esc(m.date)} • ${esc(p.projectNumber||'')} — ${esc(p.projectName||'')} ${m.note?'<br>'+esc(m.note):''}</div></div>`}).join(''):`<div class="empty">${tr('noMaterials')}</div>`}
-function refreshProjectSelectors(){const opts=projects.map(p=>`<option value="${esc(p.id)}">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</option>`).join('');['hoursProject','materialProject','photoProject','measureProject','voiceProject'].forEach(id=>{if($(id))$(id).innerHTML=opts})}
-function renderHome(){$('countProjects').textContent=projects.length;$('countClients').textContent=new Set(projects.map(p=>(p.clientName||'').trim()).filter(Boolean)).size;$('countHours').textContent=hours.reduce((a,b)=>a+Number(b.total||0),0).toFixed(1)}
-function normalizeOfferStatus(s){return s==='unpaid'?'accepted':s==='paid'?'rejected':(s||'unsent')}
-function offerStatusText(s){s=normalizeOfferStatus(s);return s==='unsent'?tr('offerUnsent'):s==='sent'?tr('offerSent'):s==='accepted'?tr('offerUnpaid'):tr('offerPaid')}
+function refreshProjectSelectors(){const opts=projects.map(p=>`<option value="${esc(p.id)}">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</option>`).join('');['hoursProject','materialProject','photoProject','measureProject','voiceProject'].forEach(id=>{if($(id)){const previous=$(id).value;$(id).innerHTML=(id==='hoursProject'?`<option value="">${currentLang==='sv'?'Utan projekt':'Pa projekt'}</option>`:'')+opts;if([...$(id).options].some(o=>o.value===previous))$(id).value=previous}})}
+function renderHome(){$('countProjects').textContent=projects.length;$('countClients').textContent=new Set(projects.map(p=>(p.clientName||'').trim()).filter(Boolean)).size;$('countHours').textContent=hours.reduce((a,b)=>a+hourTotal(b),0).toFixed(1)}
+function normalizeOfferStatus(s){return s==='accepted'?'unpaid':(s||'unsent')}
+function offerStatusText(s){s=normalizeOfferStatus(s);return s==='unsent'?tr('offerUnsent'):s==='sent'?tr('offerSent'):s==='unpaid'?tr('offerUnpaid'):tr('offerPaid')}
 function nextOfferNumber(){const y=new Date().getFullYear();const nums=offers.map(o=>String(o.number||'')).filter(n=>n.startsWith(y+'-')).map(n=>parseInt(n.split('-').pop(),10)).filter(Number.isFinite);const next=(nums.length?Math.max(...nums):0)+1;return `${y}-${String(next).padStart(3,'0')}`}
-function addOfferLine(kind,data={}){const box=$(kind==='work'?'workLines':'materialLines');const row=document.createElement('div');row.className='offer-line '+(kind==='material'?'material-line':'');row.dataset.kind=kind;if(kind==='work'){const workTypes=currentLang==='sv'?['Målning av väggar','Målning av tak','Målning av snickerier','Målning av dörrar','Målning av karmar och foder','Målning av fönster','Målning av element','Målning av köksluckor','Fasadmålning','Målning av träpanel','Målning av betong','Målning av metall','Bredspackling','Skarvspackling','Lagning och spackling','Slipning','Grundmålning','Tapetsering','Tapetborttagning','Fogning','Sprutmålning','Lackering','Dekorationsmålning','Skrapning av färg','Målartvätt / rengöring','Maskering och täckning','Förarbete','Annat måleriarbete']:['Lyerje muresh','Lyerje tavani','Lyerje druri / snickeri','Lyerje dyersh','Lyerje kornizash dhe listelash','Lyerje dritaresh','Lyerje radiatorësh','Lyerje dyersh kuzhine','Lyerje fasade','Lyerje paneli druri','Lyerje betoni','Lyerje metali','Spatulim i plotë','Spatulim fugash','Riparim dhe spatulim','Lëmim / smerilim','Astar / grundim','Vendosje tapete','Heqje tapete','Fugim','Lyerje me sprucim','Llakim','Lyerje dekorative','Gërryerje boje','Larje / pastrim para lyerjes','Maskim dhe mbulim','Punë përgatitore','Punë tjetër molerie'];const selected=data.description||'';row.innerHTML=`<input class="desc" list="iliriWorkTypes" placeholder="${esc(tr('chooseWork'))}" value="${esc(selected)}"><datalist id="iliriWorkTypes">${workTypes.map(x=>`<option value="${esc(x)}"></option>`).join('')}</datalist><input class="qty" type="number" min="0" step="0.5" placeholder="${esc(tr('hoursLower'))}" value="${esc(data.qty??'')}"><input class="unitPrice" type="number" min="0" step="1" placeholder="kr/${esc(tr('hoursLower'))}" value="${esc(data.unitPrice??'')}"><button class="danger removeLine" type="button">×</button>`;}else row.innerHTML=`<input class="desc" placeholder="${esc(tr('material'))}" value="${esc(data.description||'')}"><input class="qty" type="number" min="0" step="1" placeholder="${esc(tr('quantity'))}" value="${esc(data.qty??'')}"><input class="unitPrice" type="number" min="0" step="1" placeholder="kr" value="${esc(data.unitPrice??'')}"><button class="danger removeLine" type="button">×</button>`;box.appendChild(row);row.querySelectorAll('input').forEach(x=>x.addEventListener('input',calcOffer));const desc=row.querySelector('.desc');if(desc&&desc.tagName==='SELECT')desc.addEventListener('change',calcOffer);row.querySelector('.removeLine').addEventListener('click',()=>{row.remove();calcOffer()});calcOffer()}
+function addOfferLine(kind,data={}){const box=$(kind==='work'?'workLines':'materialLines');const row=document.createElement('div');row.className='offer-line '+(kind==='material'?'material-line':'');row.dataset.kind=kind;if(kind==='work')row.innerHTML=`<input class="desc" placeholder="${esc(tr('description'))}" value="${esc(data.description||'')}"><input class="qty" type="number" min="0" step="0.5" placeholder="${esc(tr('hoursLower'))}" value="${esc(data.qty??'')}"><input class="unitPrice" type="number" min="0" step="1" placeholder="kr/${esc(tr('hoursLower'))}" value="${esc(data.unitPrice??'')}"><button class="danger removeLine" type="button">×</button>`;else row.innerHTML=`<input class="desc" placeholder="${esc(tr('material'))}" value="${esc(data.description||'')}"><input class="qty" type="number" min="0" step="1" placeholder="${esc(tr('quantity'))}" value="${esc(data.qty??'')}"><input class="unitPrice" type="number" min="0" step="1" placeholder="kr" value="${esc(data.unitPrice??'')}"><button class="danger removeLine" type="button">×</button>`;box.appendChild(row);row.querySelectorAll('input').forEach(x=>x.addEventListener('input',calcOffer));row.querySelector('.removeLine').addEventListener('click',()=>{row.remove();calcOffer()});calcOffer()}
 function collectOfferLines(kind){return [...$(kind==='work'?'workLines':'materialLines').querySelectorAll('.offer-line')].map(r=>({description:r.querySelector('.desc').value.trim(),qty:Number(r.querySelector('.qty').value||0),unitPrice:Number(r.querySelector('.unitPrice').value||0)})).filter(x=>x.description||x.qty||x.unitPrice)}
 function calcOffer(){const lines=[...collectOfferLines('work'),...collectOfferLines('material')];const subtotal=lines.reduce((a,x)=>a+x.qty*x.unitPrice,0);const vatPct=Number($('offerVat').value||0);const vat=subtotal*vatPct/100;const fmt=n=>Number(n).toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';$('offerSubtotal').textContent=fmt(subtotal);$('offerVatAmount').textContent=fmt(vat);$('offerTotal').textContent=fmt(subtotal+vat);return{subtotal,vat,total:subtotal+vat}}
 function clearOfferForm(){$('offerId').value='';$('offerNumber').value=nextOfferNumber();$('offerDate').value=today();$('offerClient').value='';$('offerPhone').value='';$('offerAddress').value='';$('offerStatus').value='unsent';$('offerVat').value='25';$('offerNotes').value='';$('workLines').innerHTML='';$('materialLines').innerHTML='';addOfferLine('work');addOfferLine('material');$('deleteOfferBtn').classList.add('hidden');$('offerFormTitle').textContent=tr('newOfferTitle');calcOffer()}
 function newOffer(){clearOfferForm();showView('offerFormView')}
-function saveOffer(){const id=$('offerId').value;const totals=calcOffer();const prev=id?offers.find(x=>x.id===id):null;const status=normalizeOfferStatus($('offerStatus').value);const o={...prev,id:id||uid(),number:$('offerNumber').value.trim()||nextOfferNumber(),date:$('offerDate').value||today(),client:$('offerClient').value.trim(),phone:$('offerPhone').value.trim(),address:$('offerAddress').value.trim(),status,work:collectOfferLines('work'),materials:collectOfferLines('material'),vatPct:Number($('offerVat').value||0),notes:$('offerNotes').value.trim(),...totals,savedAt:prev?.savedAt||null,sentAt:prev?.sentAt||null,updatedAt:new Date().toISOString()};if(status==='sent'&&!o.sentAt)o.sentAt=new Date().toISOString();if(!o.client){$('offerClient').focus();return}const i=offers.findIndex(x=>x.id===o.id);if(i>=0)offers[i]=o;else offers.unshift(o);persistAll();showView('offersView');setTimeout(()=>printOffer(o.id),50)}
+function saveOffer(){const id=$('offerId').value;const totals=calcOffer();const prev=id?offers.find(x=>x.id===id):null;const status=normalizeOfferStatus($('offerStatus').value);const o={...prev,id:id||uid(),number:$('offerNumber').value.trim()||nextOfferNumber(),date:$('offerDate').value||today(),client:$('offerClient').value.trim(),phone:$('offerPhone').value.trim(),address:$('offerAddress').value.trim(),status,work:collectOfferLines('work'),materials:collectOfferLines('material'),vatPct:Number($('offerVat').value||0),notes:$('offerNotes').value.trim(),...totals,savedAt:prev?.savedAt||null,sentAt:prev?.sentAt||null,updatedAt:new Date().toISOString()};if(status==='sent'&&!o.sentAt)o.sentAt=new Date().toISOString();if(!o.client){$('offerClient').focus();return}const i=offers.findIndex(x=>x.id===o.id);if(i>=0)offers[i]=o;else offers.unshift(o);$('offerId').value=o.id;persistAll();showView('offersView');setTimeout(()=>printOffer(o.id),50)}
 function editOffer(id){const o=offers.find(x=>x.id===id);if(!o)return;$('offerId').value=o.id;$('offerNumber').value=o.number||'';$('offerDate').value=o.date||today();$('offerClient').value=o.client||'';$('offerPhone').value=o.phone||'';$('offerAddress').value=o.address||'';$('offerStatus').value=normalizeOfferStatus(o.status);$('offerVat').value=o.vatPct??25;$('offerNotes').value=o.notes||'';$('workLines').innerHTML='';$('materialLines').innerHTML='';(o.work||[]).forEach(x=>addOfferLine('work',x));(o.materials||[]).forEach(x=>addOfferLine('material',x));if(!(o.work||[]).length)addOfferLine('work');if(!(o.materials||[]).length)addOfferLine('material');$('deleteOfferBtn').classList.remove('hidden');$('offerFormTitle').textContent=tr('editOffer');calcOffer();showView('offerFormView')}
 function deleteOffer(id){if(!confirm(tr('deleteOfferConfirm')))return;offers=offers.filter(o=>o.id!==id);persistAll();showView('offersView')}
 function renderOffers(){
  const sorted=[...offers].sort((a,b)=>{const da=String(a.date||''),db=String(b.date||'');if(db!==da)return db.localeCompare(da);return String(b.number||'').localeCompare(String(a.number||''));});
- const counts={unsent:0,sent:0,accepted:0,rejected:0};
+ const counts={unsent:0,sent:0,unpaid:0,paid:0};
  sorted.forEach(o=>{const st=normalizeOfferStatus(o.status);if(counts[st]!==undefined)counts[st]++});
- const labels={unsent:tr('offerUnsent'),sent:tr('offerSent'),accepted:tr('offerUnpaid'),rejected:tr('offerPaid')};
- [['filterUnsent','unsent'],['filterSent','sent'],['filterUnpaid','accepted'],['filterPaid','rejected']].forEach(([id,st])=>{const b=$(id);if(b){b.textContent=`${labels[st]} (${counts[st]})`;b.classList.toggle('active',offerFilter===st)}});
+ const labels={unsent:tr('offerUnsent'),sent:tr('offerSent'),unpaid:tr('offerUnpaid'),paid:tr('offerPaid')};
+ [['filterUnsent','unsent'],['filterSent','sent'],['filterUnpaid','unpaid'],['filterPaid','paid']].forEach(([id,st])=>{const b=$(id);if(b){b.textContent=`${labels[st]} (${counts[st]})`;b.classList.toggle('active',offerFilter===st)}});
  if($('filterAll')){$('filterAll').textContent=`${currentLang==='sv'?'Alla offerter':'Të gjitha ofertat'} (${sorted.length})`;$('filterAll').classList.toggle('active',offerFilter==='all')}
  const list=sorted.filter(o=>offerFilter==='all'||normalizeOfferStatus(o.status)===offerFilter);
  $('offersList').innerHTML=list.length?list.map((o,idx)=>`<div class="item"><div class="section-title"><h3>${idx+1}. ${esc(o.number||'')} — ${esc(o.client||'')}</h3><div><span class="badge offer-status">${offerStatusText(o.status)}</span>${o.savedAt?`<span class="saved-badge">${tr('offerSaved')}</span>`:''}</div></div><div class="meta">${esc(o.date||'')} ${o.address?'• '+esc(o.address):''}<br><b>${tr('total')}:</b> ${Number(o.total||0).toLocaleString('sv-SE',{maximumFractionDigits:2})} kr${o.sentAt?`<br><small>${currentLang==='sv'?'Skickad':'Dërguar'}: ${new Date(o.sentAt).toLocaleString('sv-SE')}</small>`:''}${o.savedAt?`<br><small>${currentLang==='sv'?'Sparad':'Ruajtur'}: ${new Date(o.savedAt).toLocaleString('sv-SE')}</small>`:''}</div><div class="row" style="margin-top:10px;grid-template-columns:1fr 1fr 1fr"><button class="editOfferBtn" data-id="${esc(o.id)}" type="button">${tr('edit')}</button><button class="pdfOfferBtn secondary" data-id="${esc(o.id)}" type="button">👁️ ${currentLang==='sv'?'Visa':'Shiko'}</button><button class="danger deleteOfferListBtn" data-id="${esc(o.id)}" type="button">${tr('deleteProject')}</button></div></div>`).join(''):`<div class="empty">${tr('noOffers')}</div>`;
@@ -413,203 +757,10 @@ function renderAcceptedDocs(){
       <button type="button" class="secondary" onclick="currentPdfOfferId='${esc(o.id)}';window.__iliriCurrentOfferId='${esc(o.id)}';buildOfferPdf('sv','download')">💾 PDF Suedisht</button>
     </div>
   </div>`).join(''):`<div class="empty">Nuk ka ende dokumenta të firmosura.</div>`;
-  const signedInvoices=invoices.filter(o=>o.accepted||o.signature||o.status==='accepted');
-  if(signedInvoices.length){
-    if(!list.length)el.innerHTML='';
-    const title=document.createElement('h3');title.textContent='Faturat e pranuara';el.appendChild(title);
-    signedInvoices.forEach(o=>{
-      const card=document.createElement('div');card.className='item';
-      const heading=document.createElement('h3');heading.textContent=(o.number||'Faturë')+' — '+(o.client||'');card.appendChild(heading);
-      const label=document.createElement('p');label.textContent='✓ E pranuar'+(o.signedBy?' — '+o.signedBy:'')+(o.status==='paid'?' · E paguar':'');card.appendChild(label);
-      const button=document.createElement('button');button.type='button';button.textContent='👁️ Shiko faturën';button.onclick=()=>printInvoice(o.id);card.appendChild(button);el.appendChild(card);
-    });
-  }
 }
 
 
 let currentPdfOfferId=null;
-
-/* Vula dhe firma e ILIA MITRO – ruhen në telefon dhe për çdo ofertë */
-const OWNER_SIG_KEY='iliri_owner_signature_v1';
-const OWNER_SIG_VERSION_KEY='iliri_owner_signature_embedded_version';
-const OWNER_SIG_DEFAULT='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIIAAACQCAYAAADEHbNtAAABY2lDQ1BrQ0dDb2xvclNwYWNlRGlzcGxheVAzAAAokX2QsUvDUBDGv1aloHUQHRwcMolDlJIKuji0FURxCFXB6pS+pqmQxkeSIgU3/4GC/4EKzm4Whzo6OAiik+jm5KTgouV5L4mkInqP435877vjOCA5bnBu9wOoO75bXMorm6UtJfWMBL0gDObxnK6vSv6uP+P9PvTeTstZv///jcGK6TGqn5QZxl0fSKjE+p7PJe8Tj7m0FHFLshXyieRyyOeBZ71YIL4mVljNqBC/EKvlHt3q4brdYNEOcvu06WysyTmUE1jEDjxw2DDQhAId2T/8s4G/gF1yN+FSn4UafOrJkSInmMTLcMAwA5VYQ4ZSk3eO7ncX3U+NtYMnYKEjhLiItZUOcDZHJ2vH2tQ8MDIEXLW54RqB1EeZrFaB11NguASM3lDPtlfNauH26Tww8CjE2ySQOgS6LSE+joToHlPzA3DpfAEDp2ITpJYOWwAAAARjSUNQDA0AAW4D4+8AAAB4ZVhJZk1NACoAAAAIAAUBEgADAAAAAQABAAABGgAFAAAAAQAAAEoBGwAFAAAAAQAAAFIBKAADAAAAAQACAACHaQAEAAAAAQAAAFoAAAAAAAAASAAAAAEAAABIAAAAAQACoAIABAAAAAEAAACCoAMABAAAAAEAAACQAAAAAECg5oMAAAAJcEhZcwAACxMAAAsTAQCanBgAAAAcaURPVAAAAAIAAAAAAAAASAAAACgAAABIAAAASAAADt5yev21AAAOqklEQVR4AeyaabcVxRWGHSARAyIgKiLxcgEVZxkEBWUQRdSogAgoDveiIigSiIgiyKDGJCsxyZfED8laGX5DPuTf5XnO6R2Lps94u4/n3j7vWu+p6qrqqtq7du0a+lxzzXDjWroXjJ7OJrIa/iQSRuHM14BGkMdyEv4N74BF+fnyo+cZqIHrkOkF+F945wyUbyRSFxrQCG6AH8M/wTE4Qo00oPsPPkpcQ/gCjmfpBCPURQOxFziFwJvgeaghjFBDDSxC5rPwJngRjgwBJdQRzyL0Yah3+BIug9fDEWqiATeJ4l24DvrsHuF2GEsG0RHqoIEFCHkJzoNz4SfwZhhGQnSEOmhgLUKeyARdQngcepQcGUKmlLoEEwi6A7oUrIRH4OiKGSXUCX5bcE+wPBP6XkI3jaZrGCPURANLkdNl4WeZvA8RTsLRspAppC7B5mzgnf0O/hb4JhyhZho4iLzboUYgd8M9sI4YyqUw7ZQD5HOaNpWBinq8MPKEsDyrzPS34cbsuW5B6GVo5PZc/xp8EsbtXpmdjLoWU/9XcA4UtuVHp7ugxlcnhE6GSuYn6I0zVf4SjkNRdmfXU+dHjZqbA7+Q+CV4Y5ZWh0CdeqP6Dhwq47dju2Cs0xuIO2u3QfPKxF4qew5ar3wceocgym6rWevw/XpM/gZ6m6onHho4ANvhPhgW6r+FzkCXCjGVQdL9B/za+CCM+jSCMtqI+ocxTOVX7hXwMtT73gKHCt7yaQgxQBqEn4k/hzGDw0hI6hnW6zcF67Ne6/LZr44+R7tEZxzyensVCd0guzdSB0MFz/ZvFfToVtJ+BV028gIVFG+bNEbuh1DXKB6DdVkWwtC9RneP5CnpJIxLNaLDAf9ObgdFdDoGXqt9H3obOB/2A+t0CZjMXvbZ9jSGaC/LmtGBt6per6tvvWO6bPD44yOOdVpsDEwYgr1zFu+H5+A9MMoQ7RpeHLkpFV4rn4fhHUyb6ZiFgN6ivgvVofIPHRwQN3Lpn0Mc7HTANYyHocZwAM6DIi2Xlm/m/vA7QfQ+6FHR2fAArAPUSUwqPeIm6EQ4Ddvpi+wfB874p2B0zlDqvrTmEMY/kEzAz+AvoJdB/pegFaIO18Qx6D4hjqpEZzzUW9BJdBtUzxpF6JTojw8HSrheuxcQpgWjs/lwGWU0Ho9BGoUDrOv3skTXtwp6VJKPwL/CM/A1OHRrI32qCupR3elt9YQuv06g5+FQwk2hA+qGRqSeIIyimXPlr4I52G4G90LXQG8nvTCRnjqs9zv4KAyDIloLKK/6WwM9Nvp8CK6HQ4V0YPQIL0I7Hoh4hJEeYcxu84ORF+FmIgdh2lbkzfQwDMHlUE8g3B/oNYcSdlh3nu7mQ4hWA6wglpFFiPf2kbmjqEBN0pwsH0CXTXX1W7gQqp+hQQxWdOgoEd1WpKdhlEnD1AjcVEZ5yxgXLg91uzNoCJ79eHF0DN4CNQDvEn4Ky0eq/SnW7jruBjAGOK064mmYNhfpaZqzwd3y8jSxZvElyOs+yf3USugSXCqujeEqGoE+W9JS7bQGIay6WxR1w+Om9S2AvdTVbZvToZynJnXgpPCTv0ulKE0fVRiCHbSzJ2FsBE3rFnnhvGfwOtm7hnxet3VO93I7EeCNTAiNID7klSZXFYbgYLksuK6HV+ilw/nBvp+XPVLGUtNLXTOlrEbgyUnduCz0o1dea40qDCFaW0vEmez1s4Mo84NM0lXIl9lKCb9s5tOvenGGJii3k8q9gbpUp3fCUlGVIdh5O+2F0Aboc5BoW1guxUs8yLpiDoJ/DT0t3Aa9XfV7i3oqzUtWaQj0s/GR6TShe4X8AJtfhHw5L5IeLypYkzSPjJ9DdehHOz/uqaO8nkjqH1UYQtpJ47qyjVkXu+l8+r6vvQfvzd6vYzCO0F4mCb/F7IWleQIrFVUYQrPmH34fJOq3g34uQGbxnn9oie8X3RgSxWcUvEiLE8PHxNfA0vUwCEPQejUEd729Yi4vXIA39friDCr/ArL4jcF9wWXofUrpGIQh2OnV0AsRb8baIW/pbo7cKLnxrCs8MW2BLhFe35e+LFDnQJYG2xGu9TsasdY/+f2BwrtRCvRzQRXvTtfwCB13k+j+YDfMTxaSpo5BeITo+BjddcfrlXErq84bghcnKiLqyOeTNa0Qcthp43Og/8MwVCdpPo8ND6r8d0MnkvutSjBVQ8h3vFMnJynQy52ALtHjY9pOGu/U3rDl2/e0/w7wX6BHxCLMI9Gvjk4I72Tmw0rQjyHkhenUMctr7bp11/xfQy9HRCvP0MxtGo0bpVR5kTedw5DbbwbhJZUnL+ci0jwpqIPjsDL0Ywhu+G6AHgfdxIVQRNvCo6CC7oHO8k6w3kNwe6eC0zjfyzb/yKMui3AHiSczri8qUFZakSGkG7IYZF2Yg+fl0CmoAN5/20kvOyahfyp10JZBEdZtGPWYvgCeg35VzCPesQ++o1vckC805M/KIDX8bbDo6Gu+k+jv8FuorKal8Hk1/B1U5+4jKkORIURjdkS6pnv0c8fv4N0KdVm6eT9+jMOHoPlvQw3kDNwE9RypEVifzzvhEZiH+Sk8MbhjzqenZYY1vo2O/Qv69TSvA+VxtjvIX8GA6UHTHoT/gY5BpSgyhLQjdsBNimu66UUwPRVUN+cfKY5CB1IDyRuEs+FT6CAHiur/kky9UVFevDeMocunntKBdqNn//MyrCFN3TpxROSnZb2a/x4WeU/fKQ1FhuCg2hnXJF147FSjoyT9H5GWdj4yrWccqhA9igoJmKcXUQnh8vJLksaiIel1oh2i0wIar15Rr7e2RY/3kX4Cvp/kK6e6EcZfhC7DaRqP5aPIEOzAjVAjWJU0OZXB0PovQne/s6B1SfcYz8FAKrB/2FQJLkVTaTvqLiuMvrerz/3SLvgmVPYUvq8OjkGX0kkY8uXr/pg89aNe8nkklYciQ7B213c7GgNjWnTWeD9wk+gMeQ9qaGIJ1P3f7kMOi3j2G4XvldmPXDN9PTpBHKAinejJQqYJ4nrWPNwfxLJpmagnDd10/wGGJ408kspHK0PQEjWGFP12JLVmZ8IE1BjcSwhnjgZiXgqV5SlFzzBshnCQPn0Bi7CSRA1YHIbrGrErf7bzOAk1EsOAOlZWw1fh3+A4rBxFhhAueWmu9X4NwWrSd50xKuiQGUCDUKmP+ZBgjLgG4sYrfT+NkzVl9Fqf5b+GzugiOICvZBnKGUtDtGOooXgi8GicGgKPDbgcuq/6Myzylo1CZf4UGYIG4LIQm7gy27MuFWHdJ+FTUNwHz0IHPXAPET1HbCJDkZHfKey2vDNQdFveifJHqCHk39WoHeQVULwLNfC07lt41vBdHjdDDSHNt049zuvwAnRprBxFhqClHq24ZQXX0i9loc/OnpdhKOWRLC2eIyS5K1g+BqrTC1spoEvvBg6yA6kh56HxXoR6Pdt/BzrrUzzNwxtZwiZC5U7hkmj9Y1Bj0/AqR5EhbKFVrVT0qvzmW51/HSDpwLtztp3bYHpSeYLnCSh67YfluzUC63fmOju7aedZynnsK5osLgl7YcABV47ALCK+93CW8CShhpD2VZl3QvWhd/GdylFkCB7xFKgbpUy1g/OpwB32wqw93eglqDvcCieh6KUvP6f8Yni9L3YB63Zw0gFr95p7G8/+Lp8pXNaUZXmW6ODugc9kz7YzBi9BlxCh8YVBme9+4iK8AS6HtjMQFBnCAVreMZDWm43sJ3gha09l6DrPw9ehfRGmt0PMKP/a9hsYF1WR3u5d8z6Fzs5W7UT6HMoch8/DD6EwT7oseMpJZ7BGsA8GXPs1jsDdROzv/XA7/CaLEzSOjXrLgaDIEN6kZZUyKNxFQ6ehSg54Rv8H3A1jEIh2xCpKaESu395DdOMVNBYHoBuZrf8sdP+i2xbRPwdZA0mhh4u9RHi/9BRg2+EVHPTx7GXrfBymRpRlVRMUGcJbNGXnBgUHy01RrJu2q4I8hn0CQ9FEO0L3rjs9BRfCbt7VpX8NOy0N0SeXznuhAxz1u6Gzr0uTNKKNP5ycI9TY9XyvwXgnQpKu8CI+CyfDy43YAH6KDOEQ7Q7SEBRToW03VY6eKZ9GUls8Re5hqCF4TOsG7icuwA0tCmsAwnX9HFwC/U4SHoFow4jPEKYeKGSxXt97D94E87BclDXP9nxW9ryHIakaFBmCO93NMO1cNa3/UKvKvQhjE2Xb7hE2wV6wjcK6WPcILg3dwNn9e7gOFslsmgOsTvQ2DpRHbAde+DwJt0Jh+SI2Mnv4maBsN8tVD1W2LlpkCFqiQgsFGgRm04ibsJVJYxpkq1maFLsi+jRPepJYGq7IbPGwnfR/wkdb5Jvs8uFSsMYHMA5dToSz/BJcAK+D6ixItG/oQdr1qe+Ki14sMgQVGTNRgQYFN0a7k8ac2W7KesEzFHaPo9t2YDpB+fbD7+F6WCSvg3sf9Giox7KM4WnohHHA0rW8qA6K9IRZlP4ArurprSkUHiZDcNCPwVhnJ4k7AL3gWQprQCfgzbDVoMTMVeEOpCeBdptFl5qN0PqizgeIn4RuAGfDsmD9nqC8X1hWVqWd6mllCG66RAjdfKrmN9qYT/XOstjtux7f02OTz1BeA3KZmdfm3WhzKWU+gy6H22CkE23A59gPpMfbLPuq8pE+1dD7EL8AL55qRR3eVz5PPHMxhOYENCXTgkrZAp01g4Sz00FR8ULXuKIR6/5nB0WPQGfTjV28puEcgLsyZipovKn8znQvjtyrDFIfTgaPo+2Mmey+kMr4KjWo828wBONNI8hK6Op0sYMS3GajrX3EX4TiI3hXI9b5J4TTENwoTkI3eEWwbLTpzl+v457ICZDCGbIanoOt6krLlxm/k8q8W6miXWVXNvc530IvvS5jCM2lMbRD4kvwFWjSIGHnnHmHs0aPE96RxTsF0denKXgROqiRRvQqaHjj0KXIWb8CXoamx3vGnS32SUR686m6X9uxPxpglW0q33fwAtyIITRlt0X4PwAAAP//nl+AEwAAD35JREFU7Zv5kxXVFcfBDBqiREVUcIMZiKKIuCKiyIBrUAQRg5AowyLigmjEDTTOgEsSlxgTEytJlVqpJJXKD/kX8/m814fcafvNW6a7X1s136rv69t3Pffcc89dembevHnztsAJKOa3H7X8nkMrY3ASLoSvwstgP7iHzJ/C3TMUsk/yKbgzC4/w/CW8PnvnMe9WeAL+CNapB5qbtw6eKrld9Svsyyh8EaqrDXD+/HlZsqlZb9cSfA5GQYK1wOYXwV/By+FrcAnsFZa/A34G189QyHwXwneg7QTuIqAxLIXLoOk3w0wthOqD8h8vqbl0HBdTpxPAvt0Ht2fv52SGML/V26zHKkJruQDWDYV+Hq6BzsaLYDekA7WKzF/Aq7sU2kX6M0ke6/gBVDHvwvfgA9C4tH5eK4ftbYb7S2gpZHcsH4QawF7oRBAaunHhEaYZgq7Q2XgVrBsKvg+OwzegHqIfOMP/Bp3RnaCRTEKXnVBUPIlqTQAVp1Gm8abVAdt8CD4xi8asQyNeALfASXgAXglTONFcgpcULQ1mfBPqZoeBHTS6B74F+/VKyvxnqPtTGXnE0nMPCUXp+fzDeFcudfAwLJIxdfXKl+YxbLoGsAm6z3C5G4WiyLiPEH8HhtCux992qJVZ1/n4/6MI1YdxmnKP4l7hPNgPjpHZte91qGt302nnpV5iCuoas64Sah6UTa/oQM4kZ1HaDymjkU9BdeHmt2jwiT6LLYSezAxh2tJgDtdoLWkYuIFGX4IfwXP7EGAxed+GP4YOunuMV+AheBg6O3S5RQokulF4FmlumUGifB80+HFoH11SNYBe4XJxEkNo74esOandfYIbpqJde5KNHOXDNdx16xOoNXdDyKMncNDtkLCs+xwN6yZoXyIvwUbD2by6Bwnd9GncU/A5WGQA3fqsvk5hCKM82xpKSowQ5a71NtNqxqW0p2vXEBKRZpTCfCpvXVbG95S81oa03aJwN0Es48xekWWMOnyNiaGBu5k8CfV2o9B8Ip7tt+m/ndL2YAjbW1nNkeWyMYPj8AAUIUD7rdpfXbsu/jc9NqOs10KVdx70XQ4L0X6nZze51PUHUJedwpm7Ck5A3f+j0OUw39eZ3vNpFG9hPYZgnecUac+jmGusAxPulmDlcDDfhe/32JKdOwrdHIrobDwjzvc0zvgmwn3RR9BBFurf2Xocfg3du90NXQbcy62FekL3FN4LpM/beV8OZ4I6uQxDcDm+KG8IJjr4zkzXV9/r8gouS5PQPUovuIJM70DXS5EOtuFgK/F78HM+Mp6BsVEeI6wuXC7dBzhzv4T/ht/AT6EnLDfHL0A3mhNwPzwIN8KZoH5GMATLrumkrZ0kPgnrMgKaakHXqBH2gp+TaVcvGRuQJzXSECcfdxEJesRxuBcegRrBZBa+n6cewKVDb+GRcQF04sqBxgpDeIyy2/KGEMJdQ+KprAEeteFDWtIFdoPewLzhDbrlH1a6+nSAYpBCv747eJfBO+EEnIIfZ+FHeN4IXSaiLMEWrCPqMcJwPo/x3WAZvzW4xDybGkIrgchoyOvmVck7wcoxSQvPw7SjaaMhm7Pl4SyhU9603DDCneRahjAPQvc3TraX4Gbouu7ebAQG0jryYccrjYsyvT4t67eGi3lOUdPCfG1hXQo7AUXEtd+q+/V6+UCX6m8l3fVyIQxFxLNL0UqSWwrNak7DaWPeZXjzp7ezj7+Abu7cFwRWEHAShK5r6ROGYDtvocllZ7VJRAotxTVraRpZcVgv5PeGTlhEgjKt7pRhSPExaOnT8LVwAnruPwbd3WvARTCvG76ooyhPmXGtdjAE69xLqw92atk17DD03BpWSrBSHKd2Ny+dsI+EpzslNiTejZyu/k2oB/gpdC/QDWvIMNEtU9npmSFsxgheho75d6DFLIdaszvUOuCseaBDQypKb6BXaCLc9WvE6ksX7w7fu5GA+gw6sSLsU7hUuGTUiswQViLNCegppCMOkjLeMbW8BBXixunegirPJU4FqyyRKjHC7ZR6fx1QL+B2wzPQI60nrkCRbMalhhB51xP4WbzU9cwMYREa1SMUei4FFmPQDY4z0Q7oPnyWDdvTI2wsqFgFH0jizZtnklxJMNxmtKsH8N7fSx3P/ZfAQOTx2Ss2kdG7m1qRGYJXzEehe5iOcNAPwh1Jjn46mBSbMWidbhY35HJdx7vKdvMa7SqT4XgnWDmiLb/QeqKagu5XYjMd8kS+eJKlJ9xHLg2rVmSGoCZ3wo77s5j9uj87bqdjEKoQ2HP1XUnFFxB2X+CSkFds/j0pVlnwJmrWO7oHuDprRTnUiTA8qFzeizxuJXUiMYTbkNzNekdEx8bJ4b2063VVOE3FdyeVe5xy1uUxG4Xn6+rlfZRMLlsagcZQBbZTqawViSEsxRA+7qVxvYMWowsTDoZxZUJDCI+wlfArsK4TS9qPMP5FRDpLz0Dv+uMUEB6AqLOIMkak4bMZugR2kb4tyzNI+S7VFycnhjCC1J50eoJLhIOV7ox7KthDJjv/HrwNumkxfCmsEzEAHqPG4RT0SLcYavSmBwmWin3U9lBWY8hRagNFlSWG0Lf5OmMdJHfNZUJF63o9Qn0EfwLrRAy031f0fG/DlZkAMTB6gghnSaU99lOTXkcUeZx2Ssm/OUPoqW+pcDuQ5w2o6xQ9VdDO2vHXOjSwr+D1HXNVl+Cs95iqDOkRNu13tF5Gf6OueB4kMJ69FLUZ+Up95gxhoLo1Bq9Rr4AheCjIZ8QR7LiXME+UWUv473BrEkewUti2nuBe6OnEjWkYN8EWQr54r+p5iIo3ZJXX1SbKz4bJFgds1Rp0Zb+Frut5dKq6KH4zhU/DT+GMlxr5Rvp8z3fVO4pX4TG4Aop8nvx7O1f5v4ep0mOyqKtNGpq9IbRFbq/leobnYKzr0RGfWUvTOhfpzj7dsR9nHBSNwe/yVePHNOC18AdQbxAyEmwh5Iv3Op4agt9TakVZhhAKXIj0W6AG4e2gM3w5dKBN8wjojZzhS+Aq6AWKN4Yagmny17BKQ3CAXf/dB+yFyidi4F0mItxKqOnHNjWEmEg1NWtnsyFUgpJ6bjUO+FroevcO1O36IenFjIZPQAfCY9kYDDgoLjODGkK+K/luuZc5Cj0NrIaBNF8YdqTV8bT9BfAIXAF9T2XitTpUYQgqMVWknVsC/aLldaz0HuJ8GB1N83sc1RDcb0Q6wVlD43wInoYuA2ndEQ454p1stcE21YmTRGMVtclRhSG0uzD91w6lSo534/KdvZi4T6CGEGUIzgpjlNYrnYTjUE/g0dT9yEq4DLpc5WUhqjbYtnsW5XTiiNrkqcMQijqTj/M9Bt1z/OdQQxgE1jUCHdxN0Euhb+Hv4MGELlu+Pw/dpL4Pj8FBlySKDozov97wBLwQGlcb6jCEfjujIfwe9rM0hNJU4BboOvsH+C10E7oUugHU2CIvwRZ8N82yd0I3uhpEzEqClSNkUk7/h0HvJCK+/VbhbxMNwQH4At7aod9FynFN9Y85dP0eX09DZ5bu3/xRJp5EnUU+TqPYDs9ATzx1IGRYSWNuoJWhVjTRENxU/hF2MgQVpOLkJXA39Pi5C26Eb8Gn4AVQhJLj2Y7t/Bt1ryfLFEw/ePVaR+faO6dYt5+27UuV7RRK0ERD8ETxJziTIXjX4Kx9F+6AutTHoEdClaki88rMv5NlGtL0KB9/gXTetJzVvNjmHfA41COk8vBaLZpoCLr5r2BqCOna7t7BWe9dgLNVD/ICfAW62Sobz1Dh42VXWlCfffRYOwHnDAElaAh/gTfDdFboKdzhvwHjCtYZ5PXwOAxjScsQPWt4pDsD10EHqCoo9zao0Rkuux9U2RlN9Qh/RWQNQaj8rXASugx4QSVU2hR0QxioSoG308Dr0EupKrGHyrfAqvrRUfYmGsJVSPs1dNYvgR7lXDf1FOJi6DKgd3ApUGlVQ2/jaeSRihuaoH6XxDr6NK0rTTCEcLcxC65Ewm+gpwCPUirfgRCj0F31k76AOhXmBdUk1DhDZoKlQoO/FtbZr1YHmmAIeU16AvgX/BiG21cxm6EfsO6EdSoq2vL5BHwaBiIt3mfztK4pGJ5vNnX1XbYJhpAq0/X/YfgfuCbrjUfF/VAjcNlI8/NaOcIb2ZAbx1NwzJeSsZD6vOa2jdrRJEPQCNwseRfwT6iy9QieEvZBDUIjCEPwmQ4Sr5XBdqLdrYS9wi4L0QePwm/COu4sviN7EwxBoVTy/fAwHIP/gG4Gp+AGaHoMBMGzKIo7m1hRwJOD9xjXlVi//RiFfoIOwyix+u5VNcEQVMLl8HPohcpe+F/ox6K4JibYKLhP8ThZxqDZf+lx+QAcCppiCBfSexXr+nsIenx0PxBQUU2Bg38uPAG95ZwtrM/+PQB3z7ayQcs3wRDSWaVCvDL2ZtHTgwhFNc0Y/Kah8ZYhl8dRTyNulIeCJhhCvuPeI3wJNQiholO2IhvwM4IMbmw3liSL+6NbSqqr72qaaAjX0IvP4OKsN2XMuL4V06VAeDGPuF56xdXzoLK61HiDmi6HvNaHJhrC1XT/Q+i+QQyq3Hbpan81CE83bnKVMwyEYF/Q++ldzu+rVImZm2gIy+mff2fgiUHlNtUQQrZVyOj53wuhQWX1vkTPMmh5is4OTTSEFXTJSyQvkAadYRStFX6Qun/AFh18Twz74dD620RDGEUhfl10hn0f4EC6nHn0DS/Wj9yeGCbgJjjnEVBCYIzAizA2YBHf1Kez2ME8CJ3Z/Q6m5V0KnQBDQxM9gobgBmwod+6zGAmPvSehfyPRDy4ls+X0gBrFUDBnCLNXu97AAdQTPAN3ZmHfu3kHy62Dh3rIS5bqMGcI5enWQV0GdfP+FVUvhkC21rXyo1l+34eCOUMoT+3hFfZQpX+AOhPCUywg01G4eqbMdaTNGUJ5WnZwNQZvRCehf9KWR+olzOtXV//gxoukMCSC9WPOEKrRuR7hIIyZ7yCnCIPwRvKFJCHik6h6gnOGUI2eneHpkTAMIt/ay0T4hzcibyzt2Jp+5wyhfEXHrN5M1d6HjCRNpGGXDq+VPW6mhpKGk6LVBucMoTr9+kXxNeiNYRhADLJHzi3waRhxBIeHJhrCKOo4Ar1ZbISS+hievLz+XeNpmP5thdV5Fe0ftdzgSxPQRENYiWJ0qd4s5hXbBJ3NJEORvOMU0DPE3xp4ZHwKTsDGoImG4GWM//YV7rQxyhpQEDeB26B/+exXSj+o+ez3Kpoi1aGJhlA0q6rTQHU1awCpMfstYiu8EZpmP302AnlD+B/DllUYaT7ZjAAAAABJRU5ErkJggg==';
-// Vendos firmën e dërguar nga ILIA MITRO vetëm një herë në këtë version.
-if(!localStorage.getItem(OWNER_SIG_KEY)){
-  localStorage.setItem(OWNER_SIG_KEY,OWNER_SIG_DEFAULT);
-  localStorage.setItem(OWNER_SIG_VERSION_KEY,'firma-ilia-mitro-20260912');
-}
-function currentOwnerOffer(){return offers.find(x=>String(x.id)===String(currentPdfOfferId))}
-function ownerDecor(o){
-  if(!o.ownerDecor)o.ownerDecor={stamp:false,signature:false,stampX:147,stampY:239,signatureX:128,signatureY:263,stampSize:38,signatureSize:48};
-  if(!Number(o.ownerDecor.stampSize))o.ownerDecor.stampSize=38;
-  if(!Number(o.ownerDecor.signatureSize))o.ownerDecor.signatureSize=48;
-  return o.ownerDecor;
-}
-function saveOwnerDecor(o){persistAll();printOffer(o.id)}
-function toggleOwnerStamp(){
-  const o=currentOwnerOffer();if(!o)return;
-  const d=ownerDecor(o);d.stamp=!d.stamp;saveOwnerDecor(o);
-}
-function ownerSignatureControl(){
-  const o=currentOwnerOffer();if(!o)return;
-  const saved=localStorage.getItem(OWNER_SIG_KEY)||'';
-  if(saved){const d=ownerDecor(o);d.signature=!d.signature;saveOwnerDecor(o);return}
-  openOwnerSignaturePad();
-}
-function openOwnerSignaturePad(){
-  const o=currentOwnerOffer();if(!o)return;
-  const old=document.getElementById('ownerSigModal');if(old)old.remove();
-  const m=document.createElement('div');m.id='ownerSigModal';
-  m.style.cssText='position:fixed;inset:0;z-index:100002;background:#f3f4f6;padding:18px;overflow:auto';
-  m.innerHTML='<div style="max-width:600px;margin:auto;background:#fff;padding:18px;border-radius:16px"><button id="ownerSigClose" type="button" style="padding:10px 15px;border:0;border-radius:10px">← Kthehu</button><h2>Firma ime — ILIA MITRO</h2><p>Firmos me gisht brenda kutisë.</p><canvas id="ownerSigCanvas" width="900" height="300" style="width:100%;height:190px;border:2px solid #bbb;border-radius:12px;touch-action:none;background:#fff"></canvas><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px"><button id="ownerSigClear" type="button" style="padding:13px;border:0;border-radius:10px;background:#6b7280;color:#fff;font-weight:800">Pastro</button><button id="ownerSigSave" type="button" style="padding:13px;border:0;border-radius:10px;background:#159447;color:#fff;font-weight:800">Ruaj firmën</button></div></div>';
-  document.body.appendChild(m);
-  const cv=document.getElementById('ownerSigCanvas'),x=cv.getContext('2d');x.lineWidth=4;x.lineCap='round';let down=false,ink=false;
-  const p=e=>{const r=cv.getBoundingClientRect(),t=e.touches?e.touches[0]:e;return{x:(t.clientX-r.left)*cv.width/r.width,y:(t.clientY-r.top)*cv.height/r.height}};
-  const start=e=>{down=true;ink=true;const q=p(e);x.beginPath();x.moveTo(q.x,q.y);e.preventDefault()};
-  const move=e=>{if(!down)return;const q=p(e);x.lineTo(q.x,q.y);x.stroke();e.preventDefault()};
-  ['mousedown','touchstart'].forEach(n=>cv.addEventListener(n,start,{passive:false}));
-  ['mousemove','touchmove'].forEach(n=>cv.addEventListener(n,move,{passive:false}));
-  ['mouseup','mouseleave','touchend','touchcancel'].forEach(n=>cv.addEventListener(n,()=>down=false));
-  document.getElementById('ownerSigClose').onclick=()=>m.remove();
-  document.getElementById('ownerSigClear').onclick=()=>{x.clearRect(0,0,cv.width,cv.height);ink=false};
-  document.getElementById('ownerSigSave').onclick=()=>{if(!ink){alert('Firmos me gisht para se ta ruash.');return}localStorage.setItem(OWNER_SIG_KEY,cv.toDataURL('image/png'));ownerDecor(o).signature=true;persistAll();m.remove();printOffer(o.id)};
-}
-function clearOwnerSignature(){
-  if(!confirm('Ta fshij firmën time të ruajtur?'))return;
-  localStorage.removeItem(OWNER_SIG_KEY);offers.forEach(o=>{if(o.ownerDecor)o.ownerDecor.signature=false});persistAll();
-  const o=currentOwnerOffer();if(o)printOffer(o.id);
-}
-function makeOwnerStampDataUrl(){
-  const cv=document.createElement('canvas');cv.width=700;cv.height=700;
-  const c=cv.getContext('2d'),gold='#b58b20',dark='#111827';
-  c.clearRect(0,0,700,700);c.fillStyle='rgba(255,255,255,.96)';c.beginPath();c.arc(350,350,326,0,Math.PI*2);c.fill();
-  c.strokeStyle=gold;c.lineWidth=18;c.beginPath();c.arc(350,350,320,0,Math.PI*2);c.stroke();
-  c.lineWidth=7;c.beginPath();c.arc(350,350,290,0,Math.PI*2);c.stroke();
-  c.textAlign='center';c.textBaseline='middle';c.fillStyle=gold;c.font='bold 92px Georgia,serif';c.fillText('ILIRI',350,146);
-  c.strokeStyle=dark;c.lineWidth=14;c.lineCap='round';c.lineJoin='round';
-  c.beginPath();c.moveTo(205,300);c.lineTo(350,205);c.lineTo(495,300);c.moveTo(245,280);c.lineTo(245,370);c.moveTo(455,280);c.lineTo(455,370);c.stroke();
-  c.fillStyle=gold;c.fillRect(323,265,54,54);c.strokeStyle=dark;c.lineWidth=7;c.strokeRect(323,265,54,54);
-  c.beginPath();c.moveTo(180,360);c.bezierCurveTo(270,325,390,390,515,328);c.strokeStyle=gold;c.lineWidth=24;c.stroke();
-  c.save();c.translate(500,322);c.rotate(-0.55);c.fillStyle=dark;c.fillRect(-8,-10,88,20);c.fillStyle=gold;c.fillRect(70,-17,42,34);c.restore();
-  c.fillStyle=dark;c.font='bold 47px Arial,sans-serif';c.fillText('MÅLERI & DEKOR',350,421);
-  c.strokeStyle=gold;c.lineWidth=5;c.beginPath();c.moveTo(120,460);c.lineTo(580,460);c.stroke();
-  c.font='bold 38px Arial,sans-serif';c.fillText('ILIA MITRO',350,495);
-  c.font='27px Arial,sans-serif';c.fillText('076 922 53 61',350,532);c.fillText('ilia.mitro@yahoo.gr',350,568);
-  c.fillStyle=gold;c.font='bold 30px Arial,sans-serif';c.fillText('GÖTEBORG',350,604);
-  return cv.toDataURL('image/png');
-}
-function darkenOwnerSignatureDataUrl(src){
-  return new Promise(resolve=>{
-    if(!src){resolve(src);return}
-    const im=new Image();
-    im.onload=()=>{
-      try{
-        const cv=document.createElement('canvas');cv.width=im.naturalWidth||im.width;cv.height=im.naturalHeight||im.height;
-        const c=cv.getContext('2d');c.drawImage(im,0,0);
-        const data=c.getImageData(0,0,cv.width,cv.height),p=data.data;
-        for(let i=0;i<p.length;i+=4){if(p[i+3]){p[i]=0;p[i+1]=0;p[i+2]=0;p[i+3]=Math.min(255,p[i+3]*8)}}
-        c.putImageData(data,0,0);resolve(cv.toDataURL('image/png'));
-      }catch(e){resolve(src)}
-    };
-    im.onerror=()=>resolve(src);im.src=src;
-  });
-}
-// Shared A4 geometry: editor and PDF use identical millimetre coordinates.
-function ownerBox(d,kind){
-  const stamp=kind==='stamp', fallback=stamp?38:48;
-  const number=(value,otherwise)=>Number.isFinite(Number(value))?Number(value):otherwise;
-  const width=Math.max(25,Math.min(stamp?65:90,number(d[kind+'Size'],fallback)));
-  const height=stamp?width:width/3;
-  return {width,height,x:Math.max(0,Math.min(210-width,number(d[kind+'X'],stamp?147:128))),y:Math.max(0,Math.min(297-height,number(d[kind+'Y'],stamp?239:263)))};
-}
-function containOwnerImage(width,height,box){
-  const scale=Math.min(box.width/width,box.height/height);
-  const w=width*scale,h=height*scale;
-  return {x:box.x+(box.width-w)/2,y:box.y+(box.height-h)/2,width:w,height:h};
-}
-let ownerPdfRendererPromise=null;
-function loadOwnerPdfRenderer(){
-  if(window.pdfjsLib)return Promise.resolve(window.pdfjsLib);
-  if(!ownerPdfRendererPromise){
-    ownerPdfRendererPromise=new Promise((resolve,reject)=>{
-      const script=document.createElement('script');
-      script.src='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';
-      const timer=setTimeout(()=>{script.remove();reject(new Error('PDF renderer timeout'))},15000);
-      script.onload=()=>{
-        clearTimeout(timer);
-        if(!window.pdfjsLib){reject(new Error('PDF renderer unavailable'));return}
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-        resolve(window.pdfjsLib);
-      };
-      script.onerror=()=>{clearTimeout(timer);script.remove();reject(new Error('PDF renderer unavailable'))};
-      document.head.appendChild(script);
-    }).catch(error=>{ownerPdfRendererPromise=null;throw error});
-  }
-  return ownerPdfRendererPromise;
-}
-async function openOwnerPositionEditor(){
-  const o=currentOwnerOffer();if(!o)return;const d=ownerDecor(o),sig=localStorage.getItem(OWNER_SIG_KEY)||'';
-  if(!d.stamp&&!d.signature){alert('Aktivizo fillimisht Vulën ose Firmën time.');return}
-  const old=document.getElementById('ownerPosModal');if(old)old.remove();
-  const m=document.createElement('div');m.id='ownerPosModal';m.style.cssText='position:fixed;inset:0;z-index:100003;background:#e5e7eb;padding:12px;overflow:auto';
-  m.innerHTML='<div style="max-width:430px;margin:auto"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><button id="posBack" type="button" style="padding:12px;border:0;border-radius:10px">← Kthehu</button><button id="posSave" type="button" style="padding:12px;border:0;border-radius:10px;background:#159447;color:white;font-weight:900">Ruaj pozicionet</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><button id="stampMinus" type="button" style="padding:10px;border:0;border-radius:9px">Vula −</button><button id="stampPlus" type="button" style="padding:10px;border:0;border-radius:9px">Vula +</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><button id="sigMinus" type="button" style="padding:10px;border:0;border-radius:9px">Firma −</button><button id="sigPlus" type="button" style="padding:10px;border:0;border-radius:9px">Firma +</button></div></div><div id="a4pos" style="position:relative;width:315px;height:445.5px;margin:auto;background:white;box-shadow:0 2px 12px #999;overflow:hidden"><canvas id="ownerDocumentCanvas" style="display:block;width:315px;height:445.5px;pointer-events:none"></canvas></div><p style="text-align:center">Lëvizi me gisht. Përdor − dhe + për madhësinë.</p></div>';
-  document.body.appendChild(m);const a=document.getElementById('a4pos'),scale=1.5;
-  function syncBox(kind,el){const b=ownerBox(d,kind);d[kind+'X']=b.x;d[kind+'Y']=b.y;d[kind+'Size']=b.width;if(el){el.style.left=b.x*scale+'px';el.style.top=b.y*scale+'px';el.style.width=b.width*scale+'px';el.style.height=b.height*scale+'px'}}
-  syncBox('stamp');syncBox('signature');
-  function drag(el,keyX,keyY){
-    let active=false,dx=0,dy=0;
-    const st=e=>{active=true;const t=e.touches?e.touches[0]:e,r=el.getBoundingClientRect();dx=t.clientX-r.left;dy=t.clientY-r.top;e.preventDefault()};
-    const mv=e=>{if(!active)return;const t=e.touches?e.touches[0]:e,r=a.getBoundingClientRect();let l=Math.max(0,Math.min(315-el.getBoundingClientRect().width,t.clientX-r.left-dx));let top=Math.max(0,Math.min(445.5-el.getBoundingClientRect().height,t.clientY-r.top-dy));el.style.left=l+'px';el.style.top=top+'px';d[keyX]=l/scale;d[keyY]=top/scale;e.preventDefault()};
-    ['pointerdown','touchstart'].forEach(n=>el.addEventListener(n,st,{passive:false}));['pointermove','touchmove'].forEach(n=>m.addEventListener(n,mv,{passive:false}));['pointerup','pointercancel','touchend','touchcancel'].forEach(n=>m.addEventListener(n,()=>active=false));
-  }
-  let stampEl=null,sigEl=null;
-  if(d.stamp){stampEl=document.createElement('img');stampEl.src=makeOwnerStampDataUrl();stampEl.alt='Vula ILIRI Måleri & Dekor';stampEl.style.cssText='position:absolute;width:'+(d.stampSize*scale)+'px;height:'+(d.stampSize*scale)+'px;object-fit:contain;touch-action:none;left:'+(d.stampX*scale)+'px;top:'+(d.stampY*scale)+'px';a.appendChild(stampEl);drag(stampEl,'stampX','stampY')}
-  if(d.signature&&sig){sigEl=document.createElement('img');sigEl.src=sig;sigEl.style.cssText='position:absolute;width:'+(d.signatureSize*scale)+'px;height:'+(d.signatureSize*scale/3)+'px;object-fit:contain;touch-action:none;filter:contrast(350%) brightness(35%);left:'+(d.signatureX*scale)+'px;top:'+(d.signatureY*scale)+'px';a.appendChild(sigEl);drag(sigEl,'signatureX','signatureY')}
-  if(sigEl)darkenOwnerSignatureDataUrl(sig).then(src=>{sigEl.src=src;sigEl.style.filter='none'});
-  const resizeStamp=delta=>{d.stampSize=Math.max(25,Math.min(65,d.stampSize+delta));if(stampEl){stampEl.style.width=(d.stampSize*scale)+'px';stampEl.style.height=(d.stampSize*scale)+'px'}syncBox('stamp',stampEl)};
-  const resizeSig=delta=>{d.signatureSize=Math.max(25,Math.min(90,d.signatureSize+delta));if(sigEl){sigEl.style.width=(d.signatureSize*scale)+'px';sigEl.style.height=(d.signatureSize*scale/3)+'px'}syncBox('signature',sigEl)};
-  document.getElementById('stampMinus').onclick=()=>resizeStamp(-3);document.getElementById('stampPlus').onclick=()=>resizeStamp(3);
-  document.getElementById('sigMinus').onclick=()=>resizeSig(-4);document.getElementById('sigPlus').onclick=()=>resizeSig(4);
-  document.getElementById('posBack').onclick=()=>m.remove();document.getElementById('posSave').onclick=()=>{persistAll();m.remove();printOffer(o.id)};
-  const saveButton=m.querySelector('#posSave');
-  const status=document.createElement('p');status.setAttribute('role','status');status.style.textAlign='center';
-  a.parentNode.insertBefore(status,a);
-  const languageRow=document.createElement('div');languageRow.style.cssText='display:flex;gap:8px;margin-bottom:10px';
-  a.parentNode.insertBefore(languageRow,a);
-  let renderVersion=0;
-  async function renderDocument(lang){
-    const version=++renderVersion;
-    saveButton.disabled=true;status.textContent='Po ngarkohet dokumenti…';
-    a.style.visibility='hidden';
-    languageRow.querySelectorAll('button').forEach(b=>b.disabled=true);
-    let pdf=null;
-    try{
-      const library=await loadOwnerPdfRenderer();
-      const data=await _buildOfferPdfCore(lang,'positionBackground');
-      if(!data)throw new Error('Dokumenti nuk u krijua');
-      pdf=await library.getDocument({data:new Uint8Array(data)}).promise;
-      const page=await pdf.getPage(1),canvas=m.querySelector('#ownerDocumentCanvas');
-      const viewport=page.getViewport({scale:945/page.getViewport({scale:1}).width});
-      canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
-      await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
-      if(version!==renderVersion||!m.isConnected)return;
-      a.style.visibility='visible';saveButton.disabled=false;
-      status.textContent=pdf.numPages>1?'Faqja 1 nga '+pdf.numPages+' — vula dhe firma vendosen në faqen e parë.':'';
-    }catch(error){
-      if(m.isConnected)status.textContent='Dokumenti nuk u ngarkua. Kontrollo internetin dhe shtyp Shqip ose Suedisht për ta provuar përsëri.';
-      console.error('Pamja e dokumentit:',error);
-    }finally{
-      if(pdf)await pdf.destroy();
-      languageRow.querySelectorAll('button').forEach(b=>b.disabled=false);
-    }
-  }
-  for(const [lang,label] of [['sq','Shqip'],['sv','Suedisht']]){
-    const button=document.createElement('button');button.type='button';button.textContent=label;
-    button.style.cssText='flex:1;padding:10px;border:0;border-radius:9px';
-    button.onclick=()=>renderDocument(lang);languageRow.appendChild(button);
-  }
-  await renderDocument('sq');
-}
 
 function printOffer(id){
   window.__iliriCurrentOfferId=id;
@@ -622,8 +773,8 @@ function printOffer(id){
   const section=(title,items)=>!items||!items.length?'':`<h3 style="margin:20px 0 8px">${title}</h3>${items.map(x=>`<div style="display:grid;grid-template-columns:1fr auto;gap:12px;padding:9px 0;border-bottom:1px solid #e5e7eb"><div><b>${esc(x.description||'')}</b><div style="font-size:13px;color:#6b7280">${Number(x.qty||0)} × ${money(x.unitPrice)}</div></div><b>${money(Number(x.qty||0)*Number(x.unitPrice||0))}</b></div>`).join('')}`;
   view.innerHTML=`<div style="max-width:760px;margin:auto">
     <div style="position:sticky;top:0;z-index:2;background:#f3f4f6;padding-bottom:10px"><button type="button" onclick="document.getElementById('iphonePdfView').remove()" style="width:100%;padding:14px;border:0;border-radius:12px;font-size:17px;font-weight:800">← Kthehu</button></div>
-    <div style="background:#fff;border-radius:16px;padding:20px;box-shadow:0 1px 4px #bbb">
-      <div style="display:flex;justify-content:space-between;gap:12px"><div><div style="font-size:24px;font-weight:900">${esc(COMPANY.brand)}</div><div style="margin-top:7px;font-weight:800">${esc(COMPANY.legalName)}</div><div>${esc(COMPANY.activity)}</div><div>${esc(COMPANY.address1)}</div><div>${esc(COMPANY.address2)}</div><div>Tel: ${esc(COMPANY.phone)}</div><div>E-post: ${esc(COMPANY.email)}</div><div>Org.nr: ${esc(COMPANY.orgNr)}</div><div>Momsreg.nr / VAT-nr: ${esc(COMPANY.vatNr)} (fr.o.m. ${esc(COMPANY.vatActiveFrom)})</div><div>${esc(COMPANY.taxStatus)}</div><div>SNI: ${esc(COMPANY.sni)}</div></div><div style="font-size:20px;font-weight:900">OFERTË</div></div>
+    <div id="offerPaperPreview" style="position:relative;background:#fff;border-radius:16px;padding:20px;box-shadow:0 1px 4px #bbb;min-height:720px">
+      <div style="display:flex;justify-content:space-between;gap:12px"><div><div style="font-size:24px;font-weight:900">ILIRI Måleri</div><div style="margin-top:9px;font-weight:800">ILIA MITRO</div><div>Keplers Gatan 36, lgh 1302, 415 55 Göteborg</div><div>Tel: 076 922 53 61</div><div>E-post: ilia.mitro@yahoo.gr</div><div>Org.nr: 710109-1432</div><div>VAT-nr: SE710109143201</div><div>Godkänd för F-skatt med villkor (FA-skatt)</div></div><div style="font-size:20px;font-weight:900">OFERTË</div></div>
       <hr style="border:0;border-top:1px solid #ddd;margin:18px 0">
       ${o.number?`<div><b>Nr. ofertës:</b> ${esc(o.number)}</div>`:''}<div><b>Data:</b> ${esc(o.date||'')}</div><div><b>Klienti:</b> ${esc(o.client||'')}</div>${o.phone?`<div><b>Telefoni:</b> ${esc(o.phone)}</div>`:''}${o.address?`<div><b>Adresa:</b> ${esc(o.address)}</div>`:''}
       ${section('Punët',o.work)}${section('Materialet',o.materials)}
@@ -631,12 +782,6 @@ function printOffer(id){
       ${o.notes?`<div style="margin-top:18px"><b>Shënime:</b><div style="white-space:pre-wrap;margin-top:5px">${esc(o.notes)}</div></div>`:''}
     </div>
     <div style="background:#fff;border-radius:16px;padding:18px;margin:14px 0 30px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-        <button type="button" onclick="toggleOwnerStamp()" style="padding:14px;border:0;border-radius:14px;background:${ownerDecor(o).stamp?'#b58b20':'#6b7280'};color:#fff;font-size:16px;font-weight:900">🟡 ${ownerDecor(o).stamp?'Vula aktive':'Vulos'}</button>
-        <button type="button" onclick="ownerSignatureControl()" style="padding:14px;border:0;border-radius:14px;background:${ownerDecor(o).signature?'#159447':'#6b7280'};color:#fff;font-size:16px;font-weight:900">✍️ ${ownerDecor(o).signature?'Firma aktive':'Firma ime'}</button>
-        <button type="button" onclick="openOwnerPositionEditor()" style="padding:12px;border:0;border-radius:12px;background:#111827;color:#fff;font-weight:800">↔️ Pozicionet</button>
-        <button type="button" onclick="openOwnerSignaturePad()" style="padding:12px;border:0;border-radius:12px;background:#374151;color:#fff;font-weight:800">Ndrysho firmën</button>
-      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <button type="button" onclick="buildOfferPdf('sq','previewSign')" style="padding:16px;border:0;border-radius:14px;background:#159447;color:#fff;font-size:17px;font-weight:900">📄 PDF Shqip</button>
         <button type="button" onclick="buildOfferPdf('sv','previewSign')" style="padding:16px;border:0;border-radius:14px;background:#159447;color:#fff;font-size:17px;font-weight:900">📄 PDF Suedisht</button>
@@ -644,6 +789,7 @@ function printOffer(id){
       ${o.accepted?`<div style="margin-top:12px;padding:12px;border-radius:12px;background:#eaf7ef;color:#126b36;font-weight:900">✓ E firmosur / E pranuar${o.signedBy?' — '+esc(o.signedBy):''}</div>`:''}
     </div>
   </div>`;
+  setTimeout(()=>renderPdfDecorationControls('offerPaperPreview','offer',id),0);
 }
 async function translateSqToSv(text){
   const raw=(text||'').trim();
@@ -678,85 +824,37 @@ function openOfferPdfForSigning(pdfSource, lang, offer, pdfFile){
       <button id="iliriPdfBack" type="button" style="padding:13px 8px;border:0;border-radius:12px;background:#6b7280;color:#fff;font-weight:900">← Kthehu</button>
       <button id="iliriPdfSendSign" type="button" style="padding:13px 8px;border:0;border-radius:12px;background:#159447;color:#fff;font-weight:900">✍️ Firmosje</button>
     </div>
-    <div id="iliriPdfPages" aria-label="Dokumenti PDF" style="width:100%;min-width:0;min-height:0;flex:1;overflow:auto;-webkit-overflow-scrolling:touch;border-radius:12px;background:#e5e7eb">
-      <p role="status" style="text-align:center;padding:16px">Po ngarkohet dokumenti…</p>
-    </div>
+    <iframe title="PDF" src="${url}" style="width:100%;flex:1;border:0;border-radius:12px;background:white"></iframe>
     <div style="margin-top:10px;padding-bottom:max(4px,env(safe-area-inset-bottom));text-align:center">
       <button id="iliriPdfSave" type="button" style="width:auto;min-width:132px;padding:10px 16px;border:0;border-radius:10px;background:#111827;color:#fff;font-weight:800;font-size:14px">⬆️ Ruaj PDF</button>
     </div>`;
   document.body.appendChild(v);
-  let previewPdf=null,previewTask=null,previewClosed=false;
-  document.getElementById('iliriPdfBack').onclick=()=>{
-    previewClosed=true;
-    if(previewTask)previewTask.destroy();
-    revoke();v.remove();
-  };
-  // Render the actual PDF pages at full width. iOS's embedded PDF viewer can
-  // crop a fixed-width A4 page even when its iframe is width:100%.
-  (async()=>{
-    const pages=v.querySelector('#iliriPdfPages');
+  document.getElementById('iliriPdfBack').onclick=()=>{revoke();v.remove();};
+  document.getElementById('iliriPdfSave').onclick=()=>{
+    // Ruajtje direkte e PDF-së. Në iPhone Safari/PWA nuk mund të hapim me detyrim
+    // një dosje specifike te Files; download-i shkon te vendndodhja Downloads e iOS.
     try{
-      const library=await loadOwnerPdfRenderer();
-      if(previewClosed)return;
-      const source=pdfFile||pdfSource;
-      const input=source instanceof Blob?{data:new Uint8Array(await source.arrayBuffer())}:{url};
-      if(previewClosed)return;
-      previewTask=library.getDocument(input);
-      previewPdf=await previewTask.promise;
-      if(previewClosed)return;
-      pages.replaceChildren();
-      for(let number=1;number<=previewPdf.numPages;number++){
-        if(previewClosed||!v.isConnected)return;
-        const page=await previewPdf.getPage(number);
-        const base=page.getViewport({scale:1});
-        const cssWidth=Math.max(1,pages.clientWidth);
-        const pixelRatio=Math.min(window.devicePixelRatio||1,2);
-        const viewport=page.getViewport({scale:cssWidth*pixelRatio/base.width});
-        const canvas=document.createElement('canvas');
-        canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
-        canvas.style.cssText='display:block;width:100%;max-width:100%;height:auto;background:white;margin:0 0 10px;';
-        canvas.setAttribute('role','img');
-        canvas.setAttribute('aria-label','Faqja '+number+' / '+previewPdf.numPages);
-        pages.appendChild(canvas);
-        await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
-        page.cleanup();
+      const x=offers.find(z=>z.id===currentPdfOfferId);
+      if(x){x.savedAt=new Date().toISOString();persistAll();renderOffers();}
+      const saveName = (pdfFile && pdfFile.name) ? pdfFile.name : ((offer && offer.number) ? String(offer.number) : 'ofert') + '-' + (lang==='sv'?'sv':'sq') + '.pdf';
+      let saveUrl = url;
+      let tempUrl = null;
+      if(pdfFile){
+        tempUrl = URL.createObjectURL(pdfFile);
+        saveUrl = tempUrl;
       }
-    }catch(error){
-      if(previewClosed)return;
-      pages.replaceChildren();
-      const message=document.createElement('p');
-      message.textContent='Pamja nuk u ngarkua. Hape PDF-në veçmas ose provo përsëri me internet.';
-      message.style.padding='12px';pages.appendChild(message);
-      const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener';
-      link.textContent='Hap PDF të plotë';link.style.cssText='display:block;padding:16px;text-align:center';pages.appendChild(link);
-      console.error('PDF preview:',error);
-    }
-  })();
-  document.getElementById('iliriPdfSave').onclick=async()=>{
-    const btn=document.getElementById('iliriPdfSave');
-    const saveName=(pdfFile&&pdfFile.name)?pdfFile.name:(((offer&&offer.number)?String(offer.number):'ofert')+'-'+(lang==='sv'?'sv':'sq')+'.pdf');
-    try{
-      // Në iPhone kjo hap Share Sheet-in e sistemit. Prej aty zgjidhet “Save to Files”.
-      if(pdfFile && navigator.share && (!navigator.canShare || navigator.canShare({files:[pdfFile]}))){
-        await navigator.share({files:[pdfFile],title:saveName});
-        const x=offers.find(z=>z.id===currentPdfOfferId);
-        if(x){x.savedAt=new Date().toISOString();persistAll();renderOffers();}
-        if(btn){
-          const oldText=btn.textContent;
-          btn.textContent='✓ U ruajt';
-          setTimeout(()=>{if(document.body.contains(btn))btn.textContent=oldText;},2200);
-        }
-        return;
-      }
-
-      // Fallback: hap PDF-në në viewer-in e iPhone/Safari që të përdoret Share → Save to Files.
-      const w=window.open(url,'_blank');
-      if(!w) window.location.href=url;
-      alert('PDF u hap. Shtyp Share dhe zgjidh Save to Files.');
+      const a=document.createElement('a');
+      a.href=saveUrl;
+      a.download=saveName;
+      a.rel='noopener';
+      a.style.display='none';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      if(tempUrl) setTimeout(()=>{try{URL.revokeObjectURL(tempUrl)}catch(e){}},60000);
     }catch(e){
-      if(e && e.name==='AbortError') return;
-      console.error('PDF save/share error:',e);
-      alert('Nuk u hap ruajtja. Provo përsëri dhe zgjidh Save to Files.');
+      console.error('PDF download error:',e);
+      try{ window.open(url,'_blank'); }catch(_e){}
     }
   };
   document.getElementById('iliriPdfSendSign').onclick=()=>window.iliriSendCurrentOfferForSignature(lang);
@@ -775,8 +873,8 @@ async function _buildOfferPdfCore(lang,action='share'){
     work:'Arbete',
     materials:'Material',
     desc:'Beskrivning',
-    qty:'Antal/timmar',
-    price:'Pris',
+    qty:'Timmar',
+    price:'kr/timme',
     amount:'Summa',
     subtotal:'Exkl. moms',
     vat:'Moms',
@@ -792,8 +890,8 @@ async function _buildOfferPdfCore(lang,action='share'){
     work:'Punët',
     materials:'Materialet',
     desc:'Përshkrimi',
-    qty:'Sasia/orët',
-    price:'Çmimi',
+    qty:'Orë',
+    price:'kr/orë',
     amount:'Shuma',
     subtotal:'Pa moms',
     vat:'Moms',
@@ -841,7 +939,7 @@ async function _buildOfferPdfCore(lang,action='share'){
 
   doc.setFont('helvetica','bold');
   doc.setFontSize(18);
-  doc.text(COMPANY.brand, margin, y);
+  doc.text('ILIRI Måleri', margin, y);
   doc.setFontSize(14);
   doc.text(L.title, right, y, {align:'right'});
   y += 7;
@@ -849,18 +947,15 @@ async function _buildOfferPdfCore(lang,action='share'){
   // Företagsuppgifter / të dhënat e kontaktit – shfaqen automatikisht në çdo PDF.
   doc.setFont('helvetica','bold');
   doc.setFontSize(10.5);
-  doc.text(COMPANY.legalName, margin, y);
+  doc.text('ILIA MITRO', margin, y);
   doc.setFont('helvetica','normal');
-  doc.text(COMPANY.activity, margin, y + 5);
-  doc.text(COMPANY.address1, margin, y + 10);
-  doc.text(COMPANY.address2, margin, y + 15);
-  doc.text('Tel: '+COMPANY.phone, margin, y + 20);
-  doc.text('E-post: '+COMPANY.email, margin, y + 25);
-  doc.text('Org.nr: '+COMPANY.orgNr, margin, y + 30);
-  doc.text('Momsreg.nr / VAT-nr: '+COMPANY.vatNr+' (fr.o.m. '+COMPANY.vatActiveFrom+')', margin, y + 35);
-  doc.text(COMPANY.taxStatus, margin, y + 40);
-  doc.text('SNI: '+COMPANY.sni, margin, y + 45);
-  y += 53;
+  doc.text('Keplers Gatan 36, lgh 1302, 415 55 Göteborg', margin, y + 5);
+  doc.text('Tel: 076 922 53 61', margin, y + 10);
+  doc.text('E-post: ilia.mitro@yahoo.gr', margin, y + 15);
+  doc.text('Org.nr: 710109-1432', margin, y + 20);
+  doc.text('VAT-nr: SE710109143201', margin, y + 25);
+  doc.text('Godkänd för F-skatt med villkor (FA-skatt)', margin, y + 30);
+  y += 38;
 
   doc.setFont('helvetica','normal');
   doc.setFontSize(10.5);
@@ -965,28 +1060,8 @@ async function _buildOfferPdfCore(lang,action='share'){
     }catch(e){}
   }
 
-  // Use the exact PDF page as the positioning background, without movable decorations.
-  if(action==='positionBackground')return doc.output('arraybuffer');
-
-  // Vula dhe firma e pronarit shtohen në faqen e parë, në pozicionet e ruajtura.
-  const od=ownerDecor(o);
-  try{
-    doc.setPage(1);
-    if(od.stamp){
-      const b=ownerBox(od,'stamp');
-      doc.addImage(makeOwnerStampDataUrl(),'PNG',b.x,b.y,b.width,b.height);
-    }
-    if(od.signature){
-      const os=localStorage.getItem(OWNER_SIG_KEY)||'';
-      if(os){
-        const box=ownerBox(od,'signature');
-        const strongSignature=await darkenOwnerSignatureDataUrl(os);
-        const props=doc.getImageProperties(strongSignature);
-        const fitted=containOwnerImage(props.width,props.height,box);
-        doc.addImage(strongSignature,'PNG',fitted.x,fitted.y,fitted.width,fitted.height);
-      }
-    }
-  }catch(e){console.error('Vula/firma:',e)}
+  // Vula dhe firma e pronarit vendosen sipas pozicionit të zgjedhur në pamje.
+  addPdfDecorationsToDoc(doc,'offer',currentPdfOfferId);
 
   // On iPhone/Safari a data URI is more reliable for an in-app PDF preview than a blob URL.
   const pdfBlob = doc.output('blob');
@@ -1130,7 +1205,7 @@ function measureToOffer(){
   const p=projects.find(x=>x.id===m.projectId);newOffer();
   if(p){$('offerClient').value=p.clientName||'';$('offerPhone').value=p.phone||'';$('offerAddress').value=p.address||''}
   $('workLines').innerHTML='';$('materialLines').innerHTML='';
-  addOfferLine('work',{description:`Måleriarbete ${m.total.toFixed(2)} m²`,qty:m.total.toFixed(2),unitPrice:m.laborPrice});
+  addOfferLine('work',{description:'Måleriarbete',qty:'',unitPrice:''});
   addOfferLine('material',{description:`Målerimaterial ${m.total.toFixed(2)} m²`,qty:m.total.toFixed(2),unitPrice:m.materialPrice});
   calcOffer()
 }
@@ -1264,26 +1339,12 @@ function saveVoiceReport(){
   persistAll();renderHome();renderHours();alert('Raporti u ruajt.')
 }
 
-function exportBackup(){
-  const blob=new Blob([JSON.stringify({version:7,projects,hours,materials,offers,invoices,photos,measures,reports},null,2)],{type:'application/json'});
-  const a=document.createElement('a');
-  const d=new Date();
-  const pad=n=>String(n).padStart(2,'0');
-  const stamp=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-  a.href=URL.createObjectURL(blob);
-  a.download=`ILIRI_Maleri_Backup_${stamp}.json`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  localStorage.setItem(LAST_BACKUP_KEY,String(Date.now()));
-  alert('Backup u ruajt me sukses ✅');
-  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-}
+function exportBackup(){IliriStore.exportAll()}
 function checkWeeklyBackupReminder(){
   const now=Date.now();
-  const raw=localStorage.getItem(LAST_BACKUP_KEY);
+  const raw=safeLocalGet(LAST_BACKUP_KEY);
   if(!raw){
-    localStorage.setItem(LAST_BACKUP_KEY,String(now));
+    safeLocalSet(LAST_BACKUP_KEY,String(now));
     return;
   }
   const last=Number(raw);
@@ -1293,7 +1354,7 @@ function checkWeeklyBackupReminder(){
   }
 }
 
-function importBackup(file){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);projects=Array.isArray(d.projects)?d.projects:[];hours=Array.isArray(d.hours)?d.hours:[];materials=Array.isArray(d.materials)?d.materials:[];offers=Array.isArray(d.offers)?d.offers:[];invoices=Array.isArray(d.invoices)?d.invoices:[];photos=Array.isArray(d.photos)?d.photos:[];measures=Array.isArray(d.measures)?d.measures:[];reports=Array.isArray(d.reports)?d.reports:[];persistAll();refreshProjectSelectors();renderHome();alert(tr('backupRestored'))}catch(e){alert(tr('invalidBackup'))}};r.readAsText(file)}
+function importBackup(file){return IliriStore.importAll(file)}
 function setText(id,key){const el=$(id);if(el)el.textContent=tr(key)}
 function applyLang(){document.documentElement.lang=currentLang;setText('langBtn','langBtn');setText('backupBtn','backup');setText('btnProjects','projects');setText('btnClients','clients');setText('btnHours','hours');setText('btnMaterials','materials');setText('btnNewProject','newProject');setText('statProjects','projects');setText('statClients','clients');setText('statHours','hours');setText('lblProjectName','projectName');setText('lblProjectNumber','projectNumber');setText('lblClient','client');setText('lblPhone','phone');setText('lblAddress','address');setText('lblType','workType');setText('lblStatus','status');setText('lblPrice','offer');setText('lblNotes','notes');setText('saveProjectBtn','saveProject');setText('cancelProjectBtn','cancel');setText('deleteCurrentProjectBtn','deleteCurrentProject');setText('projectsTitle','projects');setText('clientsTitle','clients');setText('hoursTitle','hours');setText('materialsTitle','materials');setText('lblSearchProject','searchProject');setText('lblSearchClient','searchClient');$('projectSearch').placeholder=tr('searchProjectPh');$('clientSearch').placeholder=tr('searchClientPh');document.querySelectorAll('.backBtn').forEach(el=>el.textContent=tr('back'));document.querySelectorAll('.lblProject').forEach(el=>el.textContent=tr('project'));document.querySelectorAll('.lblDate').forEach(el=>el.textContent=tr('date'));setText('lblStart','start');setText('lblEnd','end');setText('lblBreak','break');setText('saveHoursBtn','saveHours');setText('lblMaterialName','material');setText('lblMaterialCost','cost');setText('lblMaterialNote','note');setText('saveMaterialBtn','saveMaterial');document.getElementById('saveBackupVisibleBtn').textContent='💾 Ruaj backup';document.getElementById('restoreBackupVisibleBtn').textContent='↩️ Rikthe backup';$('type').options[0].textContent=tr('chooseWork');$('status').options[0].textContent=tr('active');$('status').options[1].textContent=tr('waiting');$('status').options[2].textContent=tr('done');$('projectFormTitle').textContent=$('projectId').value?tr('editProject'):tr('newProjectTitle');setText('btnOffers','offers');setText('offersTitle','offers');setText('newOfferBtn','newOffer');setText('filterUnsent','offerUnsent');setText('filterSent','offerSent');setText('filterUnpaid','offerUnpaid');setText('filterPaid','offerPaid');setText('filterAll','all');setText('lblOfferNumber','offerNumber');setText('lblOfferDate','date');setText('lblOfferClient','client');setText('lblOfferPhone','phone');setText('lblOfferAddress','address');setText('lblOfferStatus','status');if($('offerStatus')){const so=$('offerStatus').options; if(so[0])so[0].textContent=tr('offerUnsent'); if(so[1])so[1].textContent=tr('offerSent'); if(so[2])so[2].textContent=tr('offerUnpaid'); if(so[3])so[3].textContent=tr('offerPaid');}setText('workLinesTitle','workLines');setText('materialLinesTitle','materials');setText('addWorkLineBtn','addWork');setText('addMaterialLineBtn','addMaterial');setText('lblVat','vat');setText('subtotalLabel','subtotal');setText('vatLabel','vat');setText('totalLabel','total');setText('lblOfferNotes','notes');setText('saveOfferBtn','saveOffer');setText('cancelOfferBtn','cancel');setText('deleteOfferBtn','deleteOffer');document.querySelectorAll('.backToOffersBtn').forEach(el=>el.textContent=tr('back'));$('offerFormTitle').textContent=$('offerId').value?tr('editOffer'):tr('newOfferTitle');renderHome();if(!$('projectsView').classList.contains('hidden'))renderProjects();if(!$('clientsView').classList.contains('hidden'))renderClients();if(!$('hoursView').classList.contains('hidden'))renderHours();if(!$('materialsView').classList.contains('hidden'))renderMaterials();if(!$('offersView').classList.contains('hidden'))renderOffers()}
 
@@ -1305,7 +1366,7 @@ function nextInvoiceNumber(){
 }
 function addInvoiceLine(v={}){
   const d=document.createElement('div'); d.className='offer-line';
-  d.innerHTML=`<input class="desc" placeholder="Përshkrimi" value="${esc(v.description||'')}"><input class="qty" type="number" min="0" step="0.5" placeholder="Orët" value="${v.qty??''}"><input class="price" type="number" min="0" step="1" placeholder="Kr/orë" value="${v.unitPrice??''}"><button class="danger" type="button">×</button>`;
+  d.innerHTML=`<input class="desc" placeholder="Përshkrimi" value="${esc(v.description||'')}"><input class="qty" type="number" step="0.01" placeholder="Sasia/orët" value="${esc(v.qty??'')}"><input class="price" type="number" step="0.01" placeholder="Çmimi" value="${esc(v.unitPrice??'')}"><button class="danger" type="button">×</button>`;
   d.querySelectorAll('input').forEach(i=>i.addEventListener('input',calcInvoice));
   d.querySelector('button').addEventListener('click',()=>{d.remove();calcInvoice()});
   $('invoiceLines').appendChild(d);
@@ -1322,261 +1383,67 @@ function calcInvoice(){
 function clearInvoiceForm(){
   $('invoiceId').value='';$('invoiceNumber').value=nextInvoiceNumber();$('invoiceDate').value=today();
   const due=new Date();due.setDate(due.getDate()+30);$('invoiceDueDate').value=due.toISOString().slice(0,10);
-  $('invoiceClient').value='';$('invoiceAddress').value='';$('invoiceStatus').value='unsent';$('invoiceVat').value='25';$('invoiceNotes').value='';$('invoiceLines').innerHTML='';addInvoiceLine();$('deleteInvoiceBtn').classList.add('hidden');$('invoiceFormTitle').textContent='Faturë e re';calcInvoice();
+  $('invoiceClient').value='';$('invoicePhone').value='';$('invoiceAddress').value='';$('invoiceStatus').value='unsent';$('invoiceVat').value='25';$('invoiceNotes').value='';$('invoiceLines').innerHTML='';addInvoiceLine();$('deleteInvoiceBtn').classList.add('hidden');$('invoiceFormTitle').textContent='Faturë e re';calcInvoice();
 }
 function newInvoice(){clearInvoiceForm();showView('invoiceFormView')}
 function saveInvoice(){
   const id=$('invoiceId').value, totals=calcInvoice();
-  const previous=invoices.find(x=>x.id===id);
-  const o={...previous,id:id||uid(),number:$('invoiceNumber').value.trim()||nextInvoiceNumber(),date:$('invoiceDate').value||today(),dueDate:$('invoiceDueDate').value,client:$('invoiceClient').value.trim(),phone:'',address:$('invoiceAddress').value.trim(),status:$('invoiceStatus').value||'unpaid',vatPct:Number($('invoiceVat').value||0),notes:$('invoiceNotes').value.trim(),lines:collectInvoiceLines(),...totals,updatedAt:new Date().toISOString()};
+  const o={...(invoices.find(x=>x.id===id)||{}),id:id||uid(),number:$('invoiceNumber').value.trim()||nextInvoiceNumber(),date:$('invoiceDate').value||today(),dueDate:$('invoiceDueDate').value,client:$('invoiceClient').value.trim(),phone:$('invoicePhone').value.trim(),address:$('invoiceAddress').value.trim(),status:$('invoiceStatus').value||'unpaid',vatPct:Number($('invoiceVat').value||0),notes:$('invoiceNotes').value.trim(),lines:collectInvoiceLines(),...totals,updatedAt:new Date().toISOString()};
   if(!o.client){$('invoiceClient').focus();return}
-  if(previous&&invoiceSnapshot(previous)!==invoiceSnapshot(o)&&(previous.signRequest||previous.signature||previous.accepted)){
-    if(!confirm('Ndryshimi i përmbajtjes anulon linkun dhe pranimin e mëparshëm. Vazhdo?'))return;
-    delete o.signRequest;delete o.signature;delete o.signedBy;delete o.signedAt;o.accepted=false;delete o.acceptedAt;
-    if(o.status==='accepted')o.status='unsent';
-  }
-  if(o.status==='accepted'){o.accepted=true;o.acceptedAt=o.acceptedAt||new Date().toISOString();}
-  if(o.status==='sent')o.sentAt=o.sentAt||new Date().toISOString();
-  const i=invoices.findIndex(x=>x.id===o.id); if(i>=0)invoices[i]=o; else invoices.unshift(o);
+  const i=invoices.findIndex(x=>x.id===o.id); if(i>=0)invoices[i]=o; else invoices.unshift(o);$('invoiceId').value=o.id;
   persistAll();showView('invoicesView');
 }
 function editInvoice(id){
   const o=invoices.find(x=>x.id===id);if(!o)return;
-  $('invoiceId').value=o.id;$('invoiceNumber').value=o.number||'';$('invoiceDate').value=o.date||today();$('invoiceDueDate').value=o.dueDate||'';$('invoiceClient').value=o.client||'';$('invoiceAddress').value=o.address||'';$('invoiceStatus').value=o.status||'unpaid';$('invoiceVat').value=o.vatPct??25;$('invoiceNotes').value=o.notes||'';$('invoiceLines').innerHTML='';(o.lines||[]).forEach(addInvoiceLine);if(!(o.lines||[]).length)addInvoiceLine();$('deleteInvoiceBtn').classList.remove('hidden');$('invoiceFormTitle').textContent='Ndrysho faturën';calcInvoice();showView('invoiceFormView');
+  $('invoiceId').value=o.id;$('invoiceNumber').value=o.number||'';$('invoiceDate').value=o.date||today();$('invoiceDueDate').value=o.dueDate||'';$('invoiceClient').value=o.client||'';$('invoicePhone').value=o.phone||'';$('invoiceAddress').value=o.address||'';$('invoiceStatus').value=o.status||'unpaid';$('invoiceVat').value=o.vatPct??25;$('invoiceNotes').value=o.notes||'';$('invoiceLines').innerHTML='';(o.lines||[]).forEach(addInvoiceLine);if(!(o.lines||[]).length)addInvoiceLine();$('deleteInvoiceBtn').classList.remove('hidden');$('invoiceFormTitle').textContent='Ndrysho faturën';calcInvoice();showView('invoiceFormView');
 }
 function deleteInvoice(id){
   if(!confirm('Ta fshij këtë faturë?'))return;
   invoices=invoices.filter(x=>x.id!==id);persistAll();showView('invoicesView');
 }
 function invoiceStatusText(v){
-  return v==='unsent'?'E pa dërguar':v==='sent'?'E dërguar':v==='accepted'?'E pranuar':v==='paid'?'E paguar':'E pa paguar';
+  return v==='unsent'?'E pa dërguar':v==='sent'?'E dërguar':v==='paid'?'E paguar':'E pa paguar';
 }
 function renderInvoices(){
   const all=[...invoices].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
-  const list=all.filter(o=>invoiceMatchesFilter(o,invoiceFilter));
+  const list=invoiceFilter==='all'?all:all.filter(o=>(o.status||'unsent')===invoiceFilter);
   $('invoicesList').innerHTML=list.length?list.map((o,idx)=>`<div class="item"><div class="section-title"><h3>${idx+1}. ${esc(o.number||'')} — ${esc(o.client||'')}</h3><span class="badge">${invoiceStatusText(o.status||'unsent')}</span></div><div class="meta">${esc(o.date||'')} ${o.dueDate?'• Afati: '+esc(o.dueDate):''}<br><b>TOTALI:</b> ${Number(o.total||0).toLocaleString('sv-SE',{maximumFractionDigits:2})} kr</div><div class="row" style="margin-top:10px;grid-template-columns:1fr 1fr 1fr"><button class="editInvoiceBtn" data-id="${esc(o.id)}" type="button">Ndrysho</button><button class="viewInvoiceBtn secondary" data-id="${esc(o.id)}" type="button">👁️ Shiko</button><button class="danger deleteInvoiceListBtn" data-id="${esc(o.id)}" type="button">Fshi</button></div></div>`).join(''):'<div class="empty">Nuk ka fatura në këtë kategori.</div>';
   document.querySelectorAll('.editInvoiceBtn').forEach(b=>b.addEventListener('click',()=>editInvoice(b.dataset.id)));
   document.querySelectorAll('.viewInvoiceBtn').forEach(b=>b.addEventListener('click',()=>printInvoice(b.dataset.id)));
   document.querySelectorAll('.deleteInvoiceListBtn').forEach(b=>b.addEventListener('click',()=>deleteInvoice(b.dataset.id)));
 }
 let currentInvoiceId=null;
-let invoiceGuest=null;
-function invoiceSnapshot(o){
-  return JSON.stringify({id:o.id,number:o.number,date:o.date,dueDate:o.dueDate,client:o.client,address:o.address,notes:o.notes,lines:o.lines,subtotal:o.subtotal,vatPct:o.vatPct,vat:o.vat,total:o.total});
-}
-function invoicePack(value){return btoa(unescape(encodeURIComponent(JSON.stringify(value)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
-function invoiceUnpack(value){
-  if(!value||value.length>100000)throw Error('Link shumë i gjatë');
-  let packed=value.replace(/-/g,'+').replace(/_/g,'/');
-  while(packed.length%4)packed+='=';
-  return JSON.parse(decodeURIComponent(escape(atob(packed))));
-}
-function invoiceBaseUrl(){return location.origin+location.pathname;}
-async function shareInvoiceLink(url,title){
-  if(navigator.share){await navigator.share({title,url});return;}
-  if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(url);alert('Linku u kopjua. Ngjite në email ose mesazh.');}
-  else prompt('Kopjo linkun / Kopiera länken:',url);
-}
-async function sendInvoiceForSignature(id,lang='sv'){
-  const o=invoices.find(x=>x.id===id);if(!o)return;
-  if(location.protocol!=='https:'&&location.protocol!=='http:'){alert('Hape aplikacionin nga linku online për të dërguar link firmosjeje.');return;}
-  if(!(o.lines||[]).length||!o.client){alert('Plotëso klientin dhe punët para dërgimit për firmë.');return;}
-  if(o.signature&&!confirm('Kjo faturë është firmosur. Të kërkohet firmë e re?'))return;
-  const snapshot=invoiceSnapshot(o);
-  const token=o.signRequest&&o.signRequest.snapshot===snapshot?o.signRequest.token:uid()+uid();
-  o.signRequest={token,snapshot,createdAt:new Date().toISOString(),lang};
-  const payload={invoice:JSON.parse(snapshot),token,lang};
-  const url=invoiceBaseUrl()+'#invoiceSign='+invoicePack(payload);
-  if(url.length>24000){alert('Fatura është shumë e gjatë për link. Dërgo PDF-në me butonin Dërgo.');return;}
-  persistAll();
-  try{
-    await shareInvoiceLink(url,lang==='sv'?'Granska och underteckna faktura '+o.number:'Kontrollo dhe firmos faturën '+o.number);
-    if(confirm('E dërgove linkun te klienti?')){
-      o.sentAt=new Date().toISOString();if(!['paid','accepted'].includes(o.status))o.status='sent';persistAll();renderInvoices();printInvoice(id);
-    }
-  }catch(e){if(e.name!=='AbortError')alert('Linku nuk u dërgua. Provo përsëri.');}
-}
-function showInvoiceReturn(guest){
-  const old=document.getElementById('invoiceGuestView');if(old)old.remove();
-  const o=guest.invoice;
-  const returnUrl=invoiceBaseUrl()+'#invoiceReturn='+invoicePack({id:o.id,token:guest.token,signature:o.signature,signedBy:o.signedBy,signedAt:o.signedAt});
-  const v=document.createElement('div');v.id='invoiceGuestView';v.style.cssText='position:fixed;inset:0;z-index:100001;background:white;overflow:auto;padding:20px;box-sizing:border-box';
-  v.innerHTML='<h2>✓ Undertecknad / E firmosur</h2><p>'+esc(o.number)+' — '+esc(o.signedBy)+'</p><p>Skicka tillbaka bekräftelselänken till avsändaren. Den skickas inte automatiskt.<br>Ktheja linkun dërguesit. Nuk kthehet automatikisht.</p><button type="button" id="invoiceReturnShare">↩️ Skicka tillbaka / Kthe të firmosur</button><button type="button" id="invoiceReturnEmail" style="margin-top:12px">✉️ E-post / Email</button><button type="button" id="invoiceGuestPdf" style="margin-top:12px">⬇️ PDF med underskrift / PDF i firmosur</button><p id="invoiceReturnHint"></p>';
-  document.body.appendChild(v);
-  v.querySelector('#invoiceReturnShare').onclick=async()=>{try{await shareInvoiceLink(returnUrl,'Undertecknad faktura '+o.number);v.querySelector('#invoiceReturnHint').textContent='Kontrollera att länken skickades till avsändaren. / Kontrollo që ia dërgove pronarit.';}catch(e){if(e.name!=='AbortError')alert('Prova E-post / Provo Email.');}};
-  v.querySelector('#invoiceReturnEmail').onclick=()=>{location.href='mailto:'+encodeURIComponent(COMPANY.email)+'?subject='+encodeURIComponent('Undertecknad faktura '+o.number)+'&body='+encodeURIComponent('Fakturan har undertecknats av '+o.signedBy+'. Öppna länken för att registrera underskriften:\n\n'+returnUrl);};
-  v.querySelector('#invoiceGuestPdf').onclick=()=>buildInvoicePdf(o.id,guest.lang,'download',o);
-}
-function validateInvoiceGuest(p){
-  const o=p&&p.invoice;
-  if(!o||typeof o.id!=='string'||typeof p.token!=='string'||p.token.length<20||p.token.length>160)throw Error('Link i pavlefshëm');
-  if(!Array.isArray(o.lines)||o.lines.length>250)throw Error('Punë të pavlefshme');
-  for(const key of ['id','number','date','dueDate','client','address','notes'])if(o[key]!=null&&(typeof o[key]!=='string'||o[key].length>10000))throw Error('Fushë e pavlefshme');
-  for(const key of ['subtotal','vatPct','vat','total'])if(typeof o[key]!=='number'||!Number.isFinite(o[key]))throw Error('Shumë e pavlefshme');
-  for(const line of o.lines)if(!line||typeof line.description!=='string'||line.description.length>10000||!Number.isFinite(line.qty)||!Number.isFinite(line.unitPrice))throw Error('Rresht i pavlefshëm');
-  if(Math.abs(o.lines.reduce((s,x)=>s+x.qty*x.unitPrice,0)-o.subtotal)>0.02||Math.abs(o.subtotal*o.vatPct/100-o.vat)>0.02||Math.abs(o.subtotal+o.vat-o.total)>0.02)throw Error('Totali nuk përputhet');
-  // Only document fields enter guest mode; no incoming owner decoration or code.
-  return {invoice:JSON.parse(invoiceSnapshot(o)),token:p.token,lang:p.lang==='sq'?'sq':'sv'};
-}
-function importInvoiceReturn(p){
-  if(!p||typeof p.id!=='string'||typeof p.token!=='string'||typeof p.signedBy!=='string'||!p.signedBy.trim()||p.signedBy.length>200||typeof p.signedAt!=='string'||!Number.isFinite(Date.parse(p.signedAt))||typeof p.signature!=='string'||p.signature.length>70000||!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(p.signature))throw Error('Konfirmim i pavlefshëm');
-  const o=invoices.find(x=>x.id===p.id);
-  if(!o)throw Error('Fatura nuk u gjet. Hape linkun në të njëjtin Safari ku ruan faturat, ose rikthe backup-in.');
-  if(!o.signRequest||o.signRequest.token!==p.token||o.signRequest.snapshot!==invoiceSnapshot(o))throw Error('Ky konfirmim nuk përputhet me versionin aktual të faturës.');
-  if(o.signature===p.signature&&o.signedAt===p.signedAt){printInvoice(o.id);return true;}
-  if(!confirm('Regjistro pranimin e faturës '+o.number+' nga '+p.signedBy+'? Firma është me gisht; identiteti nuk është verifikuar me BankID.'))return false;
-  o.signature=p.signature;o.signedBy=p.signedBy;o.signedAt=p.signedAt;o.accepted=true;o.acceptedAt=p.signedAt;
-  if(o.status!=='paid')o.status='accepted';
-  persistAll();renderInvoices();printInvoice(o.id);return true;
-}
-function openInvoiceLink(){
-  const hash=new URLSearchParams(location.hash.slice(1));
-  if(hash.has('invoiceReturn')){
-    try{if(importInvoiceReturn(invoiceUnpack(hash.get('invoiceReturn'))))history.replaceState({},'',location.pathname+location.search);}
-    catch(e){alert(e.message);}return;
-  }
-  if(!hash.has('invoiceSign'))return;
-  try{
-    invoiceGuest=validateInvoiceGuest(invoiceUnpack(hash.get('invoiceSign')));
-    const o=invoiceGuest.invoice;
-    const v=document.createElement('div');v.id='invoiceGuestView';v.style.cssText='position:fixed;inset:0;z-index:100001;background:white;overflow:auto;padding:20px;box-sizing:border-box;font-family:Arial,sans-serif;line-height:1.5';
-    v.innerHTML='<div style="max-width:700px;margin:auto;overflow-wrap:anywhere"><h2>Faktura / Faturë '+esc(o.number)+'</h2><p><b>'+esc(COMPANY.legalName)+'</b><br>'+esc(COMPANY.activity)+'<br>'+esc(COMPANY.address1)+'<br>'+esc(COMPANY.address2)+'<br>'+esc(COMPANY.email)+'<br>Org.nr: '+esc(COMPANY.orgNr)+'</p><p>Datum / Data: '+esc(o.date)+'<br>Förfallodatum / Afati: '+esc(o.dueDate)+'<br>Kund / Klienti: '+esc(o.client)+'<br>'+esc(o.address||'')+'</p><div>'+(o.lines||[]).map(x=>'<p style="border-bottom:1px solid #ddd">'+esc(x.description)+'<br>'+esc(x.qty)+' × '+esc(x.unitPrice)+' kr = '+esc(x.qty*x.unitPrice)+' kr</p>').join('')+'</div><p>Exkl. moms: '+esc(o.subtotal)+' kr<br>Moms ('+esc(o.vatPct)+'%): '+esc(o.vat)+' kr<br><b>TOTALT: '+esc(o.total)+' kr</b></p><p>'+esc(o.notes||'')+'</p><p>Granska hela fakturan före underskrift. Inte BankID. / Lexoje para firmosjes.</p><button id="invoiceGuestSign" type="button">✍️ Underteckna / Firmos</button></div>';
-    document.body.appendChild(v);v.querySelector('#invoiceGuestSign').onclick=()=>signInvoice(o.id);
-  }catch(e){alert('Linku nuk u hap / Länken kunde inte öppnas: '+e.message);}
-}
-window.addEventListener('load',openInvoiceLink);
-window.addEventListener('hashchange',openInvoiceLink);
-function invoiceMatchesFilter(o,filter){
-  if(filter==='all')return true;
-  if(filter==='accepted')return !!o.accepted||o.status==='accepted';
-  if(filter==='sent')return !!o.sentAt||o.status==='sent';
-  return (o.status||'unsent')===filter;
-}
-function setInvoiceStatus(id,status){
-  const o=invoices.find(x=>x.id===id);if(!o)return;
-  if(status==='accepted'){o.accepted=true;o.acceptedAt=o.acceptedAt||new Date().toISOString();if(o.status!=='paid')o.status='accepted';}
-  else {o.status=status;if(status==='sent')o.sentAt=o.sentAt||new Date().toISOString();if(status==='unsent')o.sentAt=null;}
-  o.updatedAt=new Date().toISOString();persistAll();renderInvoices();printInvoice(id);
-}
-function toggleInvoiceDecor(id,kind){
-  const o=invoices.find(x=>x.id===id);if(!o)return;
-  if(kind==='signature'&&!localStorage.getItem(OWNER_SIG_KEY)){alert('Nuk ka firmë të pronarit të ruajtur. Vendose te Oferta → Firma ime.');return;}
-  const d=ownerDecor(o);d[kind]=!d[kind];persistAll();printInvoice(id);
-}
 function printInvoice(id){
   currentInvoiceId=id;const o=invoices.find(x=>x.id===id);if(!o)return;
-  const old=document.getElementById('invoicePreview');if(old)old.remove();
-  const v=document.createElement('div');v.id='invoicePreview';
-  v.style.cssText='position:fixed;inset:0;z-index:99999;background:#f3f4f6;color:#111;overflow:auto;padding:12px;box-sizing:border-box;font-family:Arial,sans-serif;font-size:14px;-webkit-text-size-adjust:100%;';
+  let v=document.getElementById('invoicePreview');
+  if(!v){v=document.createElement('div');v.id='invoicePreview';v.style.cssText='position:fixed;inset:0;z-index:99999;background:#fff;color:#111;overflow:auto;padding:20px;font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;';document.body.appendChild(v)}
   const money=n=>Number(n||0).toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';
-  v.innerHTML='<div style="max-width:760px;margin:auto"><div id="invoiceActions" style="position:sticky;top:0;z-index:2;background:#f3f4f6;padding-bottom:10px"><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px"><button type="button" id="invoiceBack">← Kthehu</button><button type="button" id="invoiceSendPdf">📨 Dërgo PDF</button><button type="button" id="invoiceSendSign">🔗 Dërgo për firmë</button><button type="button" id="invoiceSign">✍️ Firmos</button></div><div style="display:flex;gap:8px;align-items:center;margin-top:8px"><label for="invoicePreviewStatus">Statusi</label><select id="invoicePreviewStatus" style="flex:1;min-width:0"><option value="unsent">E pa dërguar</option><option value="sent">E dërguar</option><option value="accepted">E pranuar</option><option value="unpaid">E pa paguar</option><option value="paid">E paguar</option></select></div><div style="display:flex;gap:8px;margin-top:8px"><button type="button" id="invoiceStamp">🔖 Vula</button><button type="button" id="invoiceOwnerSign">✍️ Firma ime</button><select id="invoicePdfLanguage" aria-label="Gjuha e PDF-së" style="flex:1;min-width:0"><option value="sv">Svenska</option><option value="sq">Shqip</option></select></div><small id="invoiceSendHint" role="status"></small></div><article style="background:white;padding:16px;border-radius:12px;line-height:1.5;overflow-wrap:anywhere"><h2 style="font-size:19px;margin:0 0 12px">FATURË <span style="white-space:nowrap">'+esc(o.number||'')+'</span></h2><h3 style="font-size:18px;margin:0">'+esc(COMPANY.brand)+'</h3><b>'+esc(COMPANY.legalName)+'</b><br>'+[COMPANY.activity,COMPANY.address1,COMPANY.address2,'Tel: '+COMPANY.phone,'E-post: '+COMPANY.email,'Org.nr: '+COMPANY.orgNr,'Momsreg.nr / VAT-nr: '+COMPANY.vatNr,COMPANY.taxStatus].map(esc).join('<br>')+'<hr><p><b>Data:</b> '+esc(o.date||'')+'<br><b>Afati:</b> '+esc(o.dueDate||'')+'<br><b>Klienti:</b> '+esc(o.client||'')+'<br><b>Adresa:</b> '+esc(o.address||'')+'</p><table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:12px"><thead><tr><th style="width:40%;text-align:left">Përshkrimi</th><th>Orët</th><th>Kr/orë</th><th>Shuma</th></tr></thead><tbody>'+(o.lines||[]).map(x=>'<tr><td style="padding:8px 2px;border-bottom:1px solid #ddd">'+esc(x.description||'')+'</td><td style="text-align:right">'+esc(x.qty||0)+'</td><td style="text-align:right">'+money(x.unitPrice)+'</td><td style="text-align:right">'+money((x.qty||0)*(x.unitPrice||0))+'</td></tr>').join('')+'</tbody></table><p>Pa moms: '+money(o.subtotal)+'<br>Moms ('+esc(o.vatPct||0)+'%): '+money(o.vat)+'<br><b>TOTALI: '+money(o.total)+'</b></p>'+(o.notes?'<p>'+esc(o.notes)+'</p>':'')+'<div id="invoiceDecorPreview"></div><div id="invoiceAcceptancePreview"></div></article><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0"><button id="invoicePdfSv" type="button">🇸🇪 PDF Svenska</button><button id="invoicePdfSq" type="button">🇦🇱 PDF Shqip</button></div></div>';
-  document.body.appendChild(v);
-  v.querySelectorAll('button').forEach(b=>{b.style.fontSize='14px';b.style.padding='11px 7px';b.style.minWidth='0'});
-  v.querySelector('#invoicePreviewStatus').value=o.status||'unsent';
-  v.querySelector('#invoicePreviewStatus').onchange=e=>setInvoiceStatus(id,e.target.value);
-  v.querySelector('#invoiceBack').onclick=()=>v.remove();
-  v.querySelector('#invoiceSendPdf').onclick=()=>sendInvoice(id,v.querySelector('#invoicePdfLanguage').value);
-  v.querySelector('#invoiceSendSign').onclick=()=>sendInvoiceForSignature(id,v.querySelector('#invoicePdfLanguage').value);
-  v.querySelector('#invoiceSign').onclick=()=>signInvoice(id);
-  v.querySelector('#invoicePdfSv').onclick=()=>buildInvoicePdf(id,'sv');
-  v.querySelector('#invoicePdfSq').onclick=()=>buildInvoicePdf(id,'sq');
-  v.querySelector('#invoiceStamp').onclick=()=>toggleInvoiceDecor(id,'stamp');
-  v.querySelector('#invoiceOwnerSign').onclick=()=>toggleInvoiceDecor(id,'signature');
-  const decor=ownerDecor(o),box=v.querySelector('#invoiceDecorPreview');
-  if(decor.stamp){const im=document.createElement('img');im.src=makeOwnerStampDataUrl();im.style.cssText='width:100px;height:100px;object-fit:contain';box.appendChild(im);}
-  if(decor.signature){const im=document.createElement('img');im.src=localStorage.getItem(OWNER_SIG_KEY)||'';im.style.cssText='width:120px;max-height:65px;object-fit:contain';box.appendChild(im);}
-  const acceptance=v.querySelector('#invoiceAcceptancePreview');
-  if(o.accepted){const p=document.createElement('p');p.textContent='✓ E pranuar'+(o.signedBy?' — '+o.signedBy:'')+(o.signedAt?' · '+o.signedAt.slice(0,10):'');acceptance.appendChild(p);}
-  if(o.signature){const im=document.createElement('img');im.src=o.signature;im.alt='Firma e klientit';im.style.cssText='width:180px;max-width:100%;height:auto';acceptance.appendChild(im);}
+  v.innerHTML=`<div style="max-width:760px;margin:0 auto;min-height:calc(100vh - 40px);display:flex;flex-direction:column"><div style="margin-bottom:18px"><button class="pdf-close-btn" onclick="document.getElementById('invoicePreview').remove()">Kthehu</button></div><div id="invoicePaperPreview" style="position:relative;flex:1;min-height:720px"><h1>ILIRI Måleri</h1><div style="line-height:1.45;margin-bottom:14px"><b>ILIA MITRO</b><br>Keplers Gatan 36, lgh 1302, 415 55 Göteborg<br>Tel: 076 922 53 61<br>E-post: ilia.mitro@yahoo.gr<br>Org.nr: 710109-1432<br>VAT-nr: SE710109143201<br>Godkänd för F-skatt med villkor (FA-skatt)</div><h2>FATURË ${esc(o.number||'')}</h2><p><b>Data:</b> ${esc(o.date||'')}<br><b>Afati:</b> ${esc(o.dueDate||'')}<br><b>Klienti:</b> ${esc(o.client||'')}<br><b>Telefoni:</b> ${esc(o.phone||'')}<br><b>Adresa:</b> ${esc(o.address||'')}</p><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;border-bottom:1px solid #ccc;padding:8px 4px">Përshkrimi</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Sasia</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Çmimi</th><th style="text-align:right;border-bottom:1px solid #ccc;padding:8px 4px">Shuma</th></tr></thead><tbody>${(o.lines||[]).map(x=>`<tr><td style="padding:8px 4px;border-bottom:1px solid #eee">${esc(x.description||'')}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${x.qty||0}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${money(x.unitPrice)}</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #eee">${money((x.qty||0)*(x.unitPrice||0))}</td></tr>`).join('')}</tbody></table><div style="margin-top:20px;line-height:1.8"><b>Pa moms:</b> ${money(o.subtotal)}<br><b>Moms (${o.vatPct||0}%):</b> ${money(o.vat)}<br><b style="font-size:20px">TOTALI: ${money(o.total)}</b></div>${o.notes?`<p><b>Shënime:</b><br>${esc(o.notes)}</p>`:''}</div><div style="display:flex;justify-content:space-between;gap:12px;margin-top:36px;padding-bottom:20px"><button onclick="buildInvoicePdf('${esc(id)}','sv')">🇸🇪 PDF Svenska</button><button onclick="buildInvoicePdf('${esc(id)}','sq')">🇦🇱 PDF Shqip</button></div></div>`;
+  setTimeout(()=>renderPdfDecorationControls('invoicePaperPreview','invoice',id),0);
 }
-async function sendInvoice(id,lang){
+function buildInvoicePdf(id,lang='sq'){
   const o=invoices.find(x=>x.id===id);if(!o)return;
-  const file=buildInvoicePdf(id,lang,'file');if(!file)return;
-  try{
-    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-      await navigator.share({files:[file],title:file.name});
-      // Sharing may mean Save to Files; only the user can confirm delivery.
-      if(confirm('E dërgove faturën te klienti? Shënoje si E dërguar vetëm nëse e dërgove.')){
-        o.sentAt=new Date().toISOString();
-        if(!['paid','accepted'].includes(o.status))o.status='sent';
-        persistAll();renderInvoices();printInvoice(id);
-      }
-    }else{
-      buildInvoicePdf(id,lang);
-      alert('PDF u shkarkua. Bashkëngjite në email ose mesazh; pasi ta dërgosh, zgjidh statusin E dërguar.');
-    }
-  }catch(e){if(e.name!=='AbortError')alert('Dërgimi nuk u hap. Përdor PDF dhe bashkëngjite vetë. Statusi nuk u ndryshua.');}
-}
-function signInvoice(id){
-  const guest=invoiceGuest&&invoiceGuest.invoice.id===id?invoiceGuest:null;
-  const o=guest?guest.invoice:invoices.find(x=>x.id===id);if(!o)return;
-  if(document.getElementById('invoiceSignPad'))return;
-  const m=document.createElement('div');m.id='invoiceSignPad';m.style.cssText='position:fixed;inset:0;z-index:100002;background:#f3f4f6;overflow:auto;padding:16px;box-sizing:border-box';
-  m.innerHTML='<div style="max-width:600px;margin:auto"><button id="invoiceSignBack" type="button">← Kthehu</button><h2>Firma e klientit</h2><p>Fatura '+esc(o.number)+' · '+esc(o.client)+' · '+esc(o.total)+' kr</p><p>Klienti firmos në këtë pajisje për pranimin e faturës. Kjo nuk shënon pagesë dhe nuk është BankID.</p><label>Emri i klientit</label><input id="invoiceSignerName" autocomplete="name"><canvas id="invoiceSignatureCanvas" width="900" height="300" style="display:block;width:100%;height:180px;background:white;border:1px solid #aaa;touch-action:none;margin:12px 0"></canvas><label><input id="invoiceSignConsent" type="checkbox" style="width:auto"> E kam lexuar dhe e pranoj këtë faturë.</label><div style="display:flex;gap:10px;margin-top:16px"><button id="invoiceSignClear" type="button">Pastro</button><button id="invoiceSignSave" type="button">Ruaj firmën</button></div></div>';
-  document.body.appendChild(m);
-  if(guest){m.querySelector('h2').textContent='Kundens underskrift / Firma e klientit';m.querySelectorAll('p')[1].textContent='Jag har granskat och godkänner fakturan. Underskriften bekräftar inte betalning. Inte BankID. / Pranimi nuk është pagesë.';m.querySelectorAll('label')[0].textContent='Ditt namn / Emri juaj';m.querySelectorAll('label')[1].lastChild.textContent=' Jag har läst och godkänner fakturan / E pranoj faturën';m.querySelector('#invoiceSignSave').textContent='Spara underskrift / Ruaj firmën';m.querySelector('#invoiceSignBack').textContent='Tillbaka / Kthehu';m.querySelector('#invoiceSignClear').textContent='Rensa / Pastro';}
-  const c=m.querySelector('canvas'),ctx=c.getContext('2d');ctx.lineWidth=4;ctx.lineCap='round';ctx.strokeStyle='#111';
-  let active=false,ink=false;
-  const point=e=>{const r=c.getBoundingClientRect();return [(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height]};
-  c.onpointerdown=e=>{active=true;c.setPointerCapture(e.pointerId);ctx.beginPath();ctx.moveTo(...point(e));};
-  c.onpointermove=e=>{if(!active)return;ctx.lineTo(...point(e));ctx.stroke();ink=true;};
-  c.onpointerup=c.onpointercancel=()=>{active=false;};
-  m.querySelector('#invoiceSignBack').onclick=()=>m.remove();
-  m.querySelector('#invoiceSignClear').onclick=()=>{ctx.clearRect(0,0,c.width,c.height);ink=false;};
-  m.querySelector('#invoiceSignSave').onclick=()=>{
-    const name=m.querySelector('#invoiceSignerName').value.trim();
-    if(!name||name.length>200||!ink||!m.querySelector('#invoiceSignConsent').checked){alert('Ange namn, skriv under och godkänn. / Shkruaj emrin, firmos dhe konfirmo pranimin.');return;}
-    if(o.signature&&!confirm('Ta zëvendësoj firmën e klientit në këtë faturë?'))return;
-    const compact=document.createElement('canvas');compact.width=450;compact.height=150;const cc=compact.getContext('2d');cc.fillStyle='#fff';cc.fillRect(0,0,450,150);cc.drawImage(c,0,0,450,150);
-    o.signature=compact.toDataURL('image/jpeg',0.6);o.signedBy=name;o.signedAt=new Date().toISOString();o.accepted=true;o.acceptedAt=o.signedAt;
-    if(o.status!=='paid')o.status='accepted';
-    if(guest){m.remove();showInvoiceReturn(guest);return;}
-    persistAll();m.remove();renderInvoices();printInvoice(id);
-  };
-}
-function addSignatureToPdf(doc,src,box){
-  const info=doc.getImageProperties(src);
-  const fit=containOwnerImage(info.width,info.height,box);
-  doc.addImage(src,src.startsWith('data:image/jpeg')?'JPEG':'PNG',fit.x,fit.y,fit.width,fit.height);
-}
-function buildInvoicePdf(id,lang='sq',action='download',source=null){
-  const o=source||invoices.find(x=>x.id===id);if(!o)return;
   if(!window.jspdf||!window.jspdf.jsPDF){alert('PDF library nuk u ngarkua.');return}
   const T=lang==='sv'?{
-    invoice:'FAKTURA',date:'Datum',due:'Förfallodatum',client:'Kund',address:'Adress',
-    desc:'Beskrivning',qty:'Timmar',price:'Kr/timme',sum:'Belopp',exvat:'Exkl. moms',vat:'Moms',total:'TOTALT',notes:'Anteckningar'
+    invoice:'FAKTURA',date:'Datum',due:'Förfallodatum',client:'Kund',phone:'Telefon',address:'Adress',
+    desc:'Beskrivning',qty:'Antal/timmar',price:'Pris',sum:'Belopp',exvat:'Exkl. moms',vat:'Moms',total:'TOTALT',notes:'Anteckningar'
   }:{
-    invoice:'FATURË',date:'Data',due:'Afati',client:'Klienti',address:'Adresa',
-    desc:'Përshkrimi',qty:'Orët',price:'Kr/orë',sum:'Shuma',exvat:'Pa moms',vat:'Moms',total:'TOTALI',notes:'Shënime'
+    invoice:'FATURË',date:'Data',due:'Afati',client:'Klienti',phone:'Telefoni',address:'Adresa',
+    desc:'Përshkrimi',qty:'Sasia/orët',price:'Çmimi',sum:'Shuma',exvat:'Pa moms',vat:'Moms',total:'TOTALI',notes:'Shënime'
   };
   const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4'}),money=n=>Number(n||0).toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';
-  let y=18;doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text(COMPANY.brand,16,y);doc.setFontSize(14);doc.text(T.invoice+' '+String(o.number||''),194,y,{align:'right'});y+=7;
-  doc.setFontSize(10.5);doc.text(COMPANY.legalName,16,y);doc.setFont('helvetica','normal');
-  [COMPANY.activity,COMPANY.address1,COMPANY.address2,'Tel: '+COMPANY.phone,'E-post: '+COMPANY.email,'Org.nr: '+COMPANY.orgNr,'Momsreg.nr / VAT-nr: '+COMPANY.vatNr,COMPANY.taxStatus].forEach(t=>{y+=5;doc.text(t,16,y)});
-  y+=9;
-  doc.setFont('helvetica','normal');doc.setFontSize(10.5);
-  [T.date+': '+(o.date||''),T.due+': '+(o.dueDate||''),T.client+': '+(o.client||''),T.address+': '+(o.address||'')].forEach(t=>{doc.text(t,16,y);y+=5});
+  let y=18;doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text('ILIRI Måleri',16,y);doc.setFontSize(14);doc.text(T.invoice+' '+String(o.number||''),194,y,{align:'right'});y+=8;
+  doc.setFontSize(10.5);doc.text('ILIA MITRO',16,y);y+=5;doc.setFont('helvetica','normal');
+  ['Keplers Gatan 36, lgh 1302, 415 55 Göteborg','Tel: 076 922 53 61','E-post: ilia.mitro@yahoo.gr','Org.nr: 710109-1432','VAT-nr: SE710109143201','Godkänd för F-skatt med villkor (FA-skatt)'].forEach(t=>{doc.text(t,16,y);y+=5});
+  y+=3;doc.setFont('helvetica','normal');doc.setFontSize(10.5);
+  [T.date+': '+(o.date||''),T.due+': '+(o.dueDate||''),T.client+': '+(o.client||''),T.phone+': '+(o.phone||''),T.address+': '+(o.address||'')].forEach(t=>{doc.text(t,16,y);y+=5});
   y+=4;doc.setFont('helvetica','bold');doc.text(T.desc,16,y);doc.text(T.qty,125,y,{align:'right'});doc.text(T.price,158,y,{align:'right'});doc.text(T.sum,194,y,{align:'right'});y+=5;doc.line(16,y,194,y);y+=5;doc.setFont('helvetica','normal');
-  (o.lines||[]).forEach(x=>{
-    const description=doc.splitTextToSize(String(x.description||''),90);
-    if(y+Math.min(description.length*5,20)>270){doc.addPage();y=18;}
-    doc.text(String(x.qty||0),125,y,{align:'right'});doc.text(money(x.unitPrice),158,y,{align:'right'});doc.text(money((x.qty||0)*(x.unitPrice||0)),194,y,{align:'right'});
-    description.forEach(line=>{if(y>270){doc.addPage();y=18;}doc.text(line,16,y);y+=5;});y+=3;
-  });
-  if(y>244){doc.addPage();y=18;}
+  (o.lines||[]).forEach(x=>{if(y>270){doc.addPage();y=18}doc.text(String(x.description||'').slice(0,60),16,y);doc.text(String(x.qty||0),125,y,{align:'right'});doc.text(money(x.unitPrice),158,y,{align:'right'});doc.text(money((x.qty||0)*(x.unitPrice||0)),194,y,{align:'right'});y+=6});
   y+=5;doc.setFont('helvetica','bold');doc.text(T.exvat+': '+money(o.subtotal),194,y,{align:'right'});y+=6;doc.text(T.vat+' ('+(o.vatPct||0)+'%): '+money(o.vat),194,y,{align:'right'});y+=7;doc.setFontSize(13);doc.text(T.total+': '+money(o.total),194,y,{align:'right'});
-  if(o.notes){y+=10;doc.setFontSize(10.5);doc.setFont('helvetica','normal');doc.splitTextToSize(T.notes+': '+String(o.notes),178).forEach(line=>{if(y>270){doc.addPage();y=18;}doc.text(line,16,y);y+=5;});}
-  if(o.signature||o.ownerDecor?.stamp||o.ownerDecor?.signature){
-    if(y>210){doc.addPage();y=18;}else y+=18;
-    if(o.ownerDecor?.stamp)doc.addImage(makeOwnerStampDataUrl(),'PNG',16,y,36,36);
-    const ownerSig=localStorage.getItem(OWNER_SIG_KEY);
-    if(o.ownerDecor?.signature&&ownerSig)addSignatureToPdf(doc,ownerSig,{x:60,y:y+4,width:48,height:32});
-    if(o.signature){doc.setFontSize(10);doc.text(lang==='sv'?'Kundens underskrift':'Firma e klientit',120,y);doc.text(doc.splitTextToSize(String(o.signedBy||''),72),120,y+5);addSignatureToPdf(doc,o.signature,{x:120,y:y+14,width:64,height:22});doc.text(String(o.signedAt||'').slice(0,10),120,y+42);}
-  }
+  if(o.notes){y+=10;doc.setFontSize(10.5);doc.text(T.notes+': '+String(o.notes).slice(0,120),16,y)}
+  addPdfDecorationsToDoc(doc,'invoice',id);
   const prefix=lang==='sv'?'Faktura':'Fatura';
-  const filename=`${prefix}_${String(o.number||'').replace(/[^0-9A-Za-z_-]/g,'_')}.pdf`;
-  if(action==='file')return new File([doc.output('blob')],filename,{type:'application/pdf'});
-  doc.save(filename);
+  doc.save(`${prefix}_${String(o.number||'').replace(/[^0-9A-Za-z_-]/g,'_')}.pdf`);
 }
 
 function renderReportsView(){
@@ -1604,7 +1471,7 @@ function saveNewReport(){
   reports.push(r);persistAll();$('reportFormBox').classList.add('hidden');renderReportsView();
 }
 
-function toggleLang(){currentLang=currentLang==='sq'?'sv':'sq';localStorage.setItem(LANG_KEY,currentLang);applyLang()}
+function toggleLang(){currentLang=currentLang==='sq'?'sv':'sq';IliriStore.setExtra(LANG_KEY,currentLang);applyLang()}
 
 function bind(){
  $('langBtn').addEventListener('click',toggleLang);
@@ -1665,14 +1532,23 @@ function bind(){
  $('projectSearch').addEventListener('input',renderProjects);
  $('clientSearch').addEventListener('input',renderClients);
  $('saveHoursBtn').addEventListener('click',saveHours);
+ $('hoursDate').addEventListener('change',renderHoursSummary);
  $('saveMaterialBtn').addEventListener('click',saveMaterial);
  $('saveBackupVisibleBtn').addEventListener('click',exportBackup);
  $('restoreBackupVisibleBtn').addEventListener('click',()=>$('importFile').click());
  $('importFile').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)importBackup(f);e.target.value=''});
 }
 
-document.addEventListener('DOMContentLoaded',()=>{
- $('hoursDate').value=today();$('materialDate').value=today();if($('voiceDate')) $('voiceDate').value=today();refreshProjectSelectors();bind();applyLang();renderHome();checkWeeklyBackupReminder();
+document.addEventListener('DOMContentLoaded',async()=>{
+ const guard=document.createElement('div');guard.id='iliriBootGuard';guard.textContent='Po hap të dhënat…';guard.setAttribute('role','status');guard.style.cssText='position:fixed;inset:0;z-index:2000000;display:grid;place-items:center;background:#f4f5f7';document.body.append(guard);
+ try{
+  $('hoursDate').value=today();$('materialDate').value=today();if($('voiceDate'))$('voiceDate').value=today();
+  if((await restoreDurable())===false){guard.textContent='Aplikacioni është hapur në një skedë tjetër. Mbylle atë skedë dhe rihape këtë faqe.';guard.dataset.blocked='1';return}
+  refreshProjectSelectors();bind();applyLang();restoreFormDrafts();renderHome();checkWeeklyBackupReminder();requestPersistentStorage();
+  document.addEventListener('input',scheduleDraftSave);document.addEventListener('change',scheduleDraftSave);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persistFormDrafts()});window.addEventListener('pagehide',persistFormDrafts);
+  IliriStore.start();
+ }catch(e){alert('Hapja nuk përfundoi. Mos fshi të dhënat e Safari-t; provo ta rihapësh aplikacionin.');console.error('ILIRI initialization failed',e)}finally{if(!guard.dataset.blocked)guard.remove()}
 });
 
 
@@ -1709,6 +1585,102 @@ if($('newReportBtn')) $('newReportBtn').addEventListener('click',openNewReport);
 if($('saveReportBtn')) $('saveReportBtn').addEventListener('click',saveNewReport);
 if($('cancelReportBtn')) $('cancelReportBtn').addEventListener('click',()=>{$('reportFormBox').classList.add('hidden')});
 </script>
+
+<script>
+/* ILIRI PDF: vulë + firmë personale, opsionale dhe të lëvizshme me gisht */
+(function(){
+  const OWNER_SIG_KEY='iliri_owner_signature_png';
+  const decoKey=(type,id)=>'iliri_pdf_deco_'+type+'_'+String(id||'');
+  function defaultState(){return {stampEnabled:false,stampX:.60,stampY:.70,stampW:.27,sigEnabled:false,sigX:.13,sigY:.78,sigW:.28};}
+  window.getPdfDecoState=function(type,id){
+    try{return Object.assign(defaultState(),JSON.parse(IliriStore.readExtra(decoKey(type,id))||'{}'));}catch(e){return defaultState();}
+  };
+  window.savePdfDecoState=function(type,id,st){try{IliriStore.setExtra(decoKey(type,id),JSON.stringify(st));}catch(e){}};
+  window.getIliriOwnerSignature=function(){try{return IliriStore.readExtra(OWNER_SIG_KEY)||'';}catch(e){return '';}};
+
+  let stampCache='';
+  window.getIliriStampDataUrl=function(){
+    if(stampCache)return stampCache;
+    const c=document.createElement('canvas'); c.width=900;c.height=360;
+    const x=c.getContext('2d'); x.clearRect(0,0,c.width,c.height);
+    x.lineWidth=10;x.strokeStyle='#c49a36';x.fillStyle='rgba(255,255,255,.92)';
+    x.beginPath();x.roundRect(14,14,872,332,34);x.fill();x.stroke();
+    x.strokeStyle='#111827';x.lineWidth=5;x.beginPath();x.moveTo(85,118);x.lineTo(225,40);x.lineTo(365,118);x.lineTo(365,220);x.lineTo(85,220);x.closePath();x.stroke();
+    x.strokeStyle='#c49a36';x.lineWidth=13;x.beginPath();x.moveTo(52,238);x.quadraticCurveTo(218,300,395,235);x.stroke();
+    x.fillStyle='#c49a36';x.font='900 92px Arial';x.fillText('ILIRI',420,125);
+    x.fillStyle='#111827';x.font='700 46px Arial';x.fillText('MÅLERI & DEKOR',420,190);
+    x.font='700 31px Arial';x.fillText('ILIA MITRO',420,242);
+    x.font='28px Arial';x.fillText('Göteborg  •  076 922 53 61',420,290);
+    stampCache=c.toDataURL('image/png');return stampCache;
+  };
+
+  window.chooseIliriOwnerSignature=function(onDone){
+    const input=document.createElement('input'); input.type='file';input.accept='image/*';input.style.display='none';
+    document.body.appendChild(input);
+    input.onchange=function(){
+      const f=input.files&&input.files[0]; if(!f){input.remove();return;}
+      const r=new FileReader();
+      r.onload=function(){
+        const img=new Image();
+        img.onload=function(){
+          const maxW=1400, scale=Math.min(1,maxW/img.width), c=document.createElement('canvas');
+          c.width=Math.max(1,Math.round(img.width*scale)); c.height=Math.max(1,Math.round(img.height*scale));
+          const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,c.width,c.height);
+          const data=c.toDataURL('image/png');
+          try{IliriStore.setExtra(OWNER_SIG_KEY,data);}catch(e){alert('Firma është shumë e madhe për t’u ruajtur. Provo një foto më të vogël.');}
+          input.remove(); if(onDone)onDone(data);
+        };img.src=String(r.result||'');
+      };r.readAsDataURL(f);
+    };input.click();
+  };
+
+  function makeDrag(el,paper,st,xKey,yKey,type,id){
+    let dragging=false,dx=0,dy=0;
+    const down=e=>{dragging=true;const p=e.touches?e.touches[0]:e;const r=el.getBoundingClientRect();dx=p.clientX-r.left;dy=p.clientY-r.top;e.preventDefault();};
+    const move=e=>{if(!dragging)return;const p=e.touches?e.touches[0]:e,pr=paper.getBoundingClientRect(),er=el.getBoundingClientRect();let left=p.clientX-pr.left-dx,top=p.clientY-pr.top-dy;left=Math.max(0,Math.min(pr.width-er.width,left));top=Math.max(0,Math.min(pr.height-er.height,top));el.style.left=left+'px';el.style.top=top+'px';st[xKey]=left/pr.width;st[yKey]=top/pr.height;savePdfDecoState(type,id,st);e.preventDefault();};
+    const up=()=>{dragging=false;};
+    el.addEventListener('pointerdown',down);document.addEventListener('pointermove',move,{passive:false});document.addEventListener('pointerup',up);
+    el.addEventListener('touchstart',down,{passive:false});document.addEventListener('touchmove',move,{passive:false});document.addEventListener('touchend',up);
+  }
+
+  window.renderPdfDecorationControls=function(previewId,type,id){
+    const paper=document.getElementById(previewId);if(!paper)return;
+    const st=getPdfDecoState(type,id);
+    let toolbar=document.createElement('div');toolbar.className='iliri-deco-toolbar';
+    toolbar.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;padding:10px;background:#eef2f3;border-radius:12px;position:relative;z-index:8';
+    toolbar.innerHTML='<button type="button" id="iliriStampBtn" style="padding:12px;border:0;border-radius:10px;font-weight:900;background:#159447;color:white">🟡 Vulos</button><button type="button" id="iliriSigBtn" style="padding:12px;border:0;border-radius:10px;font-weight:900;background:#111827;color:white">✍️ Firma ime</button>';
+    paper.parentNode.insertBefore(toolbar,paper);
+
+    const stamp=document.createElement('img');stamp.src=getIliriStampDataUrl();stamp.alt='Vula';stamp.style.cssText='position:absolute;z-index:6;cursor:grab;touch-action:none;user-select:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.15))';paper.appendChild(stamp);
+    const sig=document.createElement('img');sig.alt='Firma';sig.style.cssText='position:absolute;z-index:7;cursor:grab;touch-action:none;user-select:none;object-fit:contain';paper.appendChild(sig);
+    const refresh=()=>{
+      const pr=paper.getBoundingClientRect();
+      stamp.style.width=(st.stampW*100)+'%';stamp.style.left=(st.stampX*100)+'%';stamp.style.top=(st.stampY*100)+'%';stamp.style.display=st.stampEnabled?'block':'none';
+      const sd=getIliriOwnerSignature(); if(sd)sig.src=sd;sig.style.width=(st.sigW*100)+'%';sig.style.left=(st.sigX*100)+'%';sig.style.top=(st.sigY*100)+'%';sig.style.display=(st.sigEnabled&&sd)?'block':'none';
+      toolbar.querySelector('#iliriStampBtn').textContent=st.stampEnabled?'✅ Vula aktive':'🟡 Vulos';
+      toolbar.querySelector('#iliriSigBtn').textContent=st.sigEnabled&&sd?'✅ Firma aktive':'✍️ Firma ime';
+    };
+    toolbar.querySelector('#iliriStampBtn').onclick=()=>{st.stampEnabled=!st.stampEnabled;savePdfDecoState(type,id,st);refresh();};
+    toolbar.querySelector('#iliriSigBtn').onclick=()=>{
+      const sd=getIliriOwnerSignature();
+      if(!sd){chooseIliriOwnerSignature(()=>{st.sigEnabled=true;savePdfDecoState(type,id,st);refresh();});return;}
+      st.sigEnabled=!st.sigEnabled;savePdfDecoState(type,id,st);refresh();
+    };
+    toolbar.querySelector('#iliriSigBtn').ondblclick=()=>chooseIliriOwnerSignature(()=>{st.sigEnabled=true;savePdfDecoState(type,id,st);refresh();});
+    makeDrag(stamp,paper,st,'stampX','stampY',type,id);makeDrag(sig,paper,st,'sigX','sigY',type,id);refresh();
+  };
+
+  window.addPdfDecorationsToDoc=function(doc,type,id){
+    const st=getPdfDecoState(type,id);let old=1;try{old=doc.internal.getCurrentPageInfo().pageNumber||1;}catch(e){}
+    try{doc.setPage(1);}catch(e){}
+    if(st.stampEnabled){try{const w=st.stampW*210,h=w*(360/900);doc.addImage(getIliriStampDataUrl(),'PNG',st.stampX*210,st.stampY*297,w,h);}catch(e){console.warn(e);}}
+    const sd=getIliriOwnerSignature();
+    if(st.sigEnabled&&sd){try{const w=st.sigW*210,h=Math.min(28,w*.38);doc.addImage(sd,'PNG',st.sigX*210,st.sigY*297,w,h);}catch(e){console.warn(e);}}
+    try{doc.setPage(old);}catch(e){}
+  };
+})();
+</script>
+
 <div id="printOfferArea"></div>
 
 <!-- ILIRI SIGNATURE TEST: local demo only -->
@@ -1773,7 +1745,7 @@ if($('cancelReportBtn')) $('cancelReportBtn').addEventListener('click',()=>{$('r
     if(!oo){alert('Oferta nuk u gjet.');return;}
     const rec={name:n,date:new Date().toISOString(),signature:c.toDataURL('image/png')};
     oo.signature=rec.signature;oo.signedBy=rec.name;oo.signedAt=rec.date;oo.accepted=true;oo.status='unpaid';
-    try{localStorage.setItem('iliri_signature_demo_offer-id:'+oid,JSON.stringify(rec));}catch(e){}
+    try{IliriStore.setExtra('iliri_signature_demo_offer-id:'+oid,JSON.stringify(rec));}catch(e){}
     try{if(typeof persistAll==='function')persistAll();}catch(e){}
     document.getElementById('iliriSignedResult').innerHTML=
       '<div class="signed-ok"><b>✓ E firmosur / E pranuar</b><br>'+esc(n)+'<br>'+new Date(rec.date).toLocaleString('sv-SE')+
@@ -1819,7 +1791,7 @@ if($('cancelReportBtn')) $('cancelReportBtn').addEventListener('click',()=>{$('r
   function openDemo(card){
     activeOfferCard=card||null;
     demo.classList.remove('hidden');
-    const raw=localStorage.getItem('iliri_signature_demo_'+offerKey(activeOfferCard));
+    const raw=IliriStore.readExtra('iliri_signature_demo_'+offerKey(activeOfferCard));
     if(raw){
       try{
         const r=JSON.parse(raw);
@@ -1865,7 +1837,7 @@ if($('cancelReportBtn')) $('cancelReportBtn').addEventListener('click',()=>{$('r
     document.getElementById('iliriSigner').value=o.client||'';
     document.getElementById('iliriSignedResult').innerHTML='';
     demo.classList.remove('hidden');
-    const raw=localStorage.getItem('iliri_signature_demo_offer-id:'+id);
+    const raw=IliriStore.readExtra('iliri_signature_demo_offer-id:'+id);
     if(raw){
       try{
         const r=JSON.parse(raw);
@@ -1882,7 +1854,8 @@ if($('cancelReportBtn')) $('cancelReportBtn').addEventListener('click',()=>{$('r
 })();
 </script>
 <script>
-window.addEventListener('load',function(){
+window.addEventListener('load',async function(){
+  if((await window.iliriReady)===false)return;
   const q=new URLSearchParams(location.search);
   if(q.get('signed')!=='1')return;
   const rid=q.get('id')||'';
@@ -1910,7 +1883,8 @@ window.addEventListener('load',function(){
   history.replaceState({},'',location.pathname);
 });
 
-window.addEventListener('load',function(){
+window.addEventListener('load',async function(){
+  if((await window.iliriReady)===false)return;
   const q=new URLSearchParams(location.search);
   const sid=q.get('signOffer');
   const packed=q.get('offer');
@@ -1951,111 +1925,85 @@ window.addEventListener('load',function(){
 });
 </script>
 
-<script>
-/* ILIRI Måleri – automatic local autosave of entered fields */
-(function(){
-  const AUTO_DRAFT_KEY='iliri_maleri_auto_draft_v1';
-  let saveTimer=null;
+<script id="iliriSupabaseSQL" type="text/plain">
+-- ILIRI Måleri: run ONCE in the SQL Editor of YOUR Supabase project.
+-- No changes to existing application tables. Fails safely if these names exist.
+-- Create a private app user separately under Authentication > Users.
+-- Dashboard/ChatGPT login is NOT an app user. Never put a service_role key in HTML.
+begin;
+create table public.iliri_snapshots_v1 (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  revision bigint not null check (revision > 0),
+  mutation_id uuid not null,
+  payload jsonb not null check (jsonb_typeof(payload) = 'object'),
+  updated_at timestamptz not null default now()
+);
+create table public.iliri_snapshot_history_v1 (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  revision bigint not null,
+  mutation_id uuid not null,
+  payload jsonb not null,
+  updated_at timestamptz not null,
+  primary key (user_id, revision)
+);
+alter table public.iliri_snapshots_v1 enable row level security;
+alter table public.iliri_snapshot_history_v1 enable row level security;
+revoke all on public.iliri_snapshots_v1, public.iliri_snapshot_history_v1 from public, anon, authenticated;
+grant select on public.iliri_snapshots_v1, public.iliri_snapshot_history_v1 to authenticated;
+create policy iliri_read_own on public.iliri_snapshots_v1 for select to authenticated using ((select auth.uid()) = user_id);
+create policy iliri_read_own_history on public.iliri_snapshot_history_v1 for select to authenticated using ((select auth.uid()) = user_id);
 
-  function saveAutoDraft(){
-    try{
-      const fields={};
-      document.querySelectorAll('input[id],select[id],textarea[id]').forEach(el=>{
-        if(!el.id || el.type==='file' || el.type==='button' || el.type==='submit') return;
-        if(el.type==='checkbox' || el.type==='radio') fields[el.id]={kind:'checked',value:!!el.checked};
-        else fields[el.id]={kind:'value',value:el.value};
-      });
+-- The only write path: compare-and-swap + idempotency + five recovery versions.
+-- auth.uid() is checked explicitly because SECURITY DEFINER bypasses RLS.
+create function public.iliri_save_snapshot_v1(p_expected_revision bigint, p_mutation_id uuid, p_payload jsonb)
+returns jsonb language plpgsql security definer set search_path = '' as $
+declare
+  owner_id uuid := auth.uid();
+  current_row public.iliri_snapshots_v1%rowtype;
+  next_revision bigint;
+  field_name text;
+begin
+  if owner_id is null then raise exception 'Authentication required' using errcode = '42501'; end if;
+  if p_expected_revision is null or p_expected_revision < 0 or p_mutation_id is null then
+    raise exception 'Invalid revision or mutation';
+  end if;
+  if p_payload is null or jsonb_typeof(p_payload) <> 'object'
+     or p_payload->>'app' is distinct from 'ILIRI-MALERI'
+     or p_payload->>'version' is distinct from '9'
+     or octet_length(p_payload::text) > 33554432 then
+    raise exception 'Invalid snapshot or snapshot exceeds 32 MiB';
+  end if;
+  foreach field_name in array array['projects','hours','materials','offers','invoices','photos','measures','reports'] loop
+    if jsonb_typeof(p_payload->field_name) is distinct from 'array' then
+      raise exception 'Missing collection: %', field_name;
+    end if;
+  end loop;
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(owner_id::text, 0));
+  select * into current_row from public.iliri_snapshots_v1 where user_id = owner_id for update;
+  if current_row.user_id is not null and current_row.mutation_id = p_mutation_id then
+    return jsonb_build_object('revision',current_row.revision,'updated_at',current_row.updated_at);
+  end if;
+  if coalesce(current_row.revision,0) <> p_expected_revision then
+    return jsonb_build_object('conflict',true,'revision',coalesce(current_row.revision,0));
+  end if;
+  next_revision := coalesce(current_row.revision,0) + 1;
+  if current_row.user_id is not null then
+    insert into public.iliri_snapshot_history_v1 values
+      (owner_id,current_row.revision,current_row.mutation_id,current_row.payload,current_row.updated_at);
+  end if;
+  insert into public.iliri_snapshots_v1(user_id,revision,mutation_id,payload,updated_at)
+    values(owner_id,next_revision,p_mutation_id,p_payload,now())
+    on conflict(user_id) do update set revision=excluded.revision,mutation_id=excluded.mutation_id,
+      payload=excluded.payload,updated_at=excluded.updated_at;
+  delete from public.iliri_snapshot_history_v1 where user_id=owner_id and revision < next_revision-5;
+  return jsonb_build_object('revision',next_revision,'updated_at',now());
+end;
+$;
+revoke all on function public.iliri_save_snapshot_v1(bigint,uuid,jsonb) from public, anon, authenticated;
+grant execute on function public.iliri_save_snapshot_v1(bigint,uuid,jsonb) to authenticated;
+commit;
 
-      let offerWork=[], offerMaterials=[], invoiceLines=[];
-      try{
-        if(typeof collectOfferLines==='function'){
-          offerWork=collectOfferLines('work')||[];
-          offerMaterials=collectOfferLines('material')||[];
-        }
-      }catch(e){}
-
-      try{
-        if(typeof collectInvoiceLines==='function') invoiceLines=collectInvoiceLines()||[];
-      }catch(e){}
-
-      localStorage.setItem(AUTO_DRAFT_KEY,JSON.stringify({
-        savedAt:new Date().toISOString(),
-        fields,
-        offerWork,
-        offerMaterials,
-        invoiceLines
-      }));
-
-      /* Also keep all saved app data current in localStorage */
-      try{ if(typeof persistAll==='function') persistAll(); }catch(e){}
-    }catch(e){}
-  }
-
-  function scheduleSave(){
-    clearTimeout(saveTimer);
-    saveTimer=setTimeout(saveAutoDraft,150);
-  }
-
-  function restoreAutoDraft(){
-    try{
-      const raw=localStorage.getItem(AUTO_DRAFT_KEY);
-      if(!raw) return;
-      const d=JSON.parse(raw);
-      if(!d || !d.fields) return;
-
-      Object.keys(d.fields).forEach(id=>{
-        const el=document.getElementById(id);
-        if(!el || el.type==='file') return;
-        const item=d.fields[id];
-        if(item.kind==='checked') el.checked=!!item.value;
-        else if(item.value!==undefined && item.value!==null) el.value=item.value;
-      });
-
-      /* Restore unfinished offer/invoice work lines too */
-      const workBox=document.getElementById('workLines');
-      const materialBox=document.getElementById('materialLines');
-      if(typeof addOfferLine==='function'){
-        if(workBox && Array.isArray(d.offerWork) && d.offerWork.length){
-          workBox.innerHTML='';
-          d.offerWork.forEach(x=>addOfferLine('work',x));
-        }
-        if(materialBox && Array.isArray(d.offerMaterials) && d.offerMaterials.length){
-          materialBox.innerHTML='';
-          d.offerMaterials.forEach(x=>addOfferLine('material',x));
-        }
-        try{ if(typeof calcOffer==='function') calcOffer(); }catch(e){}
-      }
-
-      const invoiceBox=document.getElementById('invoiceLines');
-      if(invoiceBox && typeof addInvoiceLine==='function' && Array.isArray(d.invoiceLines) && d.invoiceLines.length){
-        invoiceBox.innerHTML='';
-        d.invoiceLines.forEach(x=>addInvoiceLine(x));
-        try{ if(typeof calcInvoice==='function') calcInvoice(); }catch(e){}
-      }
-    }catch(e){}
-  }
-
-  document.addEventListener('input',scheduleSave,true);
-  document.addEventListener('change',scheduleSave,true);
-  document.addEventListener('click',function(e){
-    if(e.target && (e.target.matches('button') || e.target.closest('button'))) {
-      setTimeout(saveAutoDraft,100);
-    }
-  },true);
-
-  window.addEventListener('beforeunload',saveAutoDraft);
-  window.addEventListener('pagehide',saveAutoDraft);
-  document.addEventListener('visibilitychange',function(){
-    if(document.visibilityState==='hidden') saveAutoDraft();
-  });
-
-  window.addEventListener('load',function(){
-    setTimeout(restoreAutoDraft,350);
-    /* Safety autosave every 5 seconds while the app is open */
-    setInterval(saveAutoDraft,5000);
-  });
-})();
 </script>
-
 </body>
 </html>
+

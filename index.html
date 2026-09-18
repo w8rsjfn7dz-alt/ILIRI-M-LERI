@@ -1647,10 +1647,12 @@ if($('cancelReportBtn')) $('cancelReportBtn').addEventListener('click',()=>{$('r
 
   window.renderPdfDecorationControls=function(previewId,type,id){
     const paper=document.getElementById(previewId);if(!paper)return;
+    if(getComputedStyle(paper).position==='static')paper.style.position='relative';
+    paper.style.overflow='visible';
     const st=getPdfDecoState(type,id);
     let toolbar=document.createElement('div');toolbar.className='iliri-deco-toolbar';
-    toolbar.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;padding:10px;background:#eef2f3;border-radius:12px;position:relative;z-index:8';
-    toolbar.innerHTML='<button type="button" id="iliriStampBtn" style="padding:12px;border:0;border-radius:10px;font-weight:900;background:#159447;color:white">🟡 Vulos</button><button type="button" id="iliriSigBtn" style="padding:12px;border:0;border-radius:10px;font-weight:900;background:#111827;color:white">✍️ Firma ime</button><button type="button" id="iliriStampSmaller" style="padding:11px;border:0;border-radius:10px;font-weight:800;background:#fff">Vula −</button><button type="button" id="iliriStampBigger" style="padding:11px;border:0;border-radius:10px;font-weight:800;background:#fff">Vula +</button><button type="button" id="iliriSigSmaller" style="padding:11px;border:0;border-radius:10px;font-weight:800;background:#fff">Firma −</button><button type="button" id="iliriSigBigger" style="padding:11px;border:0;border-radius:10px;font-weight:800;background:#fff">Firma +</button><div style="grid-column:1/-1;text-align:center;font-size:12px;color:#52606d;font-weight:700">Mbaje me gisht dhe tërhiqe për ta lëvizur</div>';
+    toolbar.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;padding:10px;background:#eef2f3;border-radius:12px;position:relative;z-index:100;color:#111827';
+    toolbar.innerHTML='<button type="button" id="iliriStampBtn" style="padding:12px;border:0;border-radius:10px;font-weight:900;background:#159447;color:white">🟡 Vulos</button><button type="button" id="iliriSigBtn" style="padding:12px;border:0;border-radius:10px;font-weight:900;background:#111827;color:white">✍️ Firma ime</button><button type="button" id="iliriStampSmaller" style="padding:11px;border:1px solid #cbd5e1;border-radius:10px;font-weight:900;background:#fff;color:#111827;min-height:48px">Vula −</button><button type="button" id="iliriStampBigger" style="padding:11px;border:1px solid #cbd5e1;border-radius:10px;font-weight:900;background:#fff;color:#111827;min-height:48px">Vula +</button><button type="button" id="iliriSigSmaller" style="padding:11px;border:1px solid #cbd5e1;border-radius:10px;font-weight:900;background:#fff;color:#111827;min-height:48px">Firma −</button><button type="button" id="iliriSigBigger" style="padding:11px;border:1px solid #cbd5e1;border-radius:10px;font-weight:900;background:#fff;color:#111827;min-height:48px">Firma +</button><button type="button" id="iliriDecoReset" style="grid-column:1/-1;padding:11px;border:1px solid #cbd5e1;border-radius:10px;font-weight:900;background:#fff;color:#111827">Rivendos vulën & firmën</button><div style="grid-column:1/-1;text-align:center;font-size:12px;color:#52606d;font-weight:700">Mbaje me gisht dhe tërhiqe për ta lëvizur</div>';
     paper.parentNode.insertBefore(toolbar,paper);
 
     const stamp=document.createElement('img');stamp.src=getIliriStampDataUrl();stamp.alt='Vula';stamp.style.cssText='position:absolute;z-index:6;cursor:grab;touch-action:none;user-select:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.15))';paper.appendChild(stamp);
@@ -1674,6 +1676,7 @@ if($('cancelReportBtn')) $('cancelReportBtn').addEventListener('click',()=>{$('r
     toolbar.querySelector('#iliriStampBigger').onclick=()=>resize('stampW',.025);
     toolbar.querySelector('#iliriSigSmaller').onclick=()=>resize('sigW',-.025);
     toolbar.querySelector('#iliriSigBigger').onclick=()=>resize('sigW',.025);
+    toolbar.querySelector('#iliriDecoReset').onclick=()=>{Object.assign(st,{stampEnabled:true,stampX:.58,stampY:.48,stampW:.24,sigEnabled:true,sigX:.12,sigY:.60,sigW:.22});savePdfDecoState(type,id,st);refresh();};
     makeDrag(stamp,paper,st,'stampX','stampY',type,id);makeDrag(sig,paper,st,'sigX','sigY',type,id);refresh();
   };
 

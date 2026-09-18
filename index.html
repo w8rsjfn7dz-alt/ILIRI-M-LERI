@@ -265,17 +265,6 @@ html.client-sign-mode #iliriSigBack{display:none!important}
     </div>
     <div id="hoursSaveStatus" class="meta" style="margin-top:10px;text-align:center"></div>
 
-    <div id="hoursCalendarBox" style="margin-top:14px">
-      <div class="row" style="align-items:center">
-        <button id="hoursWeekMode" class="secondary" type="button">Java</button>
-        <button id="hoursMonthMode" class="secondary" type="button">Muaji</button>
-        <button id="hoursPrevPeriod" class="secondary" type="button">‹</button>
-        <button id="hoursNextPeriod" class="secondary" type="button">›</button>
-      </div>
-      <div id="hoursPeriodTitle" style="font-weight:800;text-align:center;margin:12px 0 8px"></div>
-      <div id="hoursCalendar"></div>
-    </div>
-
     <div id="hoursSummary" class="grid" style="margin-top:14px"></div>
     <div id="hoursList"></div>
   </section>
@@ -826,60 +815,13 @@ function renderClients(){const q=$('clientSearch').value.toLowerCase();const map
 
 const ILIRI_HOURS_CAL_STYLE=document.createElement('style');
 ILIRI_HOURS_CAL_STYLE.textContent=`
-#hoursCalendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
-#hoursCalendar .hc-head{text-align:center;font-size:12px;font-weight:800;padding:5px 0}
-#hoursCalendar .hc-day{min-height:52px;border:1px solid #d9dee7;border-radius:12px;background:#fff;padding:5px 2px;text-align:center;font-weight:700}
-#hoursCalendar .hc-day.hc-selected{outline:3px solid #7c4dff;outline-offset:-2px}
-#hoursCalendar .hc-day.hc-empty{visibility:hidden}
-#hoursCalendar .hc-hours{display:block;font-size:11px;font-weight:600;margin-top:3px;opacity:.75}
-#hoursCalendarBox .row button{min-width:0;flex:1}
 `;
 document.head.appendChild(ILIRI_HOURS_CAL_STYLE);
-let hoursCalendarMode='month';
-let hoursCalendarRef='';
-function isoLocal(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
-function hoursForDate(date){return hours.filter(h=>String(h.date||'')===date).reduce((a,h)=>a+hourTotal(h),0)}
-function renderHoursCalendar(){
- const box=$('hoursCalendar'), title=$('hoursPeriodTitle'); if(!box||!title)return;
- const selected=$('hoursDate').value||today();
- if(!hoursCalendarRef)hoursCalendarRef=selected;
- let d=localDate(hoursCalendarRef), cells=[], start, end;
- const names=currentLang==='sv'?['MÅN','TIS','ONS','TOR','FRE','LÖR','SÖN']:['HËN','MAR','MËR','ENJ','PRE','SHT','DIE'];
- if(hoursCalendarMode==='week'){
-   const wd=(d.getDay()+6)%7; start=new Date(d);start.setDate(d.getDate()-wd);end=new Date(start);end.setDate(start.getDate()+6);
-   title.textContent=`${isoLocal(start)} – ${isoLocal(end)}`;
-   for(let i=0;i<7;i++){let x=new Date(start);x.setDate(start.getDate()+i);cells.push(x)}
- }else{
-   start=new Date(d.getFullYear(),d.getMonth(),1); end=new Date(d.getFullYear(),d.getMonth()+1,0);
-   title.textContent=d.toLocaleDateString(currentLang==='sv'?'sv-SE':'sq-AL',{month:'long',year:'numeric'});
-   const lead=(start.getDay()+6)%7; for(let i=0;i<lead;i++)cells.push(null);
-   for(let n=1;n<=end.getDate();n++)cells.push(new Date(d.getFullYear(),d.getMonth(),n));
- }
- box.innerHTML=names.map(n=>`<div class="hc-head">${n}</div>`).join('')+cells.map(x=>{
-   if(!x)return '<div class="hc-day hc-empty"></div>';
-   const iso=isoLocal(x), total=hoursForDate(iso);
-   return `<button type="button" class="hc-day ${iso===selected?'hc-selected':''}" data-date="${iso}">${x.getDate()}${total?`<span class="hc-hours">${total.toFixed(1)} h</span>`:''}</button>`;
- }).join('');
- box.querySelectorAll('.hc-day[data-date]').forEach(b=>b.addEventListener('click',()=>{$('hoursDate').value=b.dataset.date;hoursCalendarRef=b.dataset.date;renderHoursSummary();renderHoursCalendar()}));
- if($('hoursWeekMode'))$('hoursWeekMode').style.fontWeight=hoursCalendarMode==='week'?'800':'600';
- if($('hoursMonthMode'))$('hoursMonthMode').style.fontWeight=hoursCalendarMode==='month'?'800':'600';
-}
-function moveHoursCalendar(dir){
- let d=localDate(hoursCalendarRef||$('hoursDate').value||today());
- if(hoursCalendarMode==='week')d.setDate(d.getDate()+dir*7);else d.setMonth(d.getMonth()+dir);
- hoursCalendarRef=isoLocal(d);$('hoursDate').value=hoursCalendarRef;renderHoursSummary();renderHoursCalendar();
-}
-
-function calcHours(start,end,br){if(!start||!end)return 0;const [sh,sm]=start.split(':').map(Number),[eh,em]=end.split(':').map(Number);let mins=(eh*60+em)-(sh*60+sm)-Number(br||0);if(mins<0)mins+=1440;return Math.max(0,mins/60)}
-function hourTotal(h){const saved=Number(h&&h.total);return Number.isFinite(saved)&&saved>=0?saved:calcHours(h&&h.start,h&&h.end,Number((h&&h.breakMinutes)??(h&&h.breakMin)??0))}
-function localDate(value){const p=String(value||today()).split('-').map(Number);return new Date(p[0],(p[1]||1)-1,p[2]||1)}
-function renderHoursSummary(){const box=$('hoursSummary');if(!box)return;const ref=$('hoursDate').value||today(),d=localDate(ref),day=(d.getDay()+6)%7,monday=new Date(d);monday.setDate(d.getDate()-day);const sunday=new Date(monday);sunday.setDate(monday.getDate()+6);const iso=x=>`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;const weekStart=iso(monday),weekEnd=iso(sunday),month=ref.slice(0,7);const weekTotal=hours.filter(h=>String(h.date||'')>=weekStart&&String(h.date||'')<=weekEnd).reduce((a,h)=>a+hourTotal(h),0);const monthTotal=hours.filter(h=>String(h.date||'').slice(0,7)===month).reduce((a,h)=>a+hourTotal(h),0);const weekLabel=currentLang==='sv'?'Denna vecka':'Kjo javë',monthLabel=currentLang==='sv'?'Denna månad':'Ky muaj';box.innerHTML=`<div class="stat"><b>${weekTotal.toFixed(1)}</b><span>${weekLabel}</span></div><div class="stat"><b>${monthTotal.toFixed(1)}</b><span>${monthLabel}</span></div>`}
-let editingHoursId='';
 function resetHoursEdit(){editingHoursId='';$('saveHoursBtn').textContent=currentLang==='sv'?'Spara timmar':'Ruaj orët';if($('cancelHoursEditBtn')){$('cancelHoursEditBtn').classList.add('hidden');$('cancelHoursEditBtn').textContent=currentLang==='sv'?'Avbryt':'Anulo'}}
-function editHours(id){const h=hours.find(x=>x.id===id);if(!h)return;editingHoursId=id;refreshProjectSelectors();$('hoursProject').value=h.projectId||'';$('hoursDate').value=h.date||today();$('startTime').value=h.start||'07:00';$('endTime').value=h.end||'15:30';$('breakMinutes').value=Number(h.breakMinutes??h.breakMin??0);$('hoursNote').value=h.note||'';$('saveHoursBtn').textContent=currentLang==='sv'?'Spara ändringar':'Ruaj ndryshimet';if($('cancelHoursEditBtn')){$('cancelHoursEditBtn').classList.remove('hidden');$('cancelHoursEditBtn').textContent=currentLang==='sv'?'Avbryt':'Anulo'}$('hoursSaveStatus').textContent=currentLang==='sv'?'Redigerar sparade timmar…':'Po ndryshon orët e ruajtura…';hoursCalendarRef=h.date||today();renderHoursSummary();renderHoursCalendar();window.scrollTo({top:$('hoursView').offsetTop,behavior:'smooth'})}
+function editHours(id){const h=hours.find(x=>x.id===id);if(!h)return;editingHoursId=id;refreshProjectSelectors();$('hoursProject').value=h.projectId||'';$('hoursDate').value=h.date||today();$('startTime').value=h.start||'07:00';$('endTime').value=h.end||'15:30';$('breakMinutes').value=Number(h.breakMinutes??h.breakMin??0);$('hoursNote').value=h.note||'';$('saveHoursBtn').textContent=currentLang==='sv'?'Spara ändringar':'Ruaj ndryshimet';if($('cancelHoursEditBtn')){$('cancelHoursEditBtn').classList.remove('hidden');$('cancelHoursEditBtn').textContent=currentLang==='sv'?'Avbryt':'Anulo'}$('hoursSaveStatus').textContent=currentLang==='sv'?'Redigerar sparade timmar…':'Po ndryshon orët e ruajtura…';renderHoursSummary();window.scrollTo({top:$('hoursView').offsetTop,behavior:'smooth'})}
 function deleteHours(id){if(!confirm(currentLang==='sv'?'Radera dessa sparade timmar?':'T’i fshij këto orë të ruajtura?'))return;hours=hours.filter(h=>h.id!==id);if(editingHoursId===id){resetHoursEdit();$('hoursNote').value=''}persistAll();$('hoursSaveStatus').textContent=currentLang==='sv'?'Raderat ✅':'U fshinë ✅';renderHours();renderHome()}
 function saveHours(){const projectId=$('hoursProject').value||'';const start=$('startTime').value,end=$('endTime').value,br=Math.max(0,Number($('breakMinutes').value||0)),total=calcHours(start,end,br);if(!start||!end||total<=0){$('hoursSaveStatus').textContent=currentLang==='sv'?'Kontrollera start- och sluttiden.':'Kontrollo orën e fillimit dhe mbarimit.';return}const old=editingHoursId?hours.find(h=>h.id===editingHoursId):null;const entry={...old,id:editingHoursId||uid(),projectId,date:$('hoursDate').value||today(),start,end,breakMinutes:br,total,note:$('hoursNote').value.trim(),createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};if(editingHoursId){const i=hours.findIndex(h=>h.id===editingHoursId);if(i>=0)hours[i]=entry;else hours.unshift(entry)}else hours.unshift(entry);persistAll();$('hoursNote').value='';resetHoursEdit();persistFormDrafts();$('hoursSaveStatus').textContent=currentLang==='sv'?'Sparat ✅':'U ruajtën ✅';renderHours();renderHome()}
-function renderHours(){refreshProjectSelectors();renderHoursSummary();renderHoursCalendar();const list=[...hours].sort((a,b)=>(b.date||'').localeCompare(a.date||''));$('hoursList').innerHTML=list.length?list.map(h=>{const p=projects.find(x=>x.id===h.projectId)||{};const projectName=p.id?`${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}`:(currentLang==='sv'?'Utan projekt':'Pa projekt');const br=Number(h.breakMinutes??h.breakMin??0);return `<div class="item"><h3>${esc(h.date)} — ${hourTotal(h).toFixed(1)} ${tr('hoursLower')}</h3><div class="meta">${projectName}<br>${esc(h.start||'')}–${esc(h.end||'')} • ${tr('breakLower')} ${br} min${h.note?'<br><b>'+(currentLang==='sv'?'Anteckning':'Shënim')+':</b> '+esc(h.note):''}</div><div class="row" style="margin-top:10px"><button class="editHoursBtn" data-id="${esc(h.id)}" type="button">${currentLang==='sv'?'Redigera':'Ndrysho'}</button><button class="danger deleteHoursBtn" data-id="${esc(h.id)}" type="button">${currentLang==='sv'?'Radera':'Fshi'}</button></div></div>`}).join(''):`<div class="empty">${tr('noHours')}</div>`;document.querySelectorAll('.editHoursBtn').forEach(b=>b.addEventListener('click',()=>editHours(b.dataset.id)));document.querySelectorAll('.deleteHoursBtn').forEach(b=>b.addEventListener('click',()=>deleteHours(b.dataset.id)))}
+function renderHours(){refreshProjectSelectors();renderHoursSummary();const list=[...hours].sort((a,b)=>(b.date||'').localeCompare(a.date||''));$('hoursList').innerHTML=list.length?list.map(h=>{const p=projects.find(x=>x.id===h.projectId)||{};const projectName=p.id?`${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}`:(currentLang==='sv'?'Utan projekt':'Pa projekt');const br=Number(h.breakMinutes??h.breakMin??0);return `<div class="item"><h3>${esc(h.date)} — ${hourTotal(h).toFixed(1)} ${tr('hoursLower')}</h3><div class="meta">${projectName}<br>${esc(h.start||'')}–${esc(h.end||'')} • ${tr('breakLower')} ${br} min${h.note?'<br><b>'+(currentLang==='sv'?'Anteckning':'Shënim')+':</b> '+esc(h.note):''}</div><div class="row" style="margin-top:10px"><button class="editHoursBtn" data-id="${esc(h.id)}" type="button">${currentLang==='sv'?'Redigera':'Ndrysho'}</button><button class="danger deleteHoursBtn" data-id="${esc(h.id)}" type="button">${currentLang==='sv'?'Radera':'Fshi'}</button></div></div>`}).join(''):`<div class="empty">${tr('noHours')}</div>`;document.querySelectorAll('.editHoursBtn').forEach(b=>b.addEventListener('click',()=>editHours(b.dataset.id)));document.querySelectorAll('.deleteHoursBtn').forEach(b=>b.addEventListener('click',()=>deleteHours(b.dataset.id)))}
 function saveMaterial(){const projectId=$('materialProject').value;if(!projectId)return;materials.unshift({id:uid(),projectId,date:$('materialDate').value||today(),name:$('materialName').value.trim(),cost:Number($('materialCost').value||0),note:$('materialNote').value.trim()});persistAll();$('materialName').value='';$('materialCost').value='';$('materialNote').value='';renderMaterials();renderHome()}
 function renderMaterials(){refreshProjectSelectors();$('materialsList').innerHTML=materials.length?materials.map(m=>{const p=projects.find(x=>x.id===m.projectId)||{};return `<div class="item"><h3>${esc(m.name||tr('material'))} — ${Number(m.cost||0).toLocaleString('sv-SE')} kr</h3><div class="meta">${esc(m.date)} • ${esc(p.projectNumber||'')} — ${esc(p.projectName||'')} ${m.note?'<br>'+esc(m.note):''}</div></div>`}).join(''):`<div class="empty">${tr('noMaterials')}</div>`}
 function refreshProjectSelectors(){const opts=projects.map(p=>`<option value="${esc(p.id)}">${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</option>`).join('');['hoursProject','materialProject','photoProject','measureProject','voiceProject'].forEach(id=>{if($(id)){const previous=$(id).value;$(id).innerHTML=(id==='hoursProject'?`<option value="">${currentLang==='sv'?'Utan projekt':'Pa projekt'}</option>`:'')+opts;if([...$(id).options].some(o=>o.value===previous))$(id).value=previous}})}
@@ -1717,12 +1659,8 @@ function bind(){
  $('clientSearch').addEventListener('input',renderClients);
  $('saveHoursBtn').addEventListener('click',saveHours);
  $('cancelHoursEditBtn').addEventListener('click',()=>{resetHoursEdit();$('hoursNote').value='';$('hoursSaveStatus').textContent=currentLang==='sv'?'Ändringen avbröts.':'Ndryshimi u anulua.';renderHours()});
- $('hoursDate').addEventListener('change',()=>{hoursCalendarRef=$('hoursDate').value||today();renderHoursSummary();renderHoursCalendar()});
- $('hoursWeekMode').addEventListener('click',()=>{hoursCalendarMode='week';hoursCalendarRef=$('hoursDate').value||today();renderHoursCalendar()});
- $('hoursMonthMode').addEventListener('click',()=>{hoursCalendarMode='month';hoursCalendarRef=$('hoursDate').value||today();renderHoursCalendar()});
- $('hoursPrevPeriod').addEventListener('click',()=>moveHoursCalendar(-1));
- $('hoursNextPeriod').addEventListener('click',()=>moveHoursCalendar(1));
- $('saveMaterialBtn').addEventListener('click',saveMaterial);
+ $('hoursDate').addEventListener('change',renderHoursSummary);
+     $('saveMaterialBtn').addEventListener('click',saveMaterial);
  $('saveBackupVisibleBtn').addEventListener('click',exportBackup);
  $('restoreBackupVisibleBtn').addEventListener('click',restoreLatestBackup);
  $('importFile').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)importBackup(f);e.target.value=''});
@@ -1731,7 +1669,7 @@ function bind(){
 document.addEventListener('DOMContentLoaded',async()=>{
  const guard=document.createElement('div');guard.id='iliriBootGuard';guard.textContent='Po hap të dhënat…';guard.setAttribute('role','status');guard.style.cssText='position:fixed;inset:0;z-index:2000000;display:grid;place-items:center;background:#f4f5f7';document.body.append(guard);
  try{
-  $('hoursDate').value=today();hoursCalendarRef=today();$('materialDate').value=today();if($('voiceDate'))$('voiceDate').value=today();
+  $('hoursDate').value=today();$('materialDate').value=today();if($('voiceDate'))$('voiceDate').value=today();
   if((await restoreDurable())===false){guard.textContent='Aplikacioni është hapur në një skedë tjetër. Mbylle atë skedë dhe rihape këtë faqe.';guard.dataset.blocked='1';return}
   refreshProjectSelectors();bind();applyLang();restoreFormDrafts();renderHome();checkWeeklyBackupReminder();requestPersistentStorage();
   document.addEventListener('input',scheduleDraftSave);document.addEventListener('change',scheduleDraftSave);

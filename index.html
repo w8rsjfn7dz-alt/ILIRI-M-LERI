@@ -413,6 +413,7 @@ let projects=load(PROJECTS_KEY,[]), hours=load(HOURS_KEY,[]), materials=load(MAT
 // offer status migration: old offer-only paid/unpaid labels
 /* offer status migration */ offers=offers.map(o=>({...o,status:o.status==='accepted'?'accepted':o.status==='rejected'?'rejected':o.status}));
 let photos=load(PHOTOS_KEY,[]), measures=load(MEASURES_KEY,[]), reports=load(REPORTS_KEY,[]);
+let editingReportId=null;
 offers=offers.map(o=>({...o,status:o.status==='accepted'?'unpaid':(o.status||'unsent')}));
 let offerFilter='all';
 function $(id){return document.getElementById(id)}
@@ -1634,33 +1635,34 @@ function renderReportsView(){
   const box=$('reportsList'); if(!box)return;
   const list=Array.isArray(reports)?[...reports].sort((a,b)=>String(b.date||b.createdAt||'').localeCompare(String(a.date||a.createdAt||''))):[];
   box.innerHTML=list.length?list.map((r,i)=>`<div class="item">
-    <div class="section-title"><h3>${esc(r.date||'Raport')}</h3><div class="row" style="grid-template-columns:auto auto"><button type="button" class="editReportBtn" data-id="${esc(r.id||'')}">Ndrysho</button><button type="button" class="danger deleteReportBtn" data-id="${esc(r.id||'')}">Fshi</button></div></div>
+    <div class="section-title"><h3>${esc(r.date||'Raport')}</h3><div class="row" style="grid-template-columns:1fr 1fr;gap:8px"><button type="button" class="editReportBtn" data-id="${esc(r.id||'')}">Ndrysho</button><button type="button" class="danger deleteReportBtn" data-id="${esc(r.id||'')}">Fshi</button></div></div>
     ${r.project?`<div><b>Projekti / Vendi:</b> ${esc(r.project)}</div>`:''}
     ${r.hours!==''&&r.hours!=null?`<div><b>Orët:</b> ${esc(String(r.hours))}</div>`:''}
     ${r.work?`<div style="margin-top:6px"><b>Puna e kryer:</b><br>${esc(r.work)}</div>`:''}
     ${r.notes?`<div style="margin-top:6px"><b>Shënime:</b><br>${esc(r.notes)}</div>`:''}
   </div>`).join(''):'<div class="empty">Nuk ka raporte të ruajtura.</div>';
-  document.querySelectorAll('.editReportBtn').forEach(b=>b.addEventListener('click',()=>{
-    const r=reports.find(x=>x.id===b.dataset.id); if(!r)return;
-    $('reportDate').value=r.date||today(); $('reportProject').value=r.project||''; $('reportHours').value=r.hours??''; $('reportWork').value=r.work||''; $('reportNotes').value=r.notes||'';
-    $('reportFormBox').classList.remove('hidden'); $('reportFormBox').dataset.editId=r.id; $('saveReportBtn').textContent='Ruaj ndryshimet'; $('reportProject').focus();
-  }));
+  document.querySelectorAll('.editReportBtn').forEach(b=>b.addEventListener('click',()=>editReport(b.dataset.id)));
   document.querySelectorAll('.deleteReportBtn').forEach(b=>b.addEventListener('click',()=>{
     if(!confirm('Ta fshij këtë raport?'))return;
     reports=reports.filter(r=>r.id!==b.dataset.id);persistAll();renderReportsView();
   }));
 }
+function editReport(id){
+  const r=reports.find(x=>x.id===id); if(!r)return;
+  editingReportId=id;
+  $('reportDate').value=r.date||today(); $('reportProject').value=r.project||''; $('reportHours').value=r.hours??''; $('reportWork').value=r.work||''; $('reportNotes').value=r.notes||'';
+  $('reportFormBox').classList.remove('hidden'); $('reportProject').focus();
+}
 function openNewReport(){
+  editingReportId=null;
   $('reportDate').value=today();$('reportProject').value='';$('reportHours').value='';$('reportWork').value='';$('reportNotes').value='';
-  delete $('reportFormBox').dataset.editId; $('saveReportBtn').textContent='Ruaj raportin';
   $('reportFormBox').classList.remove('hidden');$('reportProject').focus();
 }
 function saveNewReport(){
-  const editId=$('reportFormBox').dataset.editId||'';
-  const r={id:editId||uid(),date:$('reportDate').value||today(),project:$('reportProject').value.trim(),hours:$('reportHours').value===''?'':Number($('reportHours').value),work:$('reportWork').value.trim(),notes:$('reportNotes').value.trim(),createdAt:new Date().toISOString()};
+  const r={id:editingReportId||uid(),date:$('reportDate').value||today(),project:$('reportProject').value.trim(),hours:$('reportHours').value===''?'':Number($('reportHours').value),work:$('reportWork').value.trim(),notes:$('reportNotes').value.trim(),createdAt:new Date().toISOString()};
   if(!r.project && !r.work){$('reportProject').focus();return}
-  if(editId){const i=reports.findIndex(x=>x.id===editId);if(i>=0)r.createdAt=reports[i].createdAt||r.createdAt;if(i>=0)reports[i]=r;else reports.push(r)}else reports.push(r);
-  persistAll();delete $('reportFormBox').dataset.editId;$('saveReportBtn').textContent='Ruaj raportin';$('reportFormBox').classList.add('hidden');renderReportsView();
+  if(editingReportId){const i=reports.findIndex(x=>x.id===editingReportId);if(i>=0)reports[i]={...reports[i],...r};else reports.push(r)}else reports.push(r);
+  editingReportId=null;persistAll();$('reportFormBox').classList.add('hidden');renderReportsView();
 }
 
 function toggleLang(){currentLang=currentLang==='sq'?'sv':'sq';IliriStore.setExtra(LANG_KEY,currentLang);applyLang()}

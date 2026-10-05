@@ -392,21 +392,6 @@ html.client-sign-mode #iliriSigBack{display:none!important}
 <script>
 'use strict';
 const PROJECTS_KEY='iliri_maleri_projects_v3';
-/* iOS Home Screen apps use isolated storage. On first standalone launch,
-   import the user's confirmed Safari snapshot through the URL fragment. */
-function importStandaloneSnapshotFromHash(){
-  if(!window.matchMedia('(display-mode: standalone)').matches)return false;
-  const m=location.hash.match(/^#iliri=([^&]+)$/); if(!m)return false;
-  try{
-    const data=JSON.parse(decodeURIComponent(atob(m[1])));
-    if(!data||!Array.isArray(data.projects)||!Array.isArray(data.hours))return false;
-    safeLocalSet(PROJECTS_KEY,JSON.stringify(data.projects));
-    safeLocalSet(HOURS_KEY,JSON.stringify(data.hours));
-    if(Array.isArray(data.materials))safeLocalSet(MATERIALS_KEY,JSON.stringify(data.materials));
-    history.replaceState(null,'',location.pathname+location.search);
-    location.reload(); return true;
-  }catch(e){return false}
-}
 const HOURS_KEY='iliri_maleri_hours_v1';
 const MATERIALS_KEY='iliri_maleri_materials_v1';
 const LANG_KEY='iliri_maleri_lang_v4';
@@ -739,18 +724,12 @@ const IliriStore=(()=>{
       // A newer cloud timestamp does not mean the cloud copy is more complete.
       // If both copies contain data and differ, keep the device copy intact and
       // require an explicit choice in the storage panel.
-      const standalone=window.matchMedia('(display-mode: standalone)').matches;
-      if(standalone && remoteUseful){
+      if(remoteUseful && !localUseful){
         applySnapshot(row.data);
         meta.dirty=false;meta.syncedAt=row.updated_at;
-        repaint();refreshProjectSelectors();renderHome();
+        repaint();
         await writeLocal();
-      }else if(!standalone && remoteUseful && !localUseful){
-        applySnapshot(row.data);
-        meta.dirty=false;meta.syncedAt=row.updated_at;
-        repaint();refreshProjectSelectors();renderHome();
-        await writeLocal();
-      }else if(!standalone && remoteUseful&&localUseful&&!sameCopy&&(remoteSavedAt!==localSavedAt||meta.dirty)){
+      }else if(remoteUseful&&localUseful&&!sameCopy&&(remoteSavedAt!==localSavedAt||meta.dirty)){
         setConflict({payload:row.data,updated_at:row.updated_at,revision:0});
         return;
       }else if(sameCopy){
@@ -1816,17 +1795,28 @@ function bind(){
  $('importFile').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)importBackup(f);e.target.value=''});
 }
 
-document.addEventListener('DOMContentLoaded',async()=>{
- const guard=document.createElement('div');guard.id='iliriBootGuard';guard.textContent='Po hap të dhënat…';guard.setAttribute('role','status');guard.style.cssText='position:fixed;inset:0;z-index:2000000;display:grid;place-items:center;background:#f4f5f7';document.body.append(guard);
+document.addEventListener('DOMContentLoaded',()=>{
+ const guard=document.createElement('div');guard.id='iliriBootGuard';guard.textContent='Po hap aplikacionin…';guard.setAttribute('role','status');guard.style.cssText='position:fixed;inset:0;z-index:2000000;display:grid;place-items:center;background:#f4f5f7';document.body.append(guard);
+ // Never let storage recovery prevent the interface from opening.
  try{
   $('hoursDate').value=today();hoursCalendarRef=today();$('materialDate').value=today();if($('voiceDate'))$('voiceDate').value=today();
-  await restoreDurable();
-  refreshProjectSelectors();bind();applyLang();restoreFormDrafts();renderHome();checkWeeklyBackupReminder();requestPersistentStorage();
-  document.addEventListener('input',scheduleDraftSave);document.addEventListener('change',scheduleDraftSave);
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persistFormDrafts()});window.addEventListener('pagehide',persistFormDrafts);
-  await IliriStore.start();
- }catch(e){console.error('ILIRI initialization failed',e)}finally{guard.remove()}
+  refreshProjectSelectors();bind();applyLang();renderHome();
+ }catch(e){console.error('ILIRI UI initialization failed',e)}
+ guard.remove();
+ // Recover durable data after the UI is already usable, then repaint.
+ Promise.resolve(restoreDurable()).then(()=>{
+   refreshProjectSelectors();applyLang();restoreFormDrafts();renderHome();
+   const visible=['projectsView','clientsView','hoursView','materialsView'].find(id=>$(id)&&!$(id).classList.contains('hidden'));
+   if(visible)showView(visible);
+   checkWeeklyBackupReminder();requestPersistentStorage();
+   document.addEventListener('input',scheduleDraftSave);document.addEventListener('change',scheduleDraftSave);
+   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persistFormDrafts()});window.addEventListener('pagehide',persistFormDrafts);
+   // Cloud auto-start disabled here: never let an older online snapshot replace
+   // projects/hours on this iPhone. Online sync can be started explicitly from Ruajtja.
+   console.log('ILIRI: local data protected; cloud auto-sync paused');
+ }).catch(e=>{console.error('ILIRI data recovery failed',e);IliriStore.start().catch(()=>{})});
 });
+
 
 
 document.addEventListener('click',function(e){

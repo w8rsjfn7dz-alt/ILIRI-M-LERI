@@ -1811,6 +1811,7 @@ function bind(){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
+ importStandaloneSnapshotFromHash();
  const guard=document.createElement('div');guard.id='iliriBootGuard';guard.textContent='Po hap aplikacionin…';guard.setAttribute('role','status');guard.style.cssText='position:fixed;inset:0;z-index:2000000;display:grid;place-items:center;background:#f4f5f7';document.body.append(guard);
  // Never let storage recovery prevent the interface from opening.
  try{

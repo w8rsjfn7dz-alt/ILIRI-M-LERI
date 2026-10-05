@@ -846,28 +846,23 @@ function editProject(id){const p=projects.find(x=>x.id===id);if(!p)return;$('del
 function toggleDetail(id){const el=$('detail-'+id);if(el)el.classList.toggle('hidden')}
 function renderProjects(){
   const box=$('projectsList'); if(!box)return;
-  const input=$('projectSearch'); const q=(input?.value||'').toLowerCase().trim();
-  let list=Array.isArray(projects)?projects.filter(p=>p&&typeof p==='object'):[];
-  list=[...list].sort((a,b)=>String(a.projectNumber||'').localeCompare(String(b.projectNumber||''),undefined,{numeric:true}));
-  if(q){const filtered=list.filter(p=>[p.projectName,p.projectNumber,p.clientName,p.address].map(x=>String(x||'')).join(' ').toLowerCase().includes(q));if(filtered.length)list=filtered;else if(input)input.value='';}
-  if(!list.length){box.innerHTML='<div class="empty">'+tr('noProjects')+'</div>';return;}
-  box.innerHTML='';
+  const list=Array.isArray(projects)?projects.filter(p=>p&&typeof p==='object'):[];
+  box.replaceChildren();
+  if(!list.length){const e=document.createElement('div');e.className='empty';e.textContent=tr('noProjects');box.appendChild(e);return;}
   list.forEach((p,idx)=>{
-    const id=String(p.id||'');
     const card=document.createElement('div');card.className='item clickable';
-    const title=document.createElement('h3');title.textContent=(p.projectNumber||String(idx+1).padStart(3,'0'))+' — '+(p.projectName||'Projekt');
-    const meta=document.createElement('div');meta.className='meta';meta.textContent=tr('client')+': '+(p.clientName||'')+(p.phone?' • '+p.phone:'');
+    const title=document.createElement('h3');title.textContent=String(p.projectNumber||String(idx+1).padStart(3,'0'))+' — '+String(p.projectName||'Projekt');
+    const meta=document.createElement('div');meta.className='meta';meta.textContent=tr('client')+': '+String(p.clientName||'')+(p.phone?' • '+String(p.phone):'');
     const badge=document.createElement('span');badge.className='badge';badge.textContent=statusText(p.status);
     const detail=document.createElement('div');detail.className='detail hidden';
     const info=document.createElement('div');info.className='meta';
-    const rows=[[tr('address'),p.address||'-'],[tr('workType'),p.type||'-'],[tr('hours'),projectHours(id).toFixed(1)],[tr('materials'),projectMaterials(id).toLocaleString('sv-SE')+' kr'],[tr('offer'),Number(p.price||0).toLocaleString('sv-SE')+' kr'],[tr('notes'),p.notes||'-']];
-    rows.forEach(([k,v])=>{const b=document.createElement('b');b.textContent=k+': ';info.append(b,document.createTextNode(String(v)),document.createElement('br'));});
+    [[tr('address'),p.address||'-'],[tr('workType'),p.type||'-'],[tr('offer'),Number(p.price||0).toLocaleString('sv-SE')+' kr'],[tr('notes'),p.notes||'-']].forEach(([k,v])=>{const b=document.createElement('b');b.textContent=k+': ';info.append(b,document.createTextNode(String(v)),document.createElement('br'));});
     const row=document.createElement('div');row.className='row';row.style.marginTop='10px';
-    const edit=document.createElement('button');edit.type='button';edit.textContent=tr('edit');edit.onclick=e=>{e.stopPropagation();editProject(id)};
-    const del=document.createElement('button');del.type='button';del.className='danger';del.textContent=tr('deleteProject');del.onclick=e=>{e.stopPropagation();deleteProject(id)};
+    const edit=document.createElement('button');edit.type='button';edit.textContent=tr('edit');edit.onclick=e=>{e.stopPropagation();editProject(p.id)};
+    const del=document.createElement('button');del.type='button';del.className='danger';del.textContent=tr('deleteProject');del.onclick=e=>{e.stopPropagation();deleteProject(p.id)};
     row.append(edit,del);detail.append(info,row);card.append(title,meta,badge,detail);
     card.onclick=e=>{if(e.target.closest('button'))return;detail.classList.toggle('hidden')};
-    box.append(card);
+    box.appendChild(card);
   });
 }
 function clientProjectsByName(name){return projects.filter(p=>(p.clientName||'').trim()===name)}

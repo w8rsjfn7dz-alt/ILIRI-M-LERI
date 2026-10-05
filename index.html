@@ -1761,7 +1761,9 @@ document.addEventListener('DOMContentLoaded',async()=>{
   refreshProjectSelectors();bind();applyLang();restoreFormDrafts();renderHome();checkWeeklyBackupReminder();requestPersistentStorage();
   document.addEventListener('input',scheduleDraftSave);document.addEventListener('change',scheduleDraftSave);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persistFormDrafts()});window.addEventListener('pagehide',persistFormDrafts);
-  await IliriStore.start();
+  // Start cloud/storage controls in the background. Local app opening must never
+  // wait for network/CDN/cloud initialization.
+  IliriStore.start().catch(e=>console.error('ILIRI storage start failed',e));
  }catch(e){alert('Hapja nuk përfundoi. Mos fshi të dhënat e Safari-t; provo ta rihapësh aplikacionin.');console.error('ILIRI initialization failed',e)}finally{if(!guard.dataset.blocked)guard.remove()}
 });
 

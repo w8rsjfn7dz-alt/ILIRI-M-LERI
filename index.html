@@ -843,7 +843,32 @@ async function saveProject(){const id=$('projectId').value;const p={id:id||uid()
 function deleteProject(id){if(!confirm(tr('deleteConfirm')))return;projects=projects.filter(p=>p.id!==id);/* Keep saved hours/materials as business records even if a project is deleted. */persistAll();refreshProjectSelectors();renderHome();renderProjects();renderClients()}
 function editProject(id){const p=projects.find(x=>x.id===id);if(!p)return;$('deleteCurrentProjectBtn').classList.remove('hidden');$('projectId').value=p.id;$('projectName').value=p.projectName||'';$('projectNumber').value=p.projectNumber||'';$('clientName').value=p.clientName||'';$('phone').value=p.phone||'';$('address').value=p.address||'';$('type').value=p.type||'';$('status').value=p.status||'active';$('price').value=p.price||'';$('notes').value=p.notes||'';$('projectFormTitle').textContent=tr('editProject');showView('projectFormView')}
 function toggleDetail(id){const el=$('detail-'+id);if(el)el.classList.toggle('hidden')}
-function renderProjects(){const input=$('projectSearch');const q=(input?.value||'').toLowerCase().trim();let list=[...projects].sort((a,b)=>(a.projectNumber||'').localeCompare(b.projectNumber||'',undefined,{numeric:true}));if(q){const filtered=list.filter(p=>[p.projectName,p.projectNumber,p.clientName].join(' ').toLowerCase().includes(q));/* A stale restored search draft must never make saved projects appear lost. */if(filtered.length||!list.length)list=filtered;else{input.value='';}}$('projectsList').innerHTML=list.length?list.map(p=>`<div class="item clickable" data-detail="${esc(p.id)}"><h3>${esc(p.projectNumber||'')} — ${esc(p.projectName||'')}</h3><div class="meta">${tr('client')}: ${esc(p.clientName||'')} ${p.phone?'• '+esc(p.phone):''}</div><span class="badge">${statusText(p.status)}</span><div id="detail-${esc(p.id)}" class="detail hidden"><div class="meta"><b>${tr('address')}:</b> ${esc(p.address||'-')}<br><b>${tr('workType')}:</b> ${esc(p.type||'-')}<br><b>${tr('hours')}:</b> ${projectHours(p.id).toFixed(1)}<br><b>${tr('materials')}:</b> ${projectMaterials(p.id).toLocaleString('sv-SE')} kr<br><b>${tr('offer')}:</b> ${Number(p.price||0).toLocaleString('sv-SE')} kr<br><b>${tr('notes')}:</b> ${esc(p.notes||'-')}</div><div class="row" style="margin-top:10px"><button class="editProjectBtn" data-id="${esc(p.id)}" type="button">${tr('edit')}</button><button class="danger deleteProjectBtn" data-id="${esc(p.id)}" type="button">${tr('deleteProject')}</button></div></div></div>`).join(''):`<div class="empty">${tr('noProjects')}</div>`;document.querySelectorAll('[data-detail]').forEach(el=>el.addEventListener('click',e=>{if(e.target.closest('.editProjectBtn')||e.target.closest('.deleteProjectBtn'))return;toggleDetail(el.dataset.detail)}));document.querySelectorAll('.editProjectBtn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();editProject(b.dataset.id)}));document.querySelectorAll('.deleteProjectBtn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();deleteProject(b.dataset.id)}))}
+function renderProjects(){
+  const box=$('projectsList'); if(!box)return;
+  const input=$('projectSearch'); const q=(input?.value||'').toLowerCase().trim();
+  let list=Array.isArray(projects)?projects.filter(p=>p&&typeof p==='object'):[];
+  list=[...list].sort((a,b)=>String(a.projectNumber||'').localeCompare(String(b.projectNumber||''),undefined,{numeric:true}));
+  if(q){const filtered=list.filter(p=>[p.projectName,p.projectNumber,p.clientName,p.address].map(x=>String(x||'')).join(' ').toLowerCase().includes(q));if(filtered.length)list=filtered;else if(input)input.value='';}
+  if(!list.length){box.innerHTML='<div class="empty">'+tr('noProjects')+'</div>';return;}
+  box.innerHTML='';
+  list.forEach((p,idx)=>{
+    const id=String(p.id||'');
+    const card=document.createElement('div');card.className='item clickable';
+    const title=document.createElement('h3');title.textContent=(p.projectNumber||String(idx+1).padStart(3,'0'))+' — '+(p.projectName||'Projekt');
+    const meta=document.createElement('div');meta.className='meta';meta.textContent=tr('client')+': '+(p.clientName||'')+(p.phone?' • '+p.phone:'');
+    const badge=document.createElement('span');badge.className='badge';badge.textContent=statusText(p.status);
+    const detail=document.createElement('div');detail.className='detail hidden';
+    const info=document.createElement('div');info.className='meta';
+    const rows=[[tr('address'),p.address||'-'],[tr('workType'),p.type||'-'],[tr('hours'),projectHours(id).toFixed(1)],[tr('materials'),projectMaterials(id).toLocaleString('sv-SE')+' kr'],[tr('offer'),Number(p.price||0).toLocaleString('sv-SE')+' kr'],[tr('notes'),p.notes||'-']];
+    rows.forEach(([k,v])=>{const b=document.createElement('b');b.textContent=k+': ';info.append(b,document.createTextNode(String(v)),document.createElement('br'));});
+    const row=document.createElement('div');row.className='row';row.style.marginTop='10px';
+    const edit=document.createElement('button');edit.type='button';edit.textContent=tr('edit');edit.onclick=e=>{e.stopPropagation();editProject(id)};
+    const del=document.createElement('button');del.type='button';del.className='danger';del.textContent=tr('deleteProject');del.onclick=e=>{e.stopPropagation();deleteProject(id)};
+    row.append(edit,del);detail.append(info,row);card.append(title,meta,badge,detail);
+    card.onclick=e=>{if(e.target.closest('button'))return;detail.classList.toggle('hidden')};
+    box.append(card);
+  });
+}
 function clientProjectsByName(name){return projects.filter(p=>(p.clientName||'').trim()===name)}
 function editClient(name){const list=clientProjectsByName(name);if(!list.length)return;if(list.length===1){editProject(list[0].id);return}const pick=prompt('Ky klient ka '+list.length+' projekte. Shkruaj numrin e projektit që do të ndryshosh:\n'+list.map((p,i)=>(i+1)+'. '+(p.projectNumber||'')+' — '+(p.projectName||'')).join('\n'),'1');const n=Number(pick);if(Number.isInteger(n)&&n>=1&&n<=list.length)editProject(list[n-1].id)}
 function deleteClient(name){const list=clientProjectsByName(name);if(!list.length)return;if(!confirm('Ta fshij klientin “'+name+'” nga projektet? Orët dhe materialet e projekteve nuk fshihen.'))return;projects=projects.map(p=>(p.clientName||'').trim()===name?{...p,clientName:'',phone:'',updatedAt:new Date().toISOString()}:p);persistAll();refreshProjectSelectors();renderHome();renderProjects();renderClients()}

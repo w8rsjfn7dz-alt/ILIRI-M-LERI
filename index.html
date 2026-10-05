@@ -739,13 +739,7 @@ const IliriStore=(()=>{
       // A newer cloud timestamp does not mean the cloud copy is more complete.
       // If both copies contain data and differ, keep the device copy intact and
       // require an explicit choice in the storage panel.
-      if(remoteUseful && !localUseful){
-        applySnapshot(row.data);
-        meta.dirty=false;meta.syncedAt=row.updated_at;
-        repaint();refreshProjectSelectors();renderHome();
-        await writeLocal();
-      }else if(remoteUseful&&window.matchMedia('(display-mode: standalone)').matches&&(!localUseful||!projects.length)){
-        // iOS Home Screen has its own storage. Seed it from the protected online copy.
+      if(remoteUseful && (!localUseful || (window.matchMedia('(display-mode: standalone)').matches && !projects.length))){
         applySnapshot(row.data);
         meta.dirty=false;meta.syncedAt=row.updated_at;
         repaint();refreshProjectSelectors();renderHome();

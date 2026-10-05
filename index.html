@@ -1795,26 +1795,16 @@ function bind(){
  $('importFile').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)importBackup(f);e.target.value=''});
 }
 
-document.addEventListener('DOMContentLoaded',()=>{
- const guard=document.createElement('div');guard.id='iliriBootGuard';guard.textContent='Po hap aplikacionin…';guard.setAttribute('role','status');guard.style.cssText='position:fixed;inset:0;z-index:2000000;display:grid;place-items:center;background:#f4f5f7';document.body.append(guard);
- // Never let storage recovery prevent the interface from opening.
+document.addEventListener('DOMContentLoaded',async()=>{
+ const guard=document.createElement('div');guard.id='iliriBootGuard';guard.textContent='Po hap të dhënat…';guard.setAttribute('role','status');guard.style.cssText='position:fixed;inset:0;z-index:2000000;display:grid;place-items:center;background:#f4f5f7';document.body.append(guard);
  try{
   $('hoursDate').value=today();hoursCalendarRef=today();$('materialDate').value=today();if($('voiceDate'))$('voiceDate').value=today();
-  refreshProjectSelectors();bind();applyLang();renderHome();
- }catch(e){console.error('ILIRI UI initialization failed',e)}
- guard.remove();
- // Recover durable data after the UI is already usable, then repaint.
- Promise.resolve(restoreDurable()).then(()=>{
-   refreshProjectSelectors();applyLang();restoreFormDrafts();renderHome();
-   const visible=['projectsView','clientsView','hoursView','materialsView'].find(id=>$(id)&&!$(id).classList.contains('hidden'));
-   if(visible)showView(visible);
-   checkWeeklyBackupReminder();requestPersistentStorage();
-   document.addEventListener('input',scheduleDraftSave);document.addEventListener('change',scheduleDraftSave);
-   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persistFormDrafts()});window.addEventListener('pagehide',persistFormDrafts);
-   // Cloud auto-start disabled here: never let an older online snapshot replace
-   // projects/hours on this iPhone. Online sync can be started explicitly from Ruajtja.
-   console.log('ILIRI: local data protected; cloud auto-sync paused');
- }).catch(e=>{console.error('ILIRI data recovery failed',e);IliriStore.start().catch(()=>{})});
+  if((await restoreDurable())===false){guard.textContent='Aplikacioni është hapur në një skedë tjetër. Mbylle atë skedë dhe rihape këtë faqe.';guard.dataset.blocked='1';return}
+  refreshProjectSelectors();bind();applyLang();restoreFormDrafts();renderHome();checkWeeklyBackupReminder();requestPersistentStorage();
+  document.addEventListener('input',scheduleDraftSave);document.addEventListener('change',scheduleDraftSave);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persistFormDrafts()});window.addEventListener('pagehide',persistFormDrafts);
+  IliriStore.start();
+ }catch(e){alert('Hapja nuk përfundoi. Mos fshi të dhënat e Safari-t; provo ta rihapësh aplikacionin.');console.error('ILIRI initialization failed',e)}finally{if(!guard.dataset.blocked)guard.remove()}
 });
 
 

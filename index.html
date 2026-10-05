@@ -710,50 +710,54 @@ const IliriStore=(()=>{
   async function sync(){
     if(!ready||!client||cloudBusy||clientLink)return;
     if(!navigator.onLine){cloudMessage='Pa internet — në pritje për online';renderStatus();return}
+    const beforeDraftMutation=snapshot?.mutationId;
     saveDrafts();cloudBusy=true;cloudMessage='Po ruhet online…';renderStatus();
     try{
       const read=await client.from('iliri_data').select('id,user_id,data,updated_at').eq('user_id','iliri').limit(1).maybeSingle();
       if(read.error)throw read.error;
       const row=read.data;
+      // Validate before using a remote response or deciding it can be replaced.
+      if(row?.data&&Object.keys(row.data).length)validSnapshot(row.data);
       const localUseful=useful(snapshot);
       const remoteUseful=row?.data && Object.keys(row.data||{}).length>0;
-      const localSavedAt=Number(snapshot?.savedAt)||0;
-      const remoteSavedAt=Number(row?.data?.savedAt)||0;
       const sameCopy=remoteUseful&&row.data.mutationId&&row.data.mutationId===snapshot?.mutationId;
-      const standalone=(window.navigator.standalone===true)||!!window.matchMedia?.('(display-mode: standalone)').matches;
-      // Installed iPhone app always mirrors the protected online source.
-      if(standalone&&remoteUseful){
-        applySnapshot(row.data);meta.dirty=false;meta.syncedAt=row.updated_at;
-        repaint();refreshProjectSelectors();renderHome();await writeLocal();return;
-      }
-      // Never auto-replace useful data already present on this device.
-      // A newer cloud timestamp does not mean the cloud copy is more complete.
-      // If both copies contain data and differ, keep the device copy intact and
-      // require an explicit choice in the storage panel.
-      if(remoteUseful && !localUseful){
+      const remoteUnchanged=remoteUseful&&row.data.mutationId&&
+        (row.data.mutationId===meta.baseMutationId||row.data.mutationId===beforeDraftMutation);
+      // Safari and Home Screen use the same protection: seed an empty device,
+      // but never replace edits merely because the app is installed.
+      if(remoteUseful && !localUseful && !meta.baseMutationId){
         applySnapshot(row.data);
-        meta.dirty=false;meta.syncedAt=row.updated_at;
+        meta.dirty=false;meta.syncedAt=row.updated_at;meta.baseMutationId=row.data.mutationId;
+        conflict=null;
         repaint();
         await writeLocal();
-      }else if(remoteUseful&&localUseful&&!sameCopy&&(remoteSavedAt!==localSavedAt||meta.dirty)){
+      }else if(remoteUseful&&!sameCopy&&!remoteUnchanged){
         setConflict({payload:row.data,updated_at:row.updated_at,revision:0});
         return;
       }else if(sameCopy){
-        meta.dirty=false;meta.syncedAt=row.updated_at;
+        meta.dirty=false;meta.syncedAt=row.updated_at;meta.baseMutationId=row.data.mutationId;
+        conflict=null;
         await writeLocal();
       }else{
+        if(!row&&!localUseful){cloudMessage='Nuk ka ende të dhëna për ruajtje online.';return}
         const payload=backupSnapshot();
         if(row){
-          const up=await client.from('iliri_data').update({data:payload,updated_at:new Date().toISOString()}).eq('id',row.id).select('id,updated_at').single();
+          // Only update the exact version just read. A concurrent change is
+          // re-read on the next attempt, never overwritten by a stale device.
+          const up=await client.from('iliri_data').update({data:payload,updated_at:new Date().toISOString()}).eq('id',row.id).eq('updated_at',row.updated_at).select('id,updated_at').maybeSingle();
           if(up.error)throw up.error;
+          if(!up.data){queueSync(10);return}
           meta.syncedAt=up.data.updated_at;
         }else{
           const ins=await client.from('iliri_data').insert({user_id:'iliri',data:payload}).select('id,updated_at').single();
           if(ins.error)throw ins.error;
           meta.syncedAt=ins.data.updated_at;
         }
-        meta.dirty=false;
+        meta.baseMutationId=payload.mutationId;
+        meta.dirty=snapshot.mutationId!==payload.mutationId;
+        conflict=null;
         await writeLocal();
+        if(meta.dirty)queueSync(10);
       }
       user={email:'ILIRI'};
       retryMs=3000;panelMessage='';
@@ -767,10 +771,13 @@ const IliriStore=(()=>{
     if(!conflict||cloudBusy)return;
     const row=conflict;
     if(which==='download'){download(validSnapshot(row.payload),'ILIRI_Kopja_online_'+today()+'.json');return}
-    if(!confirm(which==='online'?'Të zëvendësoj të dhënat e kësaj pajisjeje me kopjen online? Kopja aktuale ruhet për rikthim.':'Të zëvendësoj kopjen online me të dhënat e kësaj pajisjeje? Versioni i mëparshëm ruhet online.'))return;
+    if(!confirm(which==='online'?'Të zëvendësoj të dhënat e kësaj pajisjeje me kopjen online? Kopja aktuale ruhet për rikthim.':'Të zëvendësoj kopjen online me të dhënat e kësaj pajisjeje? Kopja e mëparshme ruhet në këtë pajisje.'))return;
     if(!await durablePut('before-restore',backupSnapshot())){panelMessage='Kopja mbrojtëse dështoi. Ruaj backup dhe liro hapësirë.';renderStatus();return}
-    if(which==='online'){applySnapshot(row.payload);meta.dirty=false;meta.syncedAt=row.updated_at;repaint()}
-    else {snapshot.savedAt=Date.now();snapshot.mutationId=uuid();meta.dirty=true}
+    if(which==='online'){applySnapshot(row.payload);meta.dirty=false;meta.syncedAt=row.updated_at;meta.baseMutationId=row.payload.mutationId;repaint()}
+    else {
+      if(!await durablePut('before-cloud-push',row.payload)){panelMessage='Kopja mbrojtëse dështoi. Kopja online nuk u ndryshua.';renderStatus();return}
+      meta.baseMutationId=row.payload.mutationId;snapshot.savedAt=Date.now();snapshot.mutationId=uuid();meta.dirty=true;
+    }
     meta.baseRevision=Number(row.revision);conflict=null;panelMessage='';await writeLocal();queueSync(10);renderStatus();
   }
   function installUI(){
@@ -816,22 +823,8 @@ const IliriStore=(()=>{
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')queueSync(50)});
     setInterval(()=>{if(document.visibilityState==='visible')queueSync(10)},30000);
     const saved=json(safeLocalGet(CONFIG_KEY))||{url:'https://ihghchzhknjtrzawnhdt.supabase.co',key:'sb_publishable_i2GBw8vT5HFAGHxI4m8fUQ_e5tTMOEg'};if(saved){try{await connect(validConfig(saved.url,saved.key));user={email:'ILIRI'};safeLocalSet(CONFIG_KEY,JSON.stringify(saved));
-      // One-time bridge: opening ?homepush=1 in Safari makes THIS device copy
-      // (the copy the user can see) the protected online source for Home Screen.
-      if(new URLSearchParams(location.search).get('homepush')==='1' && useful(snapshot)){
-        saveDrafts(); await localQueue;
-        const payload=backupSnapshot();
-        const read=await client.from('iliri_data').select('id').eq('user_id','iliri').limit(1).maybeSingle();
-        if(read.error)throw read.error;
-        if(read.data){
-          const up=await client.from('iliri_data').update({data:payload,updated_at:new Date().toISOString()}).eq('id',read.data.id);
-          if(up.error)throw up.error;
-        }else{
-          const ins=await client.from('iliri_data').insert({user_id:'iliri',data:payload});
-          if(ins.error)throw ins.error;
-        }
-        meta.dirty=false; cloudMessage='Kopja e Safari-t u ruajt online për Home Screen'; await writeLocal(); renderStatus();
-      }else queueSync(10)
+      // Old homepush links must use the same conflict checks as every launch.
+      queueSync(10);
     }catch(e){panelMessage=cloudError(e);renderStatus()}}
   }
   return {initLocal,start,initialized,saveData,saveDrafts,restoreDrafts:()=>applyDrafts(),backupSnapshot,exportAll,restoreLatestBackup,importAll,readExtra,setExtra,sync,
@@ -2299,5 +2292,4 @@ commit;
 
 </body>
 </html>
-
 

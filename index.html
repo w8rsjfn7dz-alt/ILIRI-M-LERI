@@ -1819,6 +1819,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   refreshProjectSelectors();bind();applyLang();renderHome();
  }catch(e){console.error('ILIRI UI initialization failed',e)}
  guard.remove();
+ // Always expose the online-storage control immediately, even if local recovery
+ // later fails or stalls on iOS.
+ try{IliriStore.start().catch(e=>console.error('ILIRI online storage failed',e))}catch(e){}
  // Recover durable data after the UI is already usable, then repaint.
  Promise.resolve(restoreDurable()).then(()=>{
    refreshProjectSelectors();applyLang();restoreFormDrafts();renderHome();
@@ -1827,9 +1830,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    checkWeeklyBackupReminder();requestPersistentStorage();
    document.addEventListener('input',scheduleDraftSave);document.addEventListener('change',scheduleDraftSave);
    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persistFormDrafts()});window.addEventListener('pagehide',persistFormDrafts);
-   // Start online storage after local recovery. Conflict protection in sync()
-   // prevents an existing useful local copy from being overwritten automatically.
-   IliriStore.start().catch(e=>console.error('ILIRI online storage failed',e));
+
  }).catch(e=>{console.error('ILIRI data recovery failed',e);IliriStore.start().catch(()=>{})});
 });
 

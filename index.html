@@ -742,13 +742,13 @@ const IliriStore=(()=>{
       if(remoteUseful && !localUseful){
         applySnapshot(row.data);
         meta.dirty=false;meta.syncedAt=row.updated_at;
-        repaint();
+        repaint();refreshProjectSelectors();renderHome();
         await writeLocal();
       }else if(remoteUseful&&window.matchMedia('(display-mode: standalone)').matches&&(!localUseful||!projects.length)){
         // iOS Home Screen has its own storage. Seed it from the protected online copy.
         applySnapshot(row.data);
         meta.dirty=false;meta.syncedAt=row.updated_at;
-        repaint();
+        repaint();refreshProjectSelectors();renderHome();
         await writeLocal();
       }else if(remoteUseful&&localUseful&&!sameCopy&&(remoteSavedAt!==localSavedAt||meta.dirty)){
         setConflict({payload:row.data,updated_at:row.updated_at,revision:0});

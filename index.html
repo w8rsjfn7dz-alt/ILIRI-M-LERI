@@ -720,6 +720,12 @@ const IliriStore=(()=>{
       const localSavedAt=Number(snapshot?.savedAt)||0;
       const remoteSavedAt=Number(row?.data?.savedAt)||0;
       const sameCopy=remoteUseful&&row.data.mutationId&&row.data.mutationId===snapshot?.mutationId;
+      const standalone=(window.navigator.standalone===true)||!!window.matchMedia?.('(display-mode: standalone)').matches;
+      // Installed iPhone app always mirrors the protected online source.
+      if(standalone&&remoteUseful){
+        applySnapshot(row.data);meta.dirty=false;meta.syncedAt=row.updated_at;
+        repaint();refreshProjectSelectors();renderHome();await writeLocal();return;
+      }
       // Never auto-replace useful data already present on this device.
       // A newer cloud timestamp does not mean the cloud copy is more complete.
       // If both copies contain data and differ, keep the device copy intact and
@@ -809,7 +815,24 @@ const IliriStore=(()=>{
     window.addEventListener('online',()=>queueSync(50));window.addEventListener('offline',()=>{cloudMessage='Pa internet — në pritje për online';renderStatus()});
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')queueSync(50)});
     setInterval(()=>{if(document.visibilityState==='visible')queueSync(10)},30000);
-    const saved=json(safeLocalGet(CONFIG_KEY))||{url:'https://ihghchzhknjtrzawnhdt.supabase.co',key:'sb_publishable_i2GBw8vT5HFAGHxI4m8fUQ_e5tTMOEg'};if(saved){try{await connect(validConfig(saved.url,saved.key));user={email:'ILIRI'};safeLocalSet(CONFIG_KEY,JSON.stringify(saved));queueSync(10)}catch(e){panelMessage=cloudError(e);renderStatus()}}
+    const saved=json(safeLocalGet(CONFIG_KEY))||{url:'https://ihghchzhknjtrzawnhdt.supabase.co',key:'sb_publishable_i2GBw8vT5HFAGHxI4m8fUQ_e5tTMOEg'};if(saved){try{await connect(validConfig(saved.url,saved.key));user={email:'ILIRI'};safeLocalSet(CONFIG_KEY,JSON.stringify(saved));
+      // One-time bridge: opening ?homepush=1 in Safari makes THIS device copy
+      // (the copy the user can see) the protected online source for Home Screen.
+      if(new URLSearchParams(location.search).get('homepush')==='1' && useful(snapshot)){
+        saveDrafts(); await localQueue;
+        const payload=backupSnapshot();
+        const read=await client.from('iliri_data').select('id').eq('user_id','iliri').limit(1).maybeSingle();
+        if(read.error)throw read.error;
+        if(read.data){
+          const up=await client.from('iliri_data').update({data:payload,updated_at:new Date().toISOString()}).eq('id',read.data.id);
+          if(up.error)throw up.error;
+        }else{
+          const ins=await client.from('iliri_data').insert({user_id:'iliri',data:payload});
+          if(ins.error)throw ins.error;
+        }
+        meta.dirty=false; cloudMessage='Kopja e Safari-t u ruajt online për Home Screen'; await writeLocal(); renderStatus();
+      }else queueSync(10)
+    }catch(e){panelMessage=cloudError(e);renderStatus()}}
   }
   return {initLocal,start,initialized,saveData,saveDrafts,restoreDrafts:()=>applyDrafts(),backupSnapshot,exportAll,restoreLatestBackup,importAll,readExtra,setExtra,sync,
     // Testable pure validation and state inspection; does not expose credentials.

@@ -498,6 +498,7 @@ const IliriStore=(()=>{
     if(!d)return;
     applying=true;
     try{
+      if(d.values){d.values.projectSearch='';d.values.clientSearch='';}
       for(const [id,value] of Object.entries(d.values||{})){
         const el=$(id);if(!el||el.type==='file'||el.type==='password'||el.closest('#iliriCloudPanel'))continue;
         if(el.type==='checkbox')el.checked=!!value;

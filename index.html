@@ -750,6 +750,8 @@ const IliriStore=(()=>{
     meta.baseRevision=Number(row.revision);conflict=null;panelMessage='';await writeLocal();queueSync(10);renderStatus();
   }
   function installUI(){
+    // Idempotent: keep the storage control visible even if start() is called again.
+    if(document.getElementById('iliriStorageBar'))return;
     const banner=document.createElement('div');banner.id='iliriStorageBar';banner.className='wrap';
     banner.innerHTML='<div class="card" style="padding:9px 12px;display:flex;align-items:center;gap:8px"><span id="iliriStorageStatus" role="status" aria-live="polite" style="font-size:12px;flex:1"></span><button type="button" id="iliriCloudOpen" class="secondary" style="padding:8px">☁️ Ruajtja</button></div>';
     document.querySelector('header').after(banner);
@@ -1742,7 +1744,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   refreshProjectSelectors();bind();applyLang();restoreFormDrafts();renderHome();checkWeeklyBackupReminder();requestPersistentStorage();
   document.addEventListener('input',scheduleDraftSave);document.addEventListener('change',scheduleDraftSave);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persistFormDrafts()});window.addEventListener('pagehide',persistFormDrafts);
-  IliriStore.start();
+  await IliriStore.start();
  }catch(e){alert('Hapja nuk përfundoi. Mos fshi të dhënat e Safari-t; provo ta rihapësh aplikacionin.');console.error('ILIRI initialization failed',e)}finally{if(!guard.dataset.blocked)guard.remove()}
 });
 

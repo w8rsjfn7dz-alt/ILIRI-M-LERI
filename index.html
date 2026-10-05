@@ -578,7 +578,17 @@ const IliriStore=(()=>{
     }
     const local=json(safeLocalGet(STATE_KEY));
     const db=await durableGet('state-v9');
-    const candidates=[db,local].filter(x=>x?.format===9&&x.snapshot).sort((a,b)=>(b.localRevision||0)-(a.localRevision||0)||(b.snapshot.savedAt||0)-(a.snapshot.savedAt||0));
+    const candidates=[db,local].filter(x=>x?.format===9&&x.snapshot);
+    // Prefer the most complete local snapshot, not merely the newest revision.
+    // This prevents an incomplete recent snapshot (e.g. 2 placeholder projects)
+    // from hiding the older snapshot that still contains the actual project records.
+    const score=e=>{
+      const s=e?.snapshot||{}, arr=k=>Array.isArray(s[k])?s[k]:[];
+      const namedProjects=arr('projects').filter(p=>String(p?.projectName||'').trim()).length;
+      const usableHours=arr('hours').filter(h=>Number(h?.total)>0||(h?.start&&h?.end)).length;
+      return namedProjects*100000+usableHours*1000+arr('projects').length*100+arr('materials').length*10+arr('offers').length+arr('invoices').length;
+    };
+    candidates.sort((a,b)=>score(b)-score(a)||(b.localRevision||0)-(a.localRevision||0)||(b.snapshot.savedAt||0)-(a.snapshot.savedAt||0));
     let restored=false;
     for(const e of candidates){try{applySnapshot(e.snapshot);meta={...meta,...e.meta};localRevision=Number(e.localRevision)||0;restored=true;break}catch(err){panelMessage=err.message}}
     if(!restored){

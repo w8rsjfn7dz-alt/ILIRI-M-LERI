@@ -592,16 +592,19 @@ const IliriStore=(()=>{
       snapshot={app:'ILIRI-MALERI',version:9,savedAt:Date.now(),mutationId:uuid(),...clone(content())};
       meta.dirty=useful(snapshot);lastContent=JSON.stringify(content());
     }
-    // Recovery guard: keep every legacy hour still present on this device.
-    // This prevents an older v9/cloud snapshot from silently dropping hours saved by an earlier build.
+    // Recovery guard: merge legacy mirrors still present on this device.
+    // This recovers projects/hours that an older or incomplete v9 snapshot omitted.
     try{
-      const legacyHours=load(HOURS_KEY,[]);
-      if(Array.isArray(legacyHours)&&legacyHours.length){
-        const seen=new Set(hours.map(h=>String(h.id||[h.date,h.start,h.end,h.projectId,h.note].join('|'))));
-        let added=0;
-        for(const h of legacyHours){const k=String(h.id||[h.date,h.start,h.end,h.projectId,h.note].join('|'));if(!seen.has(k)){hours.push(h);seen.add(k);added++}}
-        if(added){hours.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));snapshot={app:'ILIRI-MALERI',version:9,savedAt:Date.now(),mutationId:uuid(),...clone(content())};meta.dirty=true;lastContent=JSON.stringify(content())}
+      const legacy={projects:load(PROJECTS_KEY,[]),hours:load(HOURS_KEY,[]),materials:load(MATERIALS_KEY,[]),offers:load(OFFERS_KEY,[]),invoices:load(INVOICES_KEY,[]),photos:load(PHOTOS_KEY,[]),measures:load(MEASURES_KEY,[]),reports:load(REPORTS_KEY,[])};
+      let added=0;
+      for(const k of collections){
+        if(!Array.isArray(legacy[k])||!legacy[k].length)continue;
+        const target=values()[k];
+        const key=x=>String(x.id||[x.date,x.start,x.end,x.projectId,x.projectName,x.number,x.name,x.note].join('|'));
+        const seen=new Set(target.map(key));
+        for(const item of legacy[k]){const id=key(item);if(!seen.has(id)){target.push(item);seen.add(id);added++}}
       }
+      if(added){hours.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));snapshot={app:'ILIRI-MALERI',version:9,savedAt:Date.now(),mutationId:uuid(),...clone(content())};meta.dirty=true;lastContent=JSON.stringify(content())}
     }catch(e){}
     ready=true;durableReady=true;
     await writeLocal();resolveReady(true);
@@ -706,12 +709,16 @@ const IliriStore=(()=>{
       const localSavedAt=Number(snapshot?.savedAt)||0;
       const remoteSavedAt=Number(row?.data?.savedAt)||0;
       const sameCopy=remoteUseful&&row.data.mutationId&&row.data.mutationId===snapshot?.mutationId;
-      if(remoteUseful && (!localUseful || (remoteSavedAt>localSavedAt&&!meta.dirty))){
+      // Never auto-replace useful data already present on this device.
+      // A newer cloud timestamp does not mean the cloud copy is more complete.
+      // If both copies contain data and differ, keep the device copy intact and
+      // require an explicit choice in the storage panel.
+      if(remoteUseful && !localUseful){
         applySnapshot(row.data);
         meta.dirty=false;meta.syncedAt=row.updated_at;
         repaint();
         await writeLocal();
-      }else if(remoteUseful&&remoteSavedAt>localSavedAt&&meta.dirty&&!sameCopy){
+      }else if(remoteUseful&&localUseful&&!sameCopy&&(remoteSavedAt!==localSavedAt||meta.dirty)){
         setConflict({payload:row.data,updated_at:row.updated_at,revision:0});
         return;
       }else if(sameCopy){

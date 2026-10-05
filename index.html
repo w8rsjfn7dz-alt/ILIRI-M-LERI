@@ -392,6 +392,21 @@ html.client-sign-mode #iliriSigBack{display:none!important}
 <script>
 'use strict';
 const PROJECTS_KEY='iliri_maleri_projects_v3';
+/* iOS Home Screen apps use isolated storage. On first standalone launch,
+   import the user's confirmed Safari snapshot through the URL fragment. */
+function importStandaloneSnapshotFromHash(){
+  if(!window.matchMedia('(display-mode: standalone)').matches)return false;
+  const m=location.hash.match(/^#iliri=([^&]+)$/); if(!m)return false;
+  try{
+    const data=JSON.parse(decodeURIComponent(atob(m[1])));
+    if(!data||!Array.isArray(data.projects)||!Array.isArray(data.hours))return false;
+    safeLocalSet(PROJECTS_KEY,JSON.stringify(data.projects));
+    safeLocalSet(HOURS_KEY,JSON.stringify(data.hours));
+    if(Array.isArray(data.materials))safeLocalSet(MATERIALS_KEY,JSON.stringify(data.materials));
+    history.replaceState(null,'',location.pathname+location.search);
+    location.reload(); return true;
+  }catch(e){return false}
+}
 const HOURS_KEY='iliri_maleri_hours_v1';
 const MATERIALS_KEY='iliri_maleri_materials_v1';
 const LANG_KEY='iliri_maleri_lang_v4';

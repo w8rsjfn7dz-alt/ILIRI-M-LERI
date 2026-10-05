@@ -832,7 +832,28 @@ const IliriStore=(()=>{
 })();
 window.iliriReady=IliriStore.initialized;
 
+function syncStandaloneFromSafari(){
+  if(!window.matchMedia('(display-mode: standalone)').matches)return;
+  const raw=safeLocalGet('iliri_homescreen_seed_v1');
+  if(!raw)return;
+  try{
+    const d=JSON.parse(raw);
+    if(Array.isArray(d.projects)&&Array.isArray(d.hours)){
+      projects=d.projects;hours=d.hours;
+      if(Array.isArray(d.materials))materials=d.materials;
+      safeLocalSet(PROJECTS_KEY,JSON.stringify(projects));
+      safeLocalSet(HOURS_KEY,JSON.stringify(hours));
+      safeLocalSet(MATERIALS_KEY,JSON.stringify(materials));
+      safeLocalSet('iliri_homescreen_seed_v1','');
+    }
+  }catch(e){}
+}
+function publishSafariSnapshotForHomeScreen(){
+  if(window.matchMedia('(display-mode: standalone)').matches)return;
+  try{safeLocalSet('iliri_homescreen_seed_v1',JSON.stringify({projects,hours,materials,savedAt:Date.now()}))}catch(e){}
+}
 function persistAll(){
+  publishSafariSnapshotForHomeScreen();
   // Keep compatibility mirrors as a second local copy; the v9 store remains authoritative.
   try{safeLocalSet(PROJECTS_KEY,JSON.stringify(projects));safeLocalSet(HOURS_KEY,JSON.stringify(hours));safeLocalSet(MATERIALS_KEY,JSON.stringify(materials));safeLocalSet(OFFERS_KEY,JSON.stringify(offers));safeLocalSet(INVOICES_KEY,JSON.stringify(invoices));safeLocalSet(PHOTOS_KEY,JSON.stringify(photos));safeLocalSet(MEASURES_KEY,JSON.stringify(measures));safeLocalSet(REPORTS_KEY,JSON.stringify(reports))}catch(e){}
   IliriStore.saveData();

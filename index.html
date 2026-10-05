@@ -570,7 +570,10 @@ const IliriStore=(()=>{
           resolve(true);return new Promise(release=>window.addEventListener('pagehide',()=>{saveDrafts();localQueue.finally(release)},{once:true}));
         }).catch(()=>resolve(false));
       });
-      if(!acquired){resolveReady(false);return false}
+      // If another Safari/PWA page still holds the advisory lock, do not block startup.
+      // Continue with the existing durable/local recovery logic so reopening the app never
+      // strands the user behind a stale iOS tab. No stored data is deleted or reset here.
+      if(!acquired){panelMessage='Aplikacioni u rihap pa bllokim. Të dhënat lokale u ruajtën.'}
       window.addEventListener('pageshow',e=>{if(e.persisted)location.reload()});
     }
     const local=json(safeLocalGet(STATE_KEY));

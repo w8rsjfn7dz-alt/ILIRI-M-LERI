@@ -1827,9 +1827,9 @@ document.addEventListener('DOMContentLoaded',()=>{
    checkWeeklyBackupReminder();requestPersistentStorage();
    document.addEventListener('input',scheduleDraftSave);document.addEventListener('change',scheduleDraftSave);
    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persistFormDrafts()});window.addEventListener('pagehide',persistFormDrafts);
-   // Cloud auto-start disabled here: never let an older online snapshot replace
-   // projects/hours on this iPhone. Online sync can be started explicitly from Ruajtja.
-   console.log('ILIRI: local data protected; cloud auto-sync paused');
+   // Start online storage after local recovery. Conflict protection in sync()
+   // prevents an existing useful local copy from being overwritten automatically.
+   IliriStore.start().catch(e=>console.error('ILIRI online storage failed',e));
  }).catch(e=>{console.error('ILIRI data recovery failed',e);IliriStore.start().catch(()=>{})});
 });
 

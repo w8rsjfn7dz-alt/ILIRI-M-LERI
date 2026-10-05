@@ -835,7 +835,7 @@ function uid(){return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():Dat
 function today(){const d=new Date();const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}
 function statusText(s){return s==='done'?tr('done'):s==='waiting'?tr('waiting'):tr('active')}
 function projectHours(id){return (Array.isArray(hours)?hours:[]).filter(h=>String(h&&h.projectId||'')===String(id||'')).reduce((a,b)=>a+hourTotal(b),0)}
-function projectMaterials(id){return materials.filter(m=>m.projectId===id).reduce((a,b)=>a+Number(m.cost||0),0)}
+function projectMaterials(id){return (Array.isArray(materials)?materials:[]).filter(m=>String(m&&m.projectId||'')===String(id||'')).reduce((a,b)=>a+Number(b&&b.cost||0),0)}
 
 function showView(id){['homeView','projectFormView','projectsView','clientsView','hoursView','materialsView','offersView','offerFormView','invoicesView','invoiceFormView','photosView','measureView','reportsView','voiceView','acceptedDocsView'].forEach(v=>{const el=$(v);if(el)el.classList.toggle('hidden',v!==id)});if(id==='projectsView'){if($('projectSearch'))$('projectSearch').value='';renderProjects();setTimeout(renderProjects,50)}if(id==='clientsView')renderClients();if(id==='hoursView')renderHours();if(id==='materialsView')renderMaterials();if(id==='offersView')renderOffers();if(id==='invoicesView')renderInvoices();if(id==='photosView')renderPhotos();if(id==='measureView')renderMeasureHistory();if(id==='reportsView')renderReportsView();if(id==='acceptedDocsView')renderAcceptedDocs();window.scrollTo(0,0)}
 function newProject(){clearProjectForm();showView('projectFormView')}
